@@ -298,8 +298,8 @@ static bool readResult(FILE *                          theFile,
         node[ iNode ] = (*IdNode).second;
       }
     }
-    // create a tetrahedron
-    SMDS_MeshElement* aTet = theMesh->AddVolume( node[0], node[1], node[2], node[3] );
+    // create a tetrahedron with orientation as for MED
+    SMDS_MeshElement* aTet = theMesh->AddVolume( node[1], node[0], node[2], node[3] );
     theMesh->SetMeshElementOnShape( aTet, theShape );
   }
 
