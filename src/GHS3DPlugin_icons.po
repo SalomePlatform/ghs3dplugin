@@ -14,5 +14,5 @@ msgstr ""
 # ObjectBrowser
 #-----------------------------------------------------------
 
-msgid "ICON_SMESH_TREE_ALGO_GHS3D_3D"
+msgid "ICON_SMESH_TREE_ALGO_GHS3D"
 msgstr "mesh_tree_algo_tetra.png"
