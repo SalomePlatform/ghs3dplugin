@@ -38,7 +38,7 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   : SMESH_3D_Algo(hypId, studyId, gen)
 {
   MESSAGE("GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D");
-  _name = "GHS3D";
+  _name = "GHS3D_3D";
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type
 }
 
