@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='us-ascii'?>
+<!DOCTYPE meshers PUBLIC "" "desktop.dtd">
+
+<!--  GUI customization for MESH component  -->
+
+<meshers>
+
+<meshers-group name="GHS3D"
+               resources="GHS3DPlugin"
+               server-lib="libGHS3DEngine.so"
+               gui-lib="">
+  <algorithms>
+    <algorithm type="GHS3D_3D"
+               label-id="Tetrahedron (GHS3D)"
+               icon-id="mesh_algo_tetra.png"/>
+  </algorithms>
+</meshers-group>
+
+</meshers>
