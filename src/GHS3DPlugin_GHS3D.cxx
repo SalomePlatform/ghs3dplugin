@@ -376,12 +376,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #endif
 
   const QString aGenericName    = (aTmpDir + ( "GHS3D_%1" )).arg( aUniqueNb );
-  const QString aFacesFileName  = aGenericName + ".faces";
-  const QString aPointsFileName = aGenericName + ".points";
-  const QString aResultFileName = aGenericName + ".noboite";
-  const QString aErrorFileName  = aGenericName + ".log";
+  const QString aFacesFileName  = aGenericName + ".faces";  // in faces
+  const QString aPointsFileName = aGenericName + ".points"; // in points
+  const QString aResultFileName = aGenericName + ".noboite";// out points and volumes
+  const QString aBadResFileName = aGenericName + ".boite";  // out bad result
+  const QString aBbResFileName  = aGenericName + ".bb";     // out vertex stepsize
+  const QString aErrorFileName  = aGenericName + ".log";    // log
 
-  // remove old files
+  // remove possible old files
   QFile( aFacesFileName ).remove();
   QFile( aPointsFileName ).remove();
   QFile( aResultFileName ).remove();
@@ -452,7 +454,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     QFile( aPointsFileName ).remove();
     QFile( aResultFileName ).remove();
     QFile( aErrorFileName ).remove();
-  }    
+  }
+  // remove other possible files
+  QFile( aBadResFileName ).remove();
+  QFile( aBbResFileName ).remove();
+  
   return Ok;
 }
 
