@@ -19,7 +19,7 @@ using namespace std;
 
 #include "utilities.h"
 
-#include <qdir.h>
+#include <qfile.h>
 
 #ifdef _DEBUG_
 #define DUMP(txt) \
@@ -78,7 +78,7 @@ static bool writeFaces (ofstream &            theFile,
                         SMESHDS_Mesh *        theMesh,
                         const map <int,int> & theSmdsToGhs3dIdMap)
 {
-  // structure:
+  // record structure:
   //
   // NB_ELEMS DUMMY_INT
   // Loop from 1 to NB_ELEMS
@@ -134,7 +134,7 @@ static bool writePoints (ofstream &                       theFile,
                          map <int,int> &                  theSmdsToGhs3dIdMap,
                          map <int,const SMDS_MeshNode*> & theGhs3dIdToNodeMap)
 {
-  // structure:
+  // record structure:
   //
   // NB_NODES
   // Loop from 1 to NB_NODES
@@ -244,11 +244,13 @@ static bool readResult(FILE *                          theFile,
   // get shell to set nodes in
   TopExp_Explorer exp( theShape, TopAbs_SHELL );
   TopoDS_Shell aShell = TopoDS::Shell( exp.Current() );
+  if ( aShell.IsNull() )
+    return false;
 
-  // -------------------------------------
+  // ----------------------------------------
   // record 1:
-  // read nb generated elements and nodes
-  // -------------------------------------
+  // read nb of generated elements and nodes
+  // ----------------------------------------
   int nbElems = 0 , nbNodes = 0, nbInputNodes = 0;
   GHS3DPlugin_ReadLine( aPtr, aBuffer, theFile, aLineNb );
   if (!aPtr ||
@@ -335,7 +337,7 @@ static bool readResult(FILE *                          theFile,
     theMesh->MoveNode( node, coord[0], coord[1], coord[2] );
   }
 
-  return true;
+  return nbElems;
 }
 
 //=============================================================================
@@ -350,18 +352,34 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   MESSAGE("GHS3DPlugin_GHS3D::Compute");
 
   // working dir
-  const char* wdName = "tmp";
-  QDir wd = QDir::root();                      // "/"
-  if ( !wd.cd( wdName ) ) {                    // "/tmp"
-    MESSAGE( "Cannot find the " << wdName << " directory" );
-    return false;
+  QString aTmpDir ( getenv("SALOME_TMP_DIR") );
+  if ( !aTmpDir.isEmpty() ) {
+#ifdef WIN32
+    if(aTmpDir.at(aTmpDir.length()-1) != '\\') aTmpDir+='\\';
+#else
+    if(aTmpDir.at(aTmpDir.length()-1) != '/') aTmpDir+='/';
+#endif      
   }
+  else {
+#ifdef WIN32
+    aTmpDir = "C:\\";
+#else
+    aTmpDir = "/tmp/";
+#endif
+  }
+  // a unique name helps to avoid access to the same files by eg different users
+  int aUniqueNb;
+#ifdef WIN32
+  aUniqueNb = GetCurrentProcessId();
+#else
+  aUniqueNb = getpid();
+#endif
 
-  const QString aGenericName    = wd.filePath( "GHS3DTMP" );
+  const QString aGenericName    = (aTmpDir + ( "GHS3D_%1" )).arg( aUniqueNb );
   const QString aFacesFileName  = aGenericName + ".faces";
   const QString aPointsFileName = aGenericName + ".points";
   const QString aResultFileName = aGenericName + ".noboite";
-  const QString aErrorFileName  = aGenericName + ".error";
+  const QString aErrorFileName  = aGenericName + ".log";
 
   // remove old files
   QFile( aFacesFileName ).remove();
@@ -376,17 +394,22 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   ofstream aFacesFile  ( aFacesFileName.latin1()  , ios::out);
   ofstream aPointsFile ( aPointsFileName.latin1() , ios::out);
-  if (!aFacesFile  || !aFacesFile.rdbuf()->is_open() ||
-      !aPointsFile || !aPointsFile.rdbuf()->is_open())
+  bool Ok =
+#ifdef WIN32
+    aFacesFile->is_open() && aPointsFile->is_open();
+#else
+    aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
+#endif
+  if (!Ok)
   {
-    MESSAGE( "Can't write into " << wdName << " directory");
+    MESSAGE( "Can't write into " << aTmpDir << " directory");
     return false;
   }
   SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
   map <int,int> aSmdsToGhs3dIdMap;
   map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
 
-  bool Ok =
+  Ok =
     (writePoints( aPointsFile, meshDS, aSmdsToGhs3dIdMap, aGhs3dIdToNodeMap ) &&
      writeFaces ( aFacesFile, meshDS, aSmdsToGhs3dIdMap ));
 
@@ -397,7 +420,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     return false;
 
   // -----------------
-  // run ghs3d mesher
+  // run ghs3d mesher              WIN32???
   // -----------------
 
   QString cmd = "ghs3d "
@@ -406,7 +429,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
         " 1>" + aErrorFileName; // dump into file
   if (system(cmd.latin1()))
   {
-    MESSAGE ("Failed: <" << cmd.latin1() << ">");
+    MESSAGE ("command failed: " << cmd.latin1() );
     return false;
   }
 
@@ -424,6 +447,12 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   Ok = readResult( aResultFile, meshDS, theShape, aGhs3dIdToNodeMap );
   fclose(aResultFile);
 
+  if ( Ok ) {
+    QFile( aFacesFileName ).remove();
+    QFile( aPointsFileName ).remove();
+    QFile( aResultFileName ).remove();
+    QFile( aErrorFileName ).remove();
+  }    
   return Ok;
 }
 

@@ -1,8 +1,5 @@
 //=============================================================================
 // File      : GHS3DPlugin_GHS3D.hxx
-//             Moved here from SMESH_GHS3D_3D.hxx
-// Created   : lundi 27 Janvier 2003
-// Author    : Nadir BOUHAMOU (CEA)
 // Project   : SALOME
 // Copyright : CEA 2003
 // $Header$
@@ -12,7 +9,6 @@
 #define _GHS3DPlugin_GHS3D_HXX_
 
 #include "SMESH_3D_Algo.hxx"
-//#include "SMESH_Mesh.hxx"
 
 class SMESH_Mesh;
 
@@ -22,11 +18,11 @@ public:
   GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen);
   virtual ~GHS3DPlugin_GHS3D();
 
-  virtual bool CheckHypothesis(SMESH_Mesh& aMesh,
-                               const TopoDS_Shape& aShape,
+  virtual bool CheckHypothesis(SMESH_Mesh&                          aMesh,
+                               const TopoDS_Shape&                  aShape,
                                SMESH_Hypothesis::Hypothesis_Status& aStatus);
 
-  virtual bool Compute(SMESH_Mesh& aMesh,
+  virtual bool Compute(SMESH_Mesh&         aMesh,
 		       const TopoDS_Shape& aShape);
 
   ostream & SaveTo(ostream & save);
