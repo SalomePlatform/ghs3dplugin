@@ -47,6 +47,13 @@ include/salome/sstream: salome_adm/unix/sstream
 	-$(RM) $@
 	$(LN_S) ../../$< $@
 
+# install script in $(bindir) :
+install-bin: $(BIN_SCRIPT)
+	$(INSTALL) -d  $(bindir)
+	if test $(BIN_SCRIPT)X != X; then 			\
+		$(INSTALL_PROGRAM) $^ $(bindir);		\
+	fi
+
 # CLEAN --------------------
 
 distclean: distclean-other
@@ -59,3 +66,4 @@ distclean-other:
 
 @MODULE@
 
+install: install-bin
