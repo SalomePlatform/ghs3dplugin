@@ -29,6 +29,7 @@
 
 #include <SALOMEconfig.h>
 #include CORBA_SERVER_HEADER(GHS3DPlugin_Algorithm)
+#include CORBA_SERVER_HEADER(SALOME_Exception)
 
 #include "SMESH_3D_Algo_i.hxx"
 #include "GHS3DPlugin_GHS3D.hxx"
