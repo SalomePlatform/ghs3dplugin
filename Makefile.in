@@ -9,7 +9,7 @@
 top_srcdir=@top_srcdir@
 top_builddir=.
 srcdir=@srcdir@
-VPATH=.:@srcdir@:@top_srcdir@/resources
+VPATH=.:@srcdir@:@top_srcdir@/bin:@top_srcdir@/resources:./bin:@top_srcdir@/idl
 
 
 @COMMENCE@
@@ -17,6 +17,8 @@ VPATH=.:@srcdir@:@top_srcdir@/resources
 SUBDIRS = idl src
 
 RESOURCES_FILES = GHS3DPlugin.xml
+
+BIN_SCRIPT = VERSION
 
 # copy header files in common directory ------------
 
