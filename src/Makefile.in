@@ -27,7 +27,7 @@ LIB_SERVER_IDL = GHS3DPlugin_Algorithm.idl
 # Libraries targets
 LIB = libGHS3DEngine.la
 
-CXXFLAGS += $(QT_INCLUDES)
-LDFLAGS  += $(QT_LIBS)
+#CXXFLAGS += $(QT_INCLUDES)
+#LDFLAGS  += $(QT_LIBS)
 
 @CONCLUDE@
