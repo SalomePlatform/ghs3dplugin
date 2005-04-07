@@ -16,10 +16,14 @@ using namespace std;
 #include "SMDS_MeshNode.hxx"
 
 #include <TopExp_Explorer.hxx>
+#include <OSD_File.hxx>
 
 #include "utilities.h"
 
-#include <qfile.h>
+#ifndef WIN32
+#include <sys/sysinfo.h>
+#endif
+
 
 #ifdef _DEBUG_
 #define DUMP(txt) \
@@ -76,6 +80,7 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis
 
 static bool writeFaces (ofstream &            theFile,
                         SMESHDS_Mesh *        theMesh,
+                        const TopoDS_Shape&   theShape,
                         const map <int,int> & theSmdsToGhs3dIdMap)
 {
   // record structure:
@@ -84,7 +89,21 @@ static bool writeFaces (ofstream &            theFile,
   // Loop from 1 to NB_ELEMS
   //   NB_NODES NODE_NB_1 NODE_NB_2 ... (NB_NODES + 1) times: DUMMY_INT
 
-  int nbFaces = theMesh->NbFaces();
+  // get all faces bound to theShape
+  int nbFaces = 0;
+  list< const SMDS_MeshElement* > faces;
+  TopExp_Explorer fExp( theShape, TopAbs_FACE );
+  for ( ; fExp.More(); fExp.Next() ) {
+    SMESHDS_SubMesh* sm = theMesh->MeshElements( fExp.Current() );
+    if ( sm ) {
+      SMDS_ElemIteratorPtr eIt = sm->GetElements();
+      while ( eIt->more() ) {
+        faces.push_back( eIt->next() );
+        nbFaces++;
+      }
+    }
+  }
+
   if ( nbFaces == 0 )
     return false;
 
@@ -95,11 +114,11 @@ static bool writeFaces (ofstream &            theFile,
   theFile << space << nbFaces << space << dummyint << endl;
 
   // Loop from 1 to NB_ELEMS
-  SMDS_FaceIteratorPtr it = theMesh->facesIterator();
-  while ( it->more() )
+  list< const SMDS_MeshElement* >::iterator f = faces.begin();
+  for ( ; f != faces.end(); ++f )
   {
     // NB_NODES
-    const SMDS_MeshElement* elem = it->next();
+    const SMDS_MeshElement* elem = *f;
     const int nbNodes = elem->NbNodes();
     theFile << space << nbNodes;
 
@@ -340,6 +359,34 @@ static bool readResult(FILE *                          theFile,
   return nbElems;
 }
 
+//=======================================================================
+//function : getTmpDir
+//purpose  : 
+//=======================================================================
+
+static TCollection_AsciiString getTmpDir()
+{
+  TCollection_AsciiString aTmpDir;
+
+  char *Tmp_dir = getenv("SALOME_TMP_DIR");
+  if(Tmp_dir != NULL) {
+    aTmpDir = Tmp_dir;
+#ifdef WIN32
+    if(aTmpDir.Value(aTmpDir.Length()) != '\\') aTmpDir+='\\';
+#else
+    if(aTmpDir.Value(aTmpDir.Length()) != '/') aTmpDir+='/';
+#endif      
+  }
+  else {
+#ifdef WIN32
+    aTmpDir = TCollection_AsciiString("C:\\");
+#else
+    aTmpDir = TCollection_AsciiString("/tmp/");
+#endif
+  }
+  return aTmpDir;
+}
+
 //=============================================================================
 /*!
  *Here we are going to use the GHS3D mesher
@@ -351,51 +398,36 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 {
   MESSAGE("GHS3DPlugin_GHS3D::Compute");
 
-  // working dir
-  QString aTmpDir ( getenv("SALOME_TMP_DIR") );
-  if ( !aTmpDir.isEmpty() ) {
+  SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
+
+  // make a unique working file name
+  // to avoid access to the same files by eg different users
+  
+  TCollection_AsciiString aGenericName, aTmpDir = getTmpDir();
+  aGenericName = aTmpDir + "GHS3D_";
 #ifdef WIN32
-    if(aTmpDir.at(aTmpDir.length()-1) != '\\') aTmpDir+='\\';
+  aGenericName += GetCurrentProcessId();
 #else
-    if(aTmpDir.at(aTmpDir.length()-1) != '/') aTmpDir+='/';
-#endif      
-  }
-  else {
-#ifdef WIN32
-    aTmpDir = "C:\\";
-#else
-    aTmpDir = "/tmp/";
+  aGenericName += getpid();
 #endif
-  }
-  // a unique name helps to avoid access to the same files by eg different users
-  int aUniqueNb;
-#ifdef WIN32
-  aUniqueNb = GetCurrentProcessId();
-#else
-  aUniqueNb = getpid();
-#endif
+  aGenericName += "_";
+  aGenericName += meshDS->ShapeToIndex( theShape );
 
-  const QString aGenericName    = (aTmpDir + ( "GHS3D_%1" )).arg( aUniqueNb );
-  const QString aFacesFileName  = aGenericName + ".faces";  // in faces
-  const QString aPointsFileName = aGenericName + ".points"; // in points
-  const QString aResultFileName = aGenericName + ".noboite";// out points and volumes
-  const QString aBadResFileName = aGenericName + ".boite";  // out bad result
-  const QString aBbResFileName  = aGenericName + ".bb";     // out vertex stepsize
-  const QString aErrorFileName  = aGenericName + ".log";    // log
-
-  // remove possible old files
-  QFile( aFacesFileName ).remove();
-  QFile( aPointsFileName ).remove();
-  QFile( aResultFileName ).remove();
-  QFile( aErrorFileName ).remove();
-
+  TCollection_AsciiString aFacesFileName, aPointsFileName, aResultFileName;
+  TCollection_AsciiString aBadResFileName, aBbResFileName, aLogFileName;
+  aFacesFileName  = aGenericName + ".faces";  // in faces
+  aPointsFileName = aGenericName + ".points"; // in points
+  aResultFileName = aGenericName + ".noboite";// out points and volumes
+  aBadResFileName = aGenericName + ".boite";  // out bad result
+  aBbResFileName  = aGenericName + ".bb";     // out vertex stepsize
+  aLogFileName    = aGenericName + ".log";    // log
 
   // -----------------
   // make input files
   // -----------------
 
-  ofstream aFacesFile  ( aFacesFileName.latin1()  , ios::out);
-  ofstream aPointsFile ( aPointsFileName.latin1() , ios::out);
+  ofstream aFacesFile  ( aFacesFileName.ToCString()  , ios::out);
+  ofstream aPointsFile ( aPointsFileName.ToCString() , ios::out);
   bool Ok =
 #ifdef WIN32
     aFacesFile->is_open() && aPointsFile->is_open();
@@ -404,60 +436,88 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #endif
   if (!Ok)
   {
-    MESSAGE( "Can't write into " << aTmpDir << " directory");
+    INFOS( "Can't write into " << aTmpDir.ToCString());
     return false;
   }
-  SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
   map <int,int> aSmdsToGhs3dIdMap;
   map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
 
   Ok =
     (writePoints( aPointsFile, meshDS, aSmdsToGhs3dIdMap, aGhs3dIdToNodeMap ) &&
-     writeFaces ( aFacesFile, meshDS, aSmdsToGhs3dIdMap ));
+     writeFaces ( aFacesFile, meshDS, theShape, aSmdsToGhs3dIdMap ));
 
   aFacesFile.close();
   aPointsFile.close();
 
-  if ( ! Ok )
+  if ( ! Ok ) {
+    if ( !getenv("GHS3D_KEEP_FILES") ) {
+      OSD_File( aFacesFileName ).Remove();
+      OSD_File( aPointsFileName ).Remove();
+    }
     return false;
+  }
 
   // -----------------
   // run ghs3d mesher              WIN32???
   // -----------------
 
-  QString cmd = "ghs3d "
-    "-m 1000 "                 // memory: 1000 M
-      "-f " + aGenericName +   // file to read
-        " 1>" + aErrorFileName; // dump into file
-  if (system(cmd.latin1()))
-  {
-    MESSAGE ("command failed: " << cmd.latin1() );
-    return false;
+  // ghs3d need to know amount of memory it may use (MB).
+  // Default memory is defined at ghs3d installation but it may be not enough,
+  // so allow to use about all available memory
+  TCollection_AsciiString memory;
+#ifndef WIN32
+  struct sysinfo si;
+  int err = sysinfo( &si );
+  if ( err == 0 ) {
+    memory = "-m ";
+    memory += int ( 0.8 * ( si.freeram + si.freeswap ) * si.mem_unit / 1024 / 1024 );
   }
+#endif
+
+  TCollection_AsciiString cmd( "ghs3d " ); // command to run
+  cmd +=
+    memory +                   // memory
+      " -f " + aGenericName +  // file to read
+        " 1>" + aLogFileName;  // dump into file
+
+  system( cmd.ToCString() ); // run
 
   // --------------
   // read a result
   // --------------
 
-  FILE * aResultFile = fopen( aResultFileName.latin1(), "r" );
-  if (!aResultFile)
+  FILE * aResultFile = fopen( aResultFileName.ToCString(), "r" );
+  if (aResultFile)
   {
-    MESSAGE( "GHS3D ERROR: see " << aErrorFileName.latin1() );
-    return false;
+    Ok = readResult( aResultFile, meshDS, theShape, aGhs3dIdToNodeMap );
+    fclose(aResultFile);
   }
-  
-  Ok = readResult( aResultFile, meshDS, theShape, aGhs3dIdToNodeMap );
-  fclose(aResultFile);
+  else
+    Ok = false;
+
+  // ---------------------
+  // remove working files
+  // ---------------------
 
   if ( Ok ) {
-    QFile( aFacesFileName ).remove();
-    QFile( aPointsFileName ).remove();
-    QFile( aResultFileName ).remove();
-    QFile( aErrorFileName ).remove();
+    OSD_File( aLogFileName ).Remove();
   }
-  // remove other possible files
-  QFile( aBadResFileName ).remove();
-  QFile( aBbResFileName ).remove();
+  else if ( OSD_File( aLogFileName ).Size() > 0 ) {
+    INFOS( "GHS3D Error: see " << aLogFileName.ToCString() );
+  }
+  else {
+    OSD_File( aLogFileName ).Remove();
+    INFOS( "GHS3D Error: command '" << cmd.ToCString() << "' failed" );
+  }
+
+  if ( !getenv("GHS3D_KEEP_FILES") )
+  {
+    OSD_File( aFacesFileName ).Remove();
+    OSD_File( aPointsFileName ).Remove();
+    OSD_File( aResultFileName ).Remove();
+    OSD_File( aBadResFileName ).Remove();
+    OSD_File( aBbResFileName ).Remove();
+  }
   
   return Ok;
 }
