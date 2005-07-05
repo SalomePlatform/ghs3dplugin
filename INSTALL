@@ -1,4 +1,5 @@
-This is the version 2.2.2 of GHS3DPLUGIN
+This is the version 3.0.0 of GHS3DPLUGIN
 Compatible with :
-	- KERNEL 2.2.2
-	- SMESH 2.2.2
+	- KERNEL 3.0.0
+        - SALOMEGUI 3.0.0
+	- SMESH 3.0.0
