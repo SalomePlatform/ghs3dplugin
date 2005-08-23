@@ -12,7 +12,8 @@
   <algorithms>
     <algorithm type="GHS3D_3D"
                label-id="Tetrahedron (GHS3D)"
-               icon-id="mesh_algo_tetra.png"/>
+               icon-id="mesh_algo_tetra.png"
+               dim="3"/>
   </algorithms>
 </meshers-group>
 
