@@ -259,12 +259,7 @@ static bool readResult(FILE *                          theFile,
   char aBuffer[ GHS3DPlugin_BUFLENGTH ];
   char * aPtr;
   int aLineNb = 0;
-
-  // get shell to set nodes in
-  TopExp_Explorer exp( theShape, TopAbs_SHELL );
-  TopoDS_Shell aShell = TopoDS::Shell( exp.Current() );
-  if ( aShell.IsNull() )
-    return false;
+  int shapeID = theMesh->ShapeToIndex( theShape );
 
   // ----------------------------------------
   // record 1:
@@ -307,19 +302,18 @@ static bool readResult(FILE *                          theFile,
         // ID is not yet in theGhs3dIdToNodeMap
         ASSERT ( ID > nbInputNodes ); // it should be a new one
         SMDS_MeshNode * aNewNode = theMesh->AddNode( 0.,0.,0. ); // read XYZ later
-        theMesh->SetNodeInVolume( aNewNode, aShell );
-        theGhs3dIdToNodeMap.insert
-          ( map <int,const SMDS_MeshNode*>::value_type( ID, aNewNode ));
+        theMesh->SetNodeInVolume( aNewNode, shapeID );
+        theGhs3dIdToNodeMap.insert ( make_pair( ID, aNewNode ));
         node[ iNode ] = aNewNode;
       }
       else
       {
-        node[ iNode ] = (*IdNode).second;
+        node[ iNode ] = IdNode->second;
       }
     }
     // create a tetrahedron with orientation as for MED
     SMDS_MeshElement* aTet = theMesh->AddVolume( node[1], node[0], node[2], node[3] );
-    theMesh->SetMeshElementOnShape( aTet, theShape );
+    theMesh->SetMeshElementOnShape( aTet, shapeID );
   }
 
   // ------------------------
