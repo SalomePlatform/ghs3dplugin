@@ -33,6 +33,12 @@ using namespace std;
 
 #include "GHS3DPlugin_GHS3D_i.hxx"
 
+template <class T> class GHS3DPlugin_Creator_i:public HypothesisCreator_i<T>
+{
+  // as we have 'module GHS3DPlugin' in GHS3DPlugin_Algorithm.idl
+  virtual std::string GetModuleName() { return "GHS3DPlugin"; }
+};
+
 //=============================================================================
 /*!
  *
@@ -51,7 +57,7 @@ extern "C"
 
     // Algorithms
     if (strcmp(aHypName, "GHS3D_3D") == 0)
-      aCreator = new HypothesisCreator_i<GHS3DPlugin_GHS3D_i>;
+      aCreator = new GHS3DPlugin_Creator_i<GHS3DPlugin_GHS3D_i>;
     else ;
 
     return aCreator;
