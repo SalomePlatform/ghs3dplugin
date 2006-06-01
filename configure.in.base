@@ -22,8 +22,10 @@ AC_CANONICAL_HOST
 PACKAGE=salome
 AC_SUBST(PACKAGE)
 
-VERSION=0.0.1
+VERSION=3.2.0
+XVERSION=0x030200
 AC_SUBST(VERSION)
+AC_SUBST(XVERSION)
 
 dnl
 dnl Initialize source and build root directories
@@ -112,14 +114,6 @@ dnl We must test if it exists. If not, add it in include !
 dnl
 
 AC_CXX_HAVE_SSTREAM
-
-echo
-echo ---------------------------------------------
-echo BOOST Library
-echo ---------------------------------------------
-echo
-
-CHECK_BOOST
 
 dnl
 dnl ---------------------------------------------
@@ -239,6 +233,14 @@ echo Testing OpenCascade
 echo ---------------------------------------------
 echo
 
+echo
+echo ---------------------------------------------
+echo BOOST Library
+echo ---------------------------------------------
+echo
+
+CHECK_BOOST
+
 CHECK_CAS
 
 echo
@@ -355,7 +357,7 @@ fi
 
 # make other build directories
 for rep in \
-	salome_adm adm_local doc bin/salome include/salome lib/salome share/salome/resources #idl
+	salome_adm adm_local doc bin/salome include/salome lib${LIB_LOCATION_SUFFIX}/salome share/salome/resources #idl
 do
 #   if test ! -d $rep ; then
 #      eval mkdir $rep

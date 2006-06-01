@@ -1,5 +1,1 @@
-This is the version 3.2.0b1 of GHS3DPLUGIN
-Compatible with :
-	- KERNEL 3.2.0b1
-        - SALOMEGUI 3.2.0b1
-	- SMESH 3.2.0b1
+SALOME2 : GHS3DPLUGIN module (SMESH plugin)
