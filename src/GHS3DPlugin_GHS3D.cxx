@@ -482,7 +482,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   int err = sysinfo( &si );
   if ( err == 0 ) {
     memory = "-m ";
-    memory += int ( 0.8 * ( si.freeram + si.freeswap ) * si.mem_unit / 1024 / 1024 );
+    memory += int ( 0.5 * ( si.freeram + si.freeswap ) * si.mem_unit / 1024 / 1024 );
   }
 #endif
 
