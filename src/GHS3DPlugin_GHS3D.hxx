@@ -43,11 +43,6 @@ public:
   virtual bool Compute(SMESH_Mesh&         aMesh,
 		       const TopoDS_Shape& aShape);
 
-  ostream & SaveTo(ostream & save);
-  istream & LoadFrom(istream & load);
-  friend ostream & operator << (ostream & save, GHS3DPlugin_GHS3D & hyp);
-  friend istream & operator >> (istream & load, GHS3DPlugin_GHS3D & hyp);
-
 };
 
 #endif
