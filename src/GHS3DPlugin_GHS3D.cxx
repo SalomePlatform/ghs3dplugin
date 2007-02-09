@@ -399,6 +399,53 @@ static TCollection_AsciiString getTmpDir()
   return aTmpDir;
 }
 
+//================================================================================
+/*!
+ * \brief Decrease amount of memory GHS3D may use until it can allocate it
+  * \param nbMB - memory size to adjust
+  * \param aLogFileName - file for GHS3D output
+  * \retval bool - false if GHS3D can not run for any reason
+ */
+//================================================================================
+
+static bool adjustMemory(int & nbMB, const TCollection_AsciiString & aLogFileName)
+{
+  TCollection_AsciiString cmd( "ghs3d -m " );
+  cmd += nbMB;
+  cmd += " 1>";
+  cmd += aLogFileName;
+
+  system( cmd.ToCString() ); // run
+
+  // analyse log file
+
+  FILE * aLogFile = fopen( aLogFileName.ToCString(), "r" );
+  if ( aLogFile )
+  {
+    bool memoryOK = true;
+    char * aPtr;
+    char aBuffer[ GHS3DPlugin_BUFLENGTH ];
+    int aLineNb = 0;
+    do { 
+      GHS3DPlugin_ReadLine( aPtr, aBuffer, aLogFile, aLineNb );
+      if ( aPtr ) {
+        TCollection_AsciiString line( aPtr );
+        if ( line.Search( "UNABLE TO ALLOCATE MEMORY" ) > 0 )
+          memoryOK = false;
+      }
+    } while ( aPtr && memoryOK );
+
+    fclose( aLogFile );
+
+    if ( !memoryOK ) {
+      nbMB *= 0.75;
+      return adjustMemory( nbMB, aLogFileName );
+    }
+    return true;
+  }
+  return false;
+}
+
 //=============================================================================
 /*!
  *Here we are going to use the GHS3D mesher
@@ -481,8 +528,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   struct sysinfo si;
   int err = sysinfo( &si );
   if ( err == 0 ) {
+    int MB = 0.9 * ( si.freeram + si.freeswap ) * si.mem_unit / 1024 / 1024;
+    adjustMemory( MB, aLogFileName );
     memory = "-m ";
-    memory += int ( 0.8 * ( si.freeram + si.freeswap ) * si.mem_unit / 1024 / 1024 );
+    memory += MB;
   }
 #endif
 
@@ -532,49 +581,4 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
   
   return Ok;
-}
-
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & GHS3DPlugin_GHS3D::SaveTo(ostream & save)
-{
-  return save;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & GHS3DPlugin_GHS3D::LoadFrom(istream & load)
-{
-  return load;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & operator << (ostream & save, GHS3DPlugin_GHS3D & hyp)
-{
-  return hyp.SaveTo( save );
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & operator >> (istream & load, GHS3DPlugin_GHS3D & hyp)
-{
-  return hyp.LoadFrom( load );
 }
