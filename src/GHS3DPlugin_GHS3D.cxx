@@ -60,8 +60,15 @@ using namespace std;
 #define DUMP(txt)
 #endif
 
-// include for mmap
-#include "HDFconvert.hxx"
+extern "C"
+{
+#ifndef WNT
+#include <unistd.h>
+#include <sys/mman.h>
+#endif
+#include <sys/stat.h>
+#include <fcntl.h>
+}
 
 //=============================================================================
 /*!
