@@ -160,8 +160,7 @@ static bool writeFaces (ofstream &            theFile,
   if ( nbFaces == 0 )
     return false;
 
-  cout << "  " << nbFaces << " triangles" << endl;
-  cout << endl;
+  cout << nbFaces << " triangles" << endl;
 
   // NB_ELEMS DUMMY_INT
   theFile << space << nbFaces << space << dummyint << endl;
@@ -226,8 +225,7 @@ static bool writePoints (ofstream &                       theFile,
 
   // NB_NODES
   theFile << space << nbNodes << endl;
-  cout << "The 2D mesh contains :" << endl;
-  cout << "  " << nbNodes << " nodes" << endl;
+  cout << "The initial 2D mesh contains " << nbNodes << " nodes and ";
 
   // Loop from 1 to NB_NODES
 
@@ -292,16 +290,13 @@ static TopoDS_Shape findSolid(const SMDS_MeshNode *aNode[],
 //=======================================================================
 
 static char* readMapIntLine(char* ptr, int tab[]) {
-  char* ptrRet = "\n";
   long int intVal;
-  int i = 1;
   cout << endl;
 
-  while ( *ptr != *ptrRet ) {
+  for ( int i=0; i<17; i++ ) {
     intVal = strtol(ptr, &ptr, 10);
-    if ( i < 4 )
-      tab[i-1] = intVal;
-    i++;
+    if ( i < 3 )
+      tab[i] = intVal;
   }
   return ptr;
 }
@@ -321,11 +316,11 @@ static bool readResultFile(const int                       fileOpen,
   struct stat  status;
   size_t       length;
 
-  char *ptr;
+  char *ptr, *mapPtr;
   char *tetraPtr;
   char *shapePtr;
 
-  int fileStat, fileClose;
+  int fileStat;
   int nbElems, nbNodes, nbInputNodes;
   int nodeId, triangleId;
   int tab[3], tabID[nShape];
@@ -346,10 +341,10 @@ static bool readResultFile(const int                       fileOpen,
   // Read the file state
   fileStat = fstat(fileOpen, &status);
   length   = status.st_size;
-  
+
   // Mapping the result file into memory
   ptr = (char *) mmap(0,length,PROT_READ,MAP_PRIVATE,fileOpen,0);
-  fileClose = close(fileOpen);
+  mapPtr = ptr;
 
   ptr      = readMapIntLine(ptr, tab);
   tetraPtr = ptr;
@@ -380,7 +375,7 @@ static bool readResultFile(const int                       fileOpen,
 
   shapePtr = ptr;
 
-  // Associating the tetrahedrons with the shapes
+  // Associating the tetrahedrons to the shapes
   for (int iElem = 0; iElem < nbElems; iElem++) {
     for (int iNode = 0; iNode < 4; iNode++) {
       ID = strtol(tetraPtr, &tetraPtr, 10);
@@ -399,7 +394,11 @@ static bool readResultFile(const int                       fileOpen,
     else
       shapeID = tabID[ ghs3dShapeID - 1];
     theMeshDS->SetMeshElementOnShape( aTet, shapeID );
+    if ( (iElem + 1) == nbElems )
+      cout << nbElems << " tetrahedrons have been associated to " << nbTriangle << " shapes" << endl;
   }
+  munmap(mapPtr, length);
+  close(fileOpen);
   return true;
 }
 
@@ -584,9 +583,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     // remove working files
     // ---------------------
 
-    if ( Ok ) {
+    if ( Ok )
       OSD_File( aLogFileName ).Remove();
-    }
     else if ( OSD_File( aLogFileName ).Size() > 0 ) {
       INFOS( "GHS3D Error: see " << aLogFileName.ToCString() );
     }
@@ -603,11 +601,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       OSD_File( aBbResFileName ).Remove();
     }
     if ( _iShape == _nbShape ) {
-      cout << "Output file " << aResultFileName.ToCString();
+      cout << aResultFileName.ToCString() << " Output file ";
       if ( !Ok )
-        cout << " not treated !" << endl;
-      else
-        cout << " treated !" << endl;
+        cout << "not ";
+      cout << "treated !" << endl;
       cout << endl;
     }
   }
