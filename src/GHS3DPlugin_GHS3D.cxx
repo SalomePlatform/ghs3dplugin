@@ -29,6 +29,7 @@ using namespace std;
 #include "GHS3DPlugin_GHS3D.hxx"
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
+#include "SMESH_Comment.hxx"
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
@@ -493,11 +494,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #else
     aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
 #endif
+
   if (!Ok)
-  {
-    INFOS( "Can't write into " << aTmpDir.ToCString());
-    return false;
-  }
+    return error(dfltErr(), SMESH_Comment("Can't write into ") << aTmpDir.ToCString());
+
   map <int,int> aSmdsToGhs3dIdMap;
   map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
 
@@ -513,7 +513,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       OSD_File( aFacesFileName ).Remove();
       OSD_File( aPointsFileName ).Remove();
     }
-    return false;
+    return error(COMPERR_BAD_INPUT_MESH);
   }
 
   // -----------------
@@ -554,7 +554,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     fclose(aResultFile);
   }
   else
-    Ok = false;
+  {
+    Ok = error(dfltErr(), "Problem with launching ghs3d");
+  }
 
   // ---------------------
   // remove working files
@@ -564,11 +566,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     OSD_File( aLogFileName ).Remove();
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 ) {
-    INFOS( "GHS3D Error: see " << aLogFileName.ToCString() );
+    Ok = error(dfltErr(), SMESH_Comment("See ")<< aLogFileName.ToCString() );
   }
   else {
     OSD_File( aLogFileName ).Remove();
-    INFOS( "GHS3D Error: command '" << cmd.ToCString() << "' failed" );
   }
 
   if ( !getenv("GHS3D_KEEP_FILES") )
