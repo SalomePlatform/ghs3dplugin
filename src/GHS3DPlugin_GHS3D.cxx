@@ -29,6 +29,7 @@ using namespace std;
 #include "GHS3DPlugin_GHS3D.hxx"
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
+#include "SMESH_Comment.hxx"
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
@@ -302,6 +303,16 @@ static char* readMapIntLine(char* ptr, int tab[]) {
 }
 
 //=======================================================================
+//function : readLine
+//purpose  : 
+//=======================================================================
+
+#define GHS3DPlugin_BUFLENGTH 256
+#define GHS3DPlugin_ReadLine(aPtr,aBuf,aFile,aLineNb) \
+{  aPtr = fgets( aBuf, GHS3DPlugin_BUFLENGTH - 2, aFile ); aLineNb++; DUMP(endl); }
+
+
+//=======================================================================
 //function : readResultFile
 //purpose  : 
 //=======================================================================
@@ -430,6 +441,53 @@ static TCollection_AsciiString getTmpDir()
   return aTmpDir;
 }
 
+//================================================================================
+/*!
+ * \brief Decrease amount of memory GHS3D may use until it can allocate it
+  * \param nbMB - memory size to adjust
+  * \param aLogFileName - file for GHS3D output
+  * \retval bool - false if GHS3D can not run for any reason
+ */
+//================================================================================
+
+static bool adjustMemory(int & nbMB, const TCollection_AsciiString & aLogFileName)
+{
+  TCollection_AsciiString cmd( "ghs3d -m " );
+  cmd += nbMB;
+  cmd += " 1>";
+  cmd += aLogFileName;
+
+  system( cmd.ToCString() ); // run
+
+  // analyse log file
+
+  FILE * aLogFile = fopen( aLogFileName.ToCString(), "r" );
+  if ( aLogFile )
+  {
+    bool memoryOK = true;
+    char * aPtr;
+    char aBuffer[ GHS3DPlugin_BUFLENGTH ];
+    int aLineNb = 0;
+    do { 
+      GHS3DPlugin_ReadLine( aPtr, aBuffer, aLogFile, aLineNb );
+      if ( aPtr ) {
+        TCollection_AsciiString line( aPtr );
+        if ( line.Search( "UNABLE TO ALLOCATE MEMORY" ) > 0 )
+          memoryOK = false;
+      }
+    } while ( aPtr && memoryOK );
+
+    fclose( aLogFile );
+
+    if ( !memoryOK ) {
+      nbMB *= 0.75;
+      return adjustMemory( nbMB, aLogFileName );
+    }
+    return true;
+  }
+  return false;
+}
+
 //=============================================================================
 /*!
  *Here we are going to use the GHS3D mesher
@@ -439,7 +497,7 @@ static TCollection_AsciiString getTmpDir()
 bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                                 const TopoDS_Shape& theShape)
 {
-  bool Ok;
+  bool Ok(false);
   SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
 
   if (_iShape == 0 && _nbShape == 0) {
@@ -510,10 +568,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #else
       aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
 #endif
-    if (!Ok) {
-      INFOS( "Can't write into " << aTmpDir.ToCString());
-      return false;
-    }
+    if (!Ok)
+	return error(dfltErr(), SMESH_Comment("Can't write into ") << aTmpDir.ToCString());
+
     map <int,int> aSmdsToGhs3dIdMap;
     map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
 
@@ -528,7 +585,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
         OSD_File( aFacesFileName ).Remove();
         OSD_File( aPointsFileName ).Remove();
       }
-      return false;
+      return error(COMPERR_BAD_INPUT_MESH);
     }
 
     // -----------------
@@ -544,9 +601,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     struct sysinfo si;
     int err = sysinfo( &si );
     if ( err == 0 ) {
-      int freeMem = si.totalram * si.mem_unit / 1024 / 1024;
-      memory = "-m ";
-      memory += int( 0.7 * freeMem );
+	int MB = 0.9 * ( si.freeram + si.freeswap ) * si.mem_unit / 1024 / 1024;
+	adjustMemory( MB, aLogFileName );
+	memory = "-m ";
+	memory += MB;
     }
 #endif
 
@@ -579,79 +637,19 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     else
       Ok = readResultFile( fileOpen, meshDS, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap );
 
-    // ---------------------
-    // remove working files
-    // ---------------------
+  // ---------------------
+  // remove working files
+  // ---------------------
 
-    if ( Ok )
-      OSD_File( aLogFileName ).Remove();
+    if ( Ok ) {
+	OSD_File( aLogFileName ).Remove();
+    }
     else if ( OSD_File( aLogFileName ).Size() > 0 ) {
-      INFOS( "GHS3D Error: see " << aLogFileName.ToCString() );
+	Ok = error(dfltErr(), SMESH_Comment("See ")<< aLogFileName.ToCString() );
     }
     else {
-      OSD_File( aLogFileName ).Remove();
-      INFOS( "GHS3D Error: command '" << cmd.ToCString() << "' failed" );
-    }
-
-    if ( !getenv("GHS3D_KEEP_FILES") ) {
-      OSD_File( aFacesFileName ).Remove();
-      OSD_File( aPointsFileName ).Remove();
-      OSD_File( aResultFileName ).Remove();
-      OSD_File( aBadResFileName ).Remove();
-      OSD_File( aBbResFileName ).Remove();
-    }
-    if ( _iShape == _nbShape ) {
-      cout << aResultFileName.ToCString() << " Output file ";
-      if ( !Ok )
-        cout << "not ";
-      cout << "treated !" << endl;
-      cout << endl;
+	OSD_File( aLogFileName ).Remove();
     }
   }
   return Ok;
-}
-
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & GHS3DPlugin_GHS3D::SaveTo(ostream & save)
-{
-  return save;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & GHS3DPlugin_GHS3D::LoadFrom(istream & load)
-{
-  return load;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & operator << (ostream & save, GHS3DPlugin_GHS3D & hyp)
-{
-  return hyp.SaveTo( save );
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & operator >> (istream & load, GHS3DPlugin_GHS3D & hyp)
-{
-  return hyp.LoadFrom( load );
 }
