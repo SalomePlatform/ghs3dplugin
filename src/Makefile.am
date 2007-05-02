@@ -19,33 +19,41 @@
 # -* Makefile *- 
 #
 # Author : Edward AGAPOV (OCC)
+# Modified by : Alexander BORODIN (OCN) - autotools usage
 # Module : GHS3DPLUGIN
 # Date : 10/01/2004
 #
 #
 
-# source path
-top_srcdir=@top_srcdir@
-top_builddir=..
-srcdir=@srcdir@
-VPATH=.:@srcdir@
+include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-@COMMENCE@
+# header files 
+salomeinclude_HEADERS =
 
-# .po files to transform in .qm
-PO_FILES = GHS3DPlugin_icons.po
+# Libraries targets
+lib_LTLIBRARIES = libGHS3DEngine.la
 
-LIB_SRC = \
+dist_libGHS3DEngine_la_SOURCES = \
 	GHS3DPlugin_GHS3D.cxx \
 	GHS3DPlugin_GHS3D_i.cxx \
 	GHS3DPlugin_i.cxx
 
-LIB_SERVER_IDL = GHS3DPlugin_Algorithm.idl
+libGHS3DEngine_la_CPPFLAGS = \
+	$(KERNEL_CXXFLAGS) \
+	$(GUI_CXXFLAGS) \
+	$(GEOM_CXXFLAGS) \
+	$(SMESH_CXXFLAGS) \
+	$(BOOST_CPPFLAGS) \
+	$(CORBA_CXXFLAGS) \
+	$(CORBA_INCLUDES) \
+	$(CAS_CPPFLAGS) \
+	-I$(top_builddir)/idl \
+	-I$(top_builddir)/salome_adm/unix
 
-# Libraries targets
-LIB = libGHS3DEngine.la
+libGHS3DEngine_la_LDFLAGS  = \
+	../idl/libSalomeIDLGHS3DPLUGIN.la \
+	$(SMESH_LDPATH) -lSMESHimpl -lSMESHEngine \
+	$(KERNEL_LDPARH) -lSalomeGenericObj
 
-#CXXFLAGS += $(QT_INCLUDES)
-#LDFLAGS  += $(QT_LIBS)
-
-@CONCLUDE@
+# resources files
+nodist_salomeres_DATA = GHS3DPlugin_icons.qm
