@@ -52,8 +52,8 @@ libGHS3DEngine_la_CPPFLAGS = \
 
 libGHS3DEngine_la_LDFLAGS  = \
 	../idl/libSalomeIDLGHS3DPLUGIN.la \
-	$(SMESH_LDPATH) -lSMESHimpl -lSMESHEngine \
-	$(KERNEL_LDPARH) -lSalomeGenericObj
+	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine \
+	$(KERNEL_LDFLAGS) -lSalomeGenericObj
 
 # resources files
 nodist_salomeres_DATA = GHS3DPlugin_icons.qm
