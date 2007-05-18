@@ -496,7 +496,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #endif
 
   if (!Ok)
-    return error(dfltErr(), SMESH_Comment("Can't write into ") << aTmpDir.ToCString());
+    return error( SMESH_Comment("Can't write into ") << aTmpDir.ToCString());
 
   map <int,int> aSmdsToGhs3dIdMap;
   map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
@@ -555,7 +555,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
   else
   {
-    Ok = error(dfltErr(), "Problem with launching ghs3d");
+    Ok = error( "Problem with launching ghs3d");
   }
 
   // ---------------------
@@ -566,7 +566,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     OSD_File( aLogFileName ).Remove();
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 ) {
-    Ok = error(dfltErr(), SMESH_Comment("See ")<< aLogFileName.ToCString() );
+    Ok = error( SMESH_Comment("See ")<< aLogFileName.ToCString() );
   }
   else {
     OSD_File( aLogFileName ).Remove();
