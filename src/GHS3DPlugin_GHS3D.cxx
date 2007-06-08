@@ -508,20 +508,30 @@ static bool findLineContaing(const TCollection_AsciiString& theText,
 
 static void adjustMemory(int & nbMB, const TCollection_AsciiString & aLogFileName)
 {
-  TCollection_AsciiString cmd( "ghs3d -m " );
-  cmd += nbMB;
-  cmd += " 1>";
-  cmd += aLogFileName;
-
-  system( cmd.ToCString() ); // run
-
-  // analyse log file
-  TCollection_AsciiString foundLine;
-  if ( findLineContaing( "UNABLE TO ALLOCATE MEMORY",aLogFileName,foundLine))
-  {
+  // the second call to ghs3d hangs up until C-d RET typed in terminal,
+  // if SALOME was launched with args, so we check memory allocation ourself
+  try {
+    char* buf = new char[ nbMB * 1024 * 1024 ];
+    delete [] buf;
+  }
+  catch (...) {
     nbMB = int( double(nbMB) * 0.75 );
     adjustMemory( nbMB, aLogFileName );
   }
+//   TCollection_AsciiString cmd( "ghs3d -m " );
+//   cmd += nbMB;
+//   cmd += " 1>";
+//   cmd += aLogFileName;
+
+//   system( cmd.ToCString() ); // run
+
+//   // analyse log file
+//   TCollection_AsciiString foundLine;
+//   if ( findLineContaing( "UNABLE TO ALLOCATE MEMORY",aLogFileName,foundLine))
+//   {
+//     nbMB = int( double(nbMB) * 0.75 );
+//     adjustMemory( nbMB, aLogFileName );
+//   }
 }
 
 //=============================================================================
