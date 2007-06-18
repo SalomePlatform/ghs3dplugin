@@ -413,6 +413,7 @@ static bool readResultFile(const int                      fileOpen,
     }
     aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
     ghs3dShapeID = strtol(shapePtr, &shapePtr, 10);
+    if ( !ghs3dShapeID ) ghs3dShapeID = 1;
     if ( tabID[ ghs3dShapeID - 1 ] == 0 ) {
       if (iElem == 0)
         aSolid = tabShape[0];
