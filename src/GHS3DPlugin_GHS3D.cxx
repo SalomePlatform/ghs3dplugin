@@ -497,43 +497,6 @@ static bool findLineContaing(const TCollection_AsciiString& theText,
   return found;
 }
 
-//================================================================================
-/*!
- * \brief Decrease amount of memory GHS3D may use until it can allocate it
-  * \param nbMB - memory size to adjust
-  * \param aLogFileName - file for GHS3D output
-  * \retval bool - false if GHS3D can not run for any reason
- */
-//================================================================================
-
-static void adjustMemory(int & nbMB, const TCollection_AsciiString & aLogFileName)
-{
-  // the second call to ghs3d hangs up until C-d RET typed in terminal,
-  // if SALOME was launched with args, so we check memory allocation ourself
-  try {
-    char* buf = new char[ nbMB * 1024 * 1024 ];
-    delete [] buf;
-  }
-  catch (...) {
-    nbMB = int( double(nbMB) * 0.75 );
-    adjustMemory( nbMB, aLogFileName );
-  }
-//   TCollection_AsciiString cmd( "ghs3d -m " );
-//   cmd += nbMB;
-//   cmd += " 1>";
-//   cmd += aLogFileName;
-
-//   system( cmd.ToCString() ); // run
-
-//   // analyse log file
-//   TCollection_AsciiString foundLine;
-//   if ( findLineContaing( "UNABLE TO ALLOCATE MEMORY",aLogFileName,foundLine))
-//   {
-//     nbMB = int( double(nbMB) * 0.75 );
-//     adjustMemory( nbMB, aLogFileName );
-//   }
-}
-
 //=============================================================================
 /*!
  *Here we are going to use the GHS3D mesher
@@ -651,11 +614,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     struct sysinfo si;
     int err = sysinfo( &si );
     if ( !err ) {
-	int MB = ( si.freeram + si.freeswap ) * si.mem_unit / 1024 / 1024;
-        MB = int( double( MB ) * 0.9 );
-	adjustMemory( MB, aLogFileName );
-	memory = "-m ";
-	memory += MB;
+      int freeMem = si.totalram * si.mem_unit / 1024 / 1024;
+      memory = "-m ";
+      memory += int( 0.7 * freeMem );
     }
 #endif
 
@@ -741,7 +702,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       OSD_File( aBadResFileName ).Remove();
       OSD_File( aBbResFileName ).Remove();
     }
+    /*if ( _iShape == _nbShape )*/ {
+      cout << aResultFileName.ToCString() << " Output file ";
+      if ( !Ok )
+        cout << "not ";
+      cout << "treated !" << endl;
+      cout << endl;
+    }
   }
-  
+
   return Ok;
 }
