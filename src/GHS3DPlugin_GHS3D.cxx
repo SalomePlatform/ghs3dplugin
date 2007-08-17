@@ -582,7 +582,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
 #endif
     if (!Ok)
-	return error(dfltErr(), SMESH_Comment("Can't write into ") << aTmpDir);
+	return error(SMESH_Comment("Can't write into ") << aTmpDir);
 
     vector <const SMDS_MeshNode*> aNodeByGhs3dId;
 
