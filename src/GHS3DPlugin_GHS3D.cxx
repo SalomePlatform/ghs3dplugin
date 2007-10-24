@@ -30,6 +30,7 @@ using namespace std;
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
 #include "SMESH_Comment.hxx"
+#include "SMESH_MesherHelper.hxx"
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
@@ -217,6 +218,92 @@ static bool writeFaces (ofstream &                      theFile,
 }
 
 //=======================================================================
+//function : writeFaces
+//purpose  : Write Faces in case if generate 3D mesh w/o geometry
+//=======================================================================
+
+static bool writeFaces (ofstream &            theFile,
+                        SMESHDS_Mesh *        theMesh,
+                        vector <const SMDS_MeshNode*> & theNodeByGhs3dId)
+{
+  // record structure:
+  //
+  // NB_ELEMS DUMMY_INT
+  // Loop from 1 to NB_ELEMS
+  //   NB_NODES NODE_NB_1 NODE_NB_2 ... (NB_NODES + 1) times: DUMMY_INT
+
+
+  int nbFaces = 0;
+  list< const SMDS_MeshElement* > faces;
+  list< const SMDS_MeshElement* >::iterator f;
+  map< const SMDS_MeshNode*,int >::iterator it;
+  SMDS_ElemIteratorPtr nodeIt;
+  const SMDS_MeshElement* elem;
+  int nbNodes;
+
+  const char* space    = "  ";
+  const int   dummyint = 0;
+
+  //get all faces from mesh
+  SMDS_FaceIteratorPtr eIt = theMesh->facesIterator();
+  while ( eIt->more() ) {
+    const SMDS_MeshElement* elem = eIt->next();
+    if ( !elem )
+      return false;
+    faces.push_back( elem );
+    nbFaces++;
+  }
+
+  if ( nbFaces == 0 )
+    return false;
+  
+  cout << "The initial 2D mesh contains " << nbFaces << " faces and ";
+
+  // NB_ELEMS DUMMY_INT
+  theFile << space << nbFaces << space << dummyint << endl;
+
+  // Loop from 1 to NB_ELEMS
+
+  map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
+  f = faces.begin();
+  for ( ; f != faces.end(); ++f )
+  {
+    // NB_NODES PER FACE
+    elem = *f;
+    nbNodes = elem->NbNodes();
+    theFile << space << nbNodes;
+
+    // NODE_NB_1 NODE_NB_2 ...
+    nodeIt = elem->nodesIterator();
+    while ( nodeIt->more() )
+    {
+      // find GHS3D ID
+      const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+      int newId = aNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
+      it = aNodeToGhs3dIdMap.insert( make_pair( node, newId )).first;
+      theFile << space << it->second;
+    }
+
+    // (NB_NODES + 1) times: DUMMY_INT
+    for ( int i=0; i<=nbNodes; i++)
+      theFile << space << dummyint;
+
+    theFile << endl;
+  }
+
+  // put nodes to theNodeByGhs3dId vector
+  theNodeByGhs3dId.resize( aNodeToGhs3dIdMap.size() );
+  map<const SMDS_MeshNode*,int>::const_iterator n2id = aNodeToGhs3dIdMap.begin();
+  for ( ; n2id != aNodeToGhs3dIdMap.end(); ++ n2id)
+  {
+    theNodeByGhs3dId[ n2id->second - 1 ] = n2id->first; // ghs3d ids count from 1
+  }
+
+  return true;
+  
+}
+
+//=======================================================================
 //function : writePoints
 //purpose  : 
 //=======================================================================
@@ -335,6 +422,90 @@ static char* readMapIntLine(char* ptr, int tab[]) {
 
 static bool readResultFile(const int                      fileOpen,
                            SMESHDS_Mesh*                  theMeshDS,
+                           TopoDS_Shape                   aSolid,
+                           vector <const SMDS_MeshNode*>& theNodeByGhs3dId) {
+
+  struct stat  status;
+  size_t       length;
+
+  char *ptr, *mapPtr;
+  char *tetraPtr;
+  char *shapePtr;
+
+  int fileStat;
+  int nbElems, nbNodes, nbInputNodes;
+  int nodeId, triangleId;
+  int tab[3];
+  int nbTriangle;
+  int ID, shapeID;
+
+  double coord [3];
+
+  SMDS_MeshNode * aNewNode;
+  const SMDS_MeshNode * node[4];
+  map <int,const SMDS_MeshNode*>::iterator IdNode;
+  SMDS_MeshElement* aTet;
+
+  // Read the file state
+  fileStat = fstat(fileOpen, &status);
+  length   = status.st_size;
+
+  // Mapping the result file into memory
+  ptr = (char *) mmap(0,length,PROT_READ,MAP_PRIVATE,fileOpen,0);
+  mapPtr = ptr;
+
+  ptr      = readMapIntLine(ptr, tab);
+  tetraPtr = ptr;
+
+  nbElems      = tab[0];
+  nbNodes      = tab[1];
+  nbInputNodes = tab[2];
+
+  theNodeByGhs3dId.resize( nbNodes );
+
+  // Reading the nodeId
+  for (int i=0; i < 4*nbElems; i++)
+    nodeId = strtol(ptr, &ptr, 10);
+
+  // Reading the nodeCoor and update the nodeMap
+  shapeID = theMeshDS->ShapeToIndex( aSolid );
+  for (int iNode=0; iNode < nbNodes; iNode++) {
+    for (int iCoor=0; iCoor < 3; iCoor++)
+      coord[ iCoor ] = strtod(ptr, &ptr);
+    if ((iNode+1) > nbInputNodes) {
+      aNewNode = theMeshDS->AddNode( coord[0],coord[1],coord[2] );
+      theMeshDS->SetNodeInVolume( aNewNode, shapeID );
+      theNodeByGhs3dId[ iNode ] = aNewNode;
+    }
+  }
+
+  // Reading the triangles
+  nbTriangle = strtol(ptr, &ptr, 10);
+
+  for (int i=0; i < 3*nbTriangle; i++)
+    triangleId = strtol(ptr, &ptr, 10);
+
+  shapePtr = ptr;
+
+  // Associating the tetrahedrons to the shapes
+  for (int iElem = 0; iElem < nbElems; iElem++) {
+    for (int iNode = 0; iNode < 4; iNode++) {
+      ID = strtol(tetraPtr, &tetraPtr, 10);
+      node[ iNode ] = theNodeByGhs3dId[ ID-1 ];
+    }
+    aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
+    shapeID = theMeshDS->ShapeToIndex( aSolid );
+    theMeshDS->SetMeshElementOnShape( aTet, shapeID );
+  }
+  if ( nbElems )
+    cout << nbElems << " tetrahedrons have been associated to " << nbTriangle << " shapes" << endl;
+  munmap(mapPtr, length);
+  close(fileOpen);
+  return true;
+}
+
+static bool readResultFile(const int                      fileOpen,
+                           SMESHDS_Mesh*                  theMeshDS,
                            TopoDS_Shape                   tabShape[],
                            double                         tabBox[][6],
                            const int                      nShape,
@@ -439,6 +610,8 @@ static bool readResultFile(const int                      fileOpen,
   close(fileOpen);
   return true;
 }
+
+
 
 //=======================================================================
 //function : getTmpDir
@@ -714,3 +887,148 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   return Ok;
 }
+
+
+//=============================================================================
+/*!
+ *Here we are going to use the GHS3D mesher w/o geometry
+ */
+//=============================================================================
+bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
+                                SMESH_MesherHelper* aHelper)
+{
+  MESSAGE("GHS3DPlugin_GHS3D::Compute()");
+
+  SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
+  TopoDS_Shape theShape = aHelper->GetSubShape();
+
+  // make a unique working file name
+  // to avoid access to the same files by eg different users
+  
+  TCollection_AsciiString aGenericName, aTmpDir = getTmpDir();
+  aGenericName = aTmpDir + "GHS3D_";
+#ifdef WIN32
+  aGenericName += GetCurrentProcessId();
+#else
+  aGenericName += getpid();
+#endif
+  aGenericName += "_";
+  aGenericName += meshDS->ShapeToIndex( theShape );
+
+  TCollection_AsciiString aFacesFileName, aPointsFileName, aResultFileName;
+  TCollection_AsciiString aBadResFileName, aBbResFileName, aLogFileName;
+  aFacesFileName  = aGenericName + ".faces";  // in faces
+  aPointsFileName = aGenericName + ".points"; // in points
+  aResultFileName = aGenericName + ".noboite";// out points and volumes
+  aBadResFileName = aGenericName + ".boite";  // out bad result
+  aBbResFileName  = aGenericName + ".bb";     // out vertex stepsize
+  aLogFileName    = aGenericName + ".log";    // log
+
+  // -----------------
+  // make input files
+  // -----------------
+
+  ofstream aFacesFile  ( aFacesFileName.ToCString()  , ios::out);
+  ofstream aPointsFile  ( aPointsFileName.ToCString()  , ios::out);
+  bool Ok =
+#ifdef WIN32
+    aFacesFile->is_open() && aPointsFile->is_open();
+#else
+    aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
+#endif
+
+  if (!Ok)
+    return error( SMESH_Comment("Can't write into ") << aTmpDir.ToCString());
+
+  vector <const SMDS_MeshNode*> aNodeByGhs3dId;
+
+  Ok = (writeFaces ( aFacesFile, meshDS, aNodeByGhs3dId ) &&
+        writePoints( aPointsFile, meshDS, aNodeByGhs3dId));
+  
+  aFacesFile.close();
+  aPointsFile.close();
+  
+  if ( ! Ok ) {
+    if ( !getenv("GHS3D_KEEP_FILES") ) {
+      OSD_File( aFacesFileName ).Remove();
+      OSD_File( aPointsFileName ).Remove();
+    }
+    return error(COMPERR_BAD_INPUT_MESH);
+  }
+
+  // -----------------
+  // run ghs3d mesher              WIN32???
+  // -----------------
+
+  // ghs3d need to know amount of memory it may use (MB).
+  // Default memory is defined at ghs3d installation but it may be not enough,
+  // so allow to use about all available memory
+  TCollection_AsciiString memory;
+#ifdef WIN32
+  // ????
+#else
+  struct sysinfo si;
+  int err = sysinfo( &si );
+  if ( !err ) {
+    int freeMem = si.totalram * si.mem_unit / 1024 / 1024;
+    memory = "-m ";
+    memory += int( 0.7 * freeMem );
+  }
+#endif
+  
+  TCollection_AsciiString cmd( "ghs3d " ); // command to run
+  cmd +=
+    memory +                 // memory
+    " -f " + aGenericName +  // file to read
+    " 1>" + aLogFileName;    // dump into file
+  
+  
+  
+  system( cmd.ToCString() ); // run
+
+  // --------------
+  // read a result
+  // --------------
+  int fileOpen;
+  fileOpen = open( aResultFileName.ToCString(), O_RDONLY);
+  if ( fileOpen < 0 ) {
+    cout << endl;
+    cout << "Error when opening the " << aResultFileName.ToCString() << " file" << endl;
+    cout << endl;
+    Ok = false;
+  }
+  else {
+    Ok = readResultFile( fileOpen, meshDS, theShape ,aNodeByGhs3dId );
+  }
+  
+  // ---------------------
+  // remove working files
+  // ---------------------
+
+  if ( Ok ) {
+    OSD_File( aLogFileName ).Remove();
+  }
+  else if ( OSD_File( aLogFileName ).Size() > 0 ) {
+    Ok = error( SMESH_Comment("See ")<< aLogFileName.ToCString() );
+  }
+  else {
+    OSD_File( aLogFileName ).Remove();
+  }
+
+  if ( !getenv("GHS3D_KEEP_FILES") )
+  {
+    OSD_File( aFacesFileName ).Remove();
+    OSD_File( aPointsFileName ).Remove();
+    OSD_File( aResultFileName ).Remove();
+    OSD_File( aBadResFileName ).Remove();
+    OSD_File( aBbResFileName ).Remove();
+  }
+  
+  return Ok;
+}
+
+
+
+
+
+

@@ -43,6 +43,10 @@ public:
   virtual bool Compute(SMESH_Mesh&         aMesh,
 		       const TopoDS_Shape& aShape);
 
+  virtual bool Compute(SMESH_Mesh&         aMesh,
+                       SMESH_MesherHelper* aHelper);
+  
+  
 private:
   int _iShape;
   int _nbShape;
