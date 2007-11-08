@@ -35,6 +35,7 @@ using namespace std;
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
 
+#include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <OSD_File.hxx>
 
