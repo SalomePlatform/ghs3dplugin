@@ -177,6 +177,15 @@ static char* readMapIntLine(char* ptr, int tab[]) {
 }
 
 //=======================================================================
+//function : readLine
+//purpose  : 
+//=======================================================================
+
+#define GHS3DPlugin_BUFLENGTH 256
+#define GHS3DPlugin_ReadLine(aPtr,aBuf,aFile,aLineNb) \
+{  aPtr = fgets( aBuf, GHS3DPlugin_BUFLENGTH - 2, aFile ); aLineNb++; DUMP(endl); }
+
+//=======================================================================
 //function : countShape
 //purpose  :
 //=======================================================================
@@ -724,6 +733,36 @@ static TCollection_AsciiString getTmpDir()
   return aTmpDir;
 }
 
+//================================================================================
+/*!
+ * \brief Look for a line containing a text in a file
+  * \retval bool - true if the line is found
+ */
+//================================================================================
+
+static bool findLineContaing(const TCollection_AsciiString& theText,
+                             const TCollection_AsciiString& theFile,
+                             TCollection_AsciiString &      theFoundLine)
+{
+  bool found = false;
+  if ( FILE * aFile = fopen( theFile.ToCString(), "r" ))
+  {
+    char * aPtr;
+    char aBuffer[ GHS3DPlugin_BUFLENGTH ];
+    int aLineNb = 0;
+    do {
+      GHS3DPlugin_ReadLine( aPtr, aBuffer, aFile, aLineNb );
+      if ( aPtr ) {
+        theFoundLine = aPtr;
+        found = theFoundLine.Search( theText ) >= 0;
+      }
+    } while ( aPtr && !found );
+
+    fclose( aFile );
+  }
+  return found;
+}
+
 //=============================================================================
 /*!
  *Here we are going to use the GHS3D mesher
@@ -801,7 +840,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #endif
   if (!Ok) {
     INFOS( "Can't write into " << aTmpDir.ToCString());
-    return false;
+    return error(SMESH_Comment("Can't write into ") << aTmpDir);
   }
   map <int,int> aSmdsToGhs3dIdMap;
   map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
@@ -817,7 +856,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       OSD_File( aFacesFileName ).Remove();
       OSD_File( aPointsFileName ).Remove();
     }
-    return false;
+    return error(COMPERR_BAD_INPUT_MESH);
   }
 
   // -----------------
@@ -872,13 +911,43 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // ---------------------
 
   if ( Ok )
+  {
     OSD_File( aLogFileName ).Remove();
-  else if ( OSD_File( aLogFileName ).Size() > 0 ) {
-    INFOS( "GHS3D Error, see the " << aLogFileName.ToCString() << " file" );
   }
-  else {
+  else if ( OSD_File( aLogFileName ).Size() > 0 )
+  {
+    INFOS( "GHS3D Error, see the " << aLogFileName.ToCString() << " file" );
+
+    // get problem description from the log file
+    SMESH_Comment comment;
+    TCollection_AsciiString foundLine;
+    if ( findLineContaing( "has expired",aLogFileName,foundLine) &&
+         foundLine.Search("Licence") >= 0)
+    {
+      foundLine.LeftAdjust();
+      comment << foundLine;
+    }
+    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine))
+    {
+      foundLine.LeftAdjust();
+      comment << foundLine;
+    }
+    if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
+    {
+      comment << "Too many elements generated for a trial version.\n";
+    }
+    if ( comment.empty() )
+      comment << "See " << aLogFileName << " for problem description";
+    else
+      comment << "See " << aLogFileName << " for more information";
+    error(COMPERR_ALGO_FAILED, comment);
+  }
+  else
+  {
+    // the log file is empty
     OSD_File( aLogFileName ).Remove();
     INFOS( "GHS3D Error, command '" << cmd.ToCString() << "' failed" );
+    error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
   }
 
   if ( !getenv("GHS3D_KEEP_FILES") ) {
@@ -1017,14 +1086,43 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // remove working files
   // ---------------------
 
-  if ( Ok ) {
+  if ( Ok )
+  {
     OSD_File( aLogFileName ).Remove();
   }
-  else if ( OSD_File( aLogFileName ).Size() > 0 ) {
-    Ok = error( SMESH_Comment("See ")<< aLogFileName.ToCString() );
+  else if ( OSD_File( aLogFileName ).Size() > 0 )
+  {
+    INFOS( "GHS3D Error, see the " << aLogFileName.ToCString() << " file" );
+
+    // get problem description from the log file
+    SMESH_Comment comment;
+    TCollection_AsciiString foundLine;
+    if ( findLineContaing( "has expired",aLogFileName,foundLine) &&
+         foundLine.Search("Licence") >= 0)
+    {
+      foundLine.LeftAdjust();
+      comment << foundLine;
+    }
+    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine))
+    {
+      foundLine.LeftAdjust();
+      comment << foundLine;
+    }
+    if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
+    {
+      comment << "Too many elements generated for a trial version.\n";
+    }
+    if ( comment.empty() )
+      comment << "See " << aLogFileName << " for problem description";
+    else
+      comment << "See " << aLogFileName << " for more information";
+    error(COMPERR_ALGO_FAILED, comment);
   }
   else {
+    // the log file is empty
     OSD_File( aLogFileName ).Remove();
+    INFOS( "GHS3D Error, command '" << cmd.ToCString() << "' failed" );
+    error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
   }
 
   if ( !getenv("GHS3D_KEEP_FILES") )
