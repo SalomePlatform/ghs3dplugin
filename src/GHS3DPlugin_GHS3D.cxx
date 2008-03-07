@@ -19,7 +19,7 @@
 //=============================================================================
 // File      : GHS3DPlugin_GHS3D.cxx
 // Created   : 
-// Author    : Edward AGAPOV
+// Author    : Edward AGAPOV, modified by Lioka RAZAFINDRAZAKA (CEA) 09/02/2007
 // Project   : SALOME
 // Copyright : CEA 2003
 // $Header$
@@ -29,10 +29,13 @@ using namespace std;
 #include "GHS3DPlugin_GHS3D.hxx"
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
+#include "SMESH_Comment.hxx"
+#include "SMESH_MesherHelper.hxx"
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
 
+#include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <OSD_File.hxx>
 
@@ -42,6 +45,18 @@ using namespace std;
 #include <sys/sysinfo.h>
 #endif
 
+//#include <Standard_Stream.hxx>
+
+#include <BRepGProp.hxx>
+#include <BRepBndLib.hxx>
+#include <BRepClass_FaceClassifier.hxx>
+#include <BRepClass3d_SolidClassifier.hxx>
+#include <TopAbs.hxx>
+#include <Bnd_Box.hxx>
+#include <GProp_GProps.hxx>
+#include <Precision.hxx>
+
+#define castToNode(n) static_cast<const SMDS_MeshNode *>( n );
 
 #ifdef _DEBUG_
 #define DUMP(txt) \
@@ -49,6 +64,16 @@ using namespace std;
 #else
 #define DUMP(txt)
 #endif
+
+extern "C"
+{
+#ifndef WNT
+#include <unistd.h>
+#include <sys/mman.h>
+#endif
+#include <sys/stat.h>
+#include <fcntl.h>
+}
 
 //=============================================================================
 /*!
@@ -62,6 +87,9 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   MESSAGE("GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D");
   _name = "GHS3D_3D";
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type
+  _onlyUnaryInput = false; // Compute() will be called on a compound of solids
+  _iShape=0;
+  _nbShape=0;
 }
 
 //=============================================================================
@@ -81,14 +109,95 @@ GHS3DPlugin_GHS3D::~GHS3DPlugin_GHS3D()
  */
 //=============================================================================
 
-bool GHS3DPlugin_GHS3D::CheckHypothesis
-                         (SMESH_Mesh& aMesh,
-                          const TopoDS_Shape& aShape,
-                          SMESH_Hypothesis::Hypothesis_Status& aStatus)
+bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&                          aMesh,
+                                          const TopoDS_Shape&                  aShape,
+                                          SMESH_Hypothesis::Hypothesis_Status& aStatus )
 {
 //  MESSAGE("GHS3DPlugin_GHS3D::CheckHypothesis");
   aStatus = SMESH_Hypothesis::HYP_OK;
   return true;
+}
+
+//=======================================================================
+//function : findShape
+//purpose  : 
+//=======================================================================
+
+static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
+                              TopoDS_Shape        aShape,
+                              const TopoDS_Shape  shape[],
+                              double**            box,
+                              const int           nShape) {
+  double *pntCoor;
+  int iShape, nbNode = 4;
+
+  pntCoor = new double[3];
+  for ( int i=0; i<3; i++ ) {
+    pntCoor[i] = 0;
+    for ( int j=0; j<nbNode; j++ ) {
+      if ( i == 0) pntCoor[i] += aNode[j]->X();
+      if ( i == 1) pntCoor[i] += aNode[j]->Y();
+      if ( i == 2) pntCoor[i] += aNode[j]->Z();
+    }
+    pntCoor[i] /= nbNode;
+  }
+
+  gp_Pnt aPnt(pntCoor[0], pntCoor[1], pntCoor[2]);
+  BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
+  if ( not(SC.State() == TopAbs_IN) ) {
+    for (iShape = 0; iShape < nShape; iShape++) {
+      aShape = shape[iShape];
+      if ( not( pntCoor[0] < box[iShape][0] || box[iShape][1] < pntCoor[0] ||
+                pntCoor[1] < box[iShape][2] || box[iShape][3] < pntCoor[1] ||
+                pntCoor[2] < box[iShape][4] || box[iShape][5] < pntCoor[2]) ) {
+        BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
+        if (SC.State() == TopAbs_IN)
+          break;
+      }
+    }
+  }
+  return aShape;
+}
+
+//=======================================================================
+//function : readMapIntLine
+//purpose  : 
+//=======================================================================
+
+static char* readMapIntLine(char* ptr, int tab[]) {
+  long int intVal;
+  cout << endl;
+
+  for ( int i=0; i<17; i++ ) {
+    intVal = strtol(ptr, &ptr, 10);
+    if ( i < 3 )
+      tab[i] = intVal;
+  }
+  return ptr;
+}
+
+//=======================================================================
+//function : readLine
+//purpose  : 
+//=======================================================================
+
+#define GHS3DPlugin_BUFLENGTH 256
+#define GHS3DPlugin_ReadLine(aPtr,aBuf,aFile,aLineNb) \
+{  aPtr = fgets( aBuf, GHS3DPlugin_BUFLENGTH - 2, aFile ); aLineNb++; DUMP(endl); }
+
+//=======================================================================
+//function : countShape
+//purpose  :
+//=======================================================================
+
+template < class Mesh, class Shape >
+static int countShape( Mesh* mesh, Shape shape ) {
+  TopExp_Explorer expShape ( mesh->ShapeToMesh(), shape );
+  int nbShape = 0;
+  for ( ; expShape.More(); expShape.Next() ) {
+      nbShape++;
+  }
+  return nbShape;
 }
 
 //=======================================================================
@@ -98,8 +207,95 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis
 
 static bool writeFaces (ofstream &            theFile,
                         SMESHDS_Mesh *        theMesh,
-                        const TopoDS_Shape&   theShape,
                         const map <int,int> & theSmdsToGhs3dIdMap)
+{
+  // record structure:
+  //
+  // NB_ELEMS DUMMY_INT
+  // Loop from 1 to NB_ELEMS
+  // NB_NODES NODE_NB_1 NODE_NB_2 ... (NB_NODES + 1) times: DUMMY_INT
+
+  int nbShape = countShape( theMesh, TopAbs_FACE );
+
+  int *tabID;             tabID    = new int[nbShape];
+  TopoDS_Shape *tabShape; tabShape = new TopoDS_Shape[nbShape];
+  TopoDS_Shape aShape;
+  SMESHDS_SubMesh* theSubMesh;
+  const SMDS_MeshElement* aFace;
+  const char* space    = "  ";
+  const int   dummyint = 0;
+  map<int,int>::const_iterator itOnMap;
+  SMDS_ElemIteratorPtr itOnSubMesh, itOnSubFace;
+  int shapeID, nbNodes, aSmdsID;
+  bool idFound;
+
+  cout << "    " << theMesh->NbFaces() << " shapes of 2D dimension" << endl;
+  cout << endl;
+
+  theFile << space << theMesh->NbFaces() << space << dummyint << endl;
+
+  TopExp_Explorer expface( theMesh->ShapeToMesh(), TopAbs_FACE );
+  for ( int i = 0; expface.More(); expface.Next(), i++ ) {
+    tabID[i] = 0;
+    aShape   = expface.Current();
+    shapeID  = theMesh->ShapeToIndex( aShape );
+    idFound  = false;
+    for ( int j=0; j<=i; j++) {
+      if ( shapeID == tabID[j] ) {
+        idFound = true;
+        break;
+      }
+    }
+    if ( not idFound ) {
+      tabID[i]    = shapeID;
+      tabShape[i] = aShape;
+    }
+  }
+  for ( int i =0; i < nbShape; i++ ) {
+    if ( not (tabID[i] == 0) ) {
+      aShape      = tabShape[i];
+      shapeID     = tabID[i];
+      theSubMesh  = theMesh->MeshElements( aShape );
+      itOnSubMesh = theSubMesh->GetElements();
+      while ( itOnSubMesh->more() ) {
+        aFace   = itOnSubMesh->next();
+        nbNodes = aFace->NbNodes();
+
+        theFile << space << nbNodes;
+
+        itOnSubFace = aFace->nodesIterator();
+        while ( itOnSubFace->more() ) {
+          // find GHS3D ID
+          aSmdsID = itOnSubFace->next()->GetID();
+          itOnMap = theSmdsToGhs3dIdMap.find( aSmdsID );
+          ASSERT( itOnMap != theSmdsToGhs3dIdMap.end() );
+
+          theFile << space << (*itOnMap).second;
+        }
+
+        // (NB_NODES + 1) times: DUMMY_INT
+        for ( int j=0; j<=nbNodes; j++)
+          theFile << space << dummyint;
+
+        theFile << endl;
+      }
+    }
+  }
+
+  delete [] tabID;
+  delete [] tabShape;
+
+  return true;
+}
+
+//=======================================================================
+//function : writeFaces
+//purpose  : Write Faces in case if generate 3D mesh w/o geometry
+//=======================================================================
+
+static bool writeFaces (ofstream &            theFile,
+                        SMESHDS_Mesh *        theMesh,
+                        vector <const SMDS_MeshNode*> & theNodeByGhs3dId)
 {
   // record structure:
   //
@@ -107,48 +303,56 @@ static bool writeFaces (ofstream &            theFile,
   // Loop from 1 to NB_ELEMS
   //   NB_NODES NODE_NB_1 NODE_NB_2 ... (NB_NODES + 1) times: DUMMY_INT
 
-  // get all faces bound to theShape
+
   int nbFaces = 0;
   list< const SMDS_MeshElement* > faces;
-  TopExp_Explorer fExp( theShape, TopAbs_FACE );
-  for ( ; fExp.More(); fExp.Next() ) {
-    SMESHDS_SubMesh* sm = theMesh->MeshElements( fExp.Current() );
-    if ( sm ) {
-      SMDS_ElemIteratorPtr eIt = sm->GetElements();
-      while ( eIt->more() ) {
-        faces.push_back( eIt->next() );
-        nbFaces++;
-      }
-    }
+  list< const SMDS_MeshElement* >::iterator f;
+  map< const SMDS_MeshNode*,int >::iterator it;
+  SMDS_ElemIteratorPtr nodeIt;
+  const SMDS_MeshElement* elem;
+  int nbNodes;
+
+  const char* space    = "  ";
+  const int   dummyint = 0;
+
+  //get all faces from mesh
+  SMDS_FaceIteratorPtr eIt = theMesh->facesIterator();
+  while ( eIt->more() ) {
+    const SMDS_MeshElement* elem = eIt->next();
+    if ( !elem )
+      return false;
+    faces.push_back( elem );
+    nbFaces++;
   }
 
   if ( nbFaces == 0 )
     return false;
-
-  const char* space    = "  ";
-  const int   dummyint = 0;
+  
+  cout << "The initial 2D mesh contains " << nbFaces << " faces and ";
 
   // NB_ELEMS DUMMY_INT
   theFile << space << nbFaces << space << dummyint << endl;
 
   // Loop from 1 to NB_ELEMS
-  list< const SMDS_MeshElement* >::iterator f = faces.begin();
+
+  map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
+  f = faces.begin();
   for ( ; f != faces.end(); ++f )
   {
-    // NB_NODES
-    const SMDS_MeshElement* elem = *f;
-    const int nbNodes = elem->NbNodes();
+    // NB_NODES PER FACE
+    elem = *f;
+    nbNodes = elem->NbNodes();
     theFile << space << nbNodes;
 
     // NODE_NB_1 NODE_NB_2 ...
-    SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
+    nodeIt = elem->nodesIterator();
     while ( nodeIt->more() )
     {
       // find GHS3D ID
-      int aSmdsID = nodeIt->next()->GetID();
-      map<int,int>::const_iterator it = theSmdsToGhs3dIdMap.find( aSmdsID );
-      ASSERT( it != theSmdsToGhs3dIdMap.end() );
-      theFile << space << (*it).second;
+      const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+      int newId = aNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
+      it = aNodeToGhs3dIdMap.insert( make_pair( node, newId )).first;
+      theFile << space << it->second;
     }
 
     // (NB_NODES + 1) times: DUMMY_INT
@@ -156,6 +360,14 @@ static bool writeFaces (ofstream &            theFile,
       theFile << space << dummyint;
 
     theFile << endl;
+  }
+
+  // put nodes to theNodeByGhs3dId vector
+  theNodeByGhs3dId.resize( aNodeToGhs3dIdMap.size() );
+  map<const SMDS_MeshNode*,int>::const_iterator n2id = aNodeToGhs3dIdMap.begin();
+  for ( ; n2id != aNodeToGhs3dIdMap.end(); ++ n2id)
+  {
+    theNodeByGhs3dId[ n2id->second - 1 ] = n2id->first; // ghs3d ids count from 1
   }
 
   return true;
@@ -184,15 +396,21 @@ static bool writePoints (ofstream &                       theFile,
   const char* space    = "  ";
   const int   dummyint = 0;
 
-  // NB_NODES
-  theFile << space << nbNodes << endl;
-
-  // Loop from 1 to NB_NODES
   int aGhs3dID = 1;
   SMDS_NodeIteratorPtr it = theMesh->nodesIterator();
+  const SMDS_MeshNode* node;
+
+  // NB_NODES
+  theFile << space << nbNodes << endl;
+  cout << endl;
+  cout << "The initial 2D mesh contains :" << endl;
+  cout << "    " << nbNodes << " vertices" << endl;
+
+  // Loop from 1 to NB_NODES
+
   while ( it->more() )
   {
-    const SMDS_MeshNode* node = it->next();
+    node = it->next();
     theSmdsToGhs3dIdMap.insert( map <int,int>::value_type( node->GetID(), aGhs3dID ));
     theGhs3dIdToNodeMap.insert (map <int,const SMDS_MeshNode*>::value_type( aGhs3dID, node ));
     aGhs3dID++;
@@ -211,164 +429,280 @@ static bool writePoints (ofstream &                       theFile,
 }
 
 //=======================================================================
-//function : getInt
+//function : writePoints
 //purpose  : 
 //=======================================================================
 
-static bool getInt( int & theValue, char * & theLine )
+static bool writePoints (ofstream &                            theFile,
+                         SMESHDS_Mesh *                        theMesh,
+                         const vector <const SMDS_MeshNode*> & theNodeByGhs3dId)
 {
-  char *ptr;
-  theValue = strtol( theLine, &ptr, 10 );
-  if ( ptr == theLine ||
-      // there must not be neither '.' nor ',' nor 'E' ...
-      (*ptr != ' ' && *ptr != '\n' && *ptr != '\0'))
+  // record structure:
+  //
+  // NB_NODES
+  // Loop from 1 to NB_NODES
+  //   X Y Z DUMMY_INT
+
+  //int nbNodes = theMesh->NbNodes();
+  int nbNodes = theNodeByGhs3dId.size();
+  if ( nbNodes == 0 )
     return false;
 
-  DUMP( "  " << theValue );
-  theLine = ptr;
-  return true;
-}
+  const char* space    = "  ";
+  const int   dummyint = 0;
 
-//=======================================================================
-//function : getDouble
-//purpose  : 
-//=======================================================================
+  const SMDS_MeshNode* node;
 
-static bool getDouble( double & theValue, char * & theLine )
-{
-  char *ptr;
-  theValue = strtod( theLine, &ptr );
-  if ( ptr == theLine )
-    return false;
+  // NB_NODES
+  theFile << space << nbNodes << endl;
+  cout << nbNodes << " nodes" << endl;
 
-  DUMP( "   " << theValue );
-  theLine = ptr;
-  return true;
-}
-  
-//=======================================================================
-//function : readLine
-//purpose  : 
-//=======================================================================
+  // Loop from 1 to NB_NODES
 
-#define GHS3DPlugin_BUFLENGTH 256
-#define GHS3DPlugin_ReadLine(aPtr,aBuf,aFile,aLineNb) \
-{  aPtr = fgets( aBuf, GHS3DPlugin_BUFLENGTH - 2, aFile ); aLineNb++; DUMP(endl); }
-
-//=======================================================================
-//function : readResult
-//purpose  : 
-//=======================================================================
-
-static bool readResult(FILE *                          theFile,
-                       SMESHDS_Mesh *                  theMesh,
-                       const TopoDS_Shape&             theShape,
-                       map <int,const SMDS_MeshNode*>& theGhs3dIdToNodeMap)
-{
-  // structure:
-
-  // record 1:
-  //  NB_ELEMENTS NB_NODES NB_INPUT_NODES (14 DUMMY_INT)
-  // record 2:
-  //  (NB_ELEMENTS * 4) node nbs
-  // record 3:
-  //  (NB_NODES) node XYZ
-
-  char aBuffer[ GHS3DPlugin_BUFLENGTH ];
-  char * aPtr;
-  int aLineNb = 0;
-  int shapeID = theMesh->ShapeToIndex( theShape );
-
-  // ----------------------------------------
-  // record 1:
-  // read nb of generated elements and nodes
-  // ----------------------------------------
-  int nbElems = 0 , nbNodes = 0, nbInputNodes = 0;
-  GHS3DPlugin_ReadLine( aPtr, aBuffer, theFile, aLineNb );
-  if (!aPtr ||
-      !getInt( nbElems, aPtr ) ||
-      !getInt( nbNodes, aPtr ) ||
-      !getInt( nbInputNodes, aPtr))
-    return false;
-
-  // -------------------------------------------
-  // record 2:
-  // read element nodes and create tetrahedrons
-  // -------------------------------------------
-  GHS3DPlugin_ReadLine( aPtr, aBuffer, theFile, aLineNb );
-  for (int iElem = 0; iElem < nbElems; iElem++)
+  vector<const SMDS_MeshNode*>::const_iterator nodeIt = theNodeByGhs3dId.begin();
+  vector<const SMDS_MeshNode*>::const_iterator after  = theNodeByGhs3dId.end();
+  for ( ; nodeIt != after; ++nodeIt )
   {
-    // read 4 nodes
-    const SMDS_MeshNode * node[4];
-    for (int iNode = 0; iNode < 4; iNode++)
-    {
-      // read Ghs3d node ID
-      int ID = 0;
-      if (!aPtr || ! getInt ( ID, aPtr ))
-      {
-        GHS3DPlugin_ReadLine( aPtr, aBuffer, theFile, aLineNb );
-        if (!aPtr || ! getInt ( ID, aPtr ))
-        {
-          MESSAGE( "Cant read " << (iNode+1) << "-th node on line " << aLineNb );
-          return false;
-        }
-      }
-      // find/create a node with ID
-      map <int,const SMDS_MeshNode*>::iterator IdNode = theGhs3dIdToNodeMap.find( ID );
-      if ( IdNode == theGhs3dIdToNodeMap.end())
-      {
-        // ID is not yet in theGhs3dIdToNodeMap
-        ASSERT ( ID > nbInputNodes ); // it should be a new one
-        SMDS_MeshNode * aNewNode = theMesh->AddNode( 0.,0.,0. ); // read XYZ later
-        theMesh->SetNodeInVolume( aNewNode, shapeID );
-        theGhs3dIdToNodeMap.insert ( make_pair( ID, aNewNode ));
-        node[ iNode ] = aNewNode;
+    node = *nodeIt;
+
+    // X Y Z DUMMY_INT
+    theFile
+      << space << node->X()
+      << space << node->Y()
+      << space << node->Z()
+      << space << dummyint;
+
+    theFile << endl;
+  }
+
+  return true;
+}
+
+//=======================================================================
+//function : readResultFile
+//purpose  : 
+//=======================================================================
+
+static bool readResultFile(const int                       fileOpen,
+                           SMESHDS_Mesh*                   theMeshDS,
+                           TopoDS_Shape                    tabShape[],
+                           double**                        tabBox,
+                           const int                       nbShape,
+                           map <int,const SMDS_MeshNode*>& theGhs3dIdToNodeMap) {
+
+  struct stat status;
+  size_t      length;
+
+  char *ptr, *mapPtr;
+  char *tetraPtr;
+  char *shapePtr;
+
+  int fileStat;
+  int nbElems, nbNodes, nbInputNodes;
+  int nodeId, triangleId;
+  int nbTriangle;
+  int ID, shapeID, ghs3dShapeID;
+  int IdShapeRef = 1;
+  int compoundID = theMeshDS->ShapeToIndex( theMeshDS->ShapeToMesh() );
+
+  int *tab, *tabID, *nodeID, *nodeAssigne;
+  double *coord;
+  const SMDS_MeshNode **node;
+
+  tab    = new int[3];
+  tabID  = new int[nbShape];
+  nodeID = new int[4];
+  coord  = new double[3];
+  node   = new const SMDS_MeshNode*[4];
+
+  TopoDS_Shape aSolid;
+  SMDS_MeshNode * aNewNode;
+  map <int,const SMDS_MeshNode*>::iterator itOnNode;
+  SMDS_MeshElement* aTet;
+
+  for (int i=0; i<nbShape; i++)
+    tabID[i] = 0;
+
+  // Read the file state
+  fileStat = fstat(fileOpen, &status);
+  length   = status.st_size;
+
+  // Mapping the result file into memory
+  ptr = (char *) mmap(0,length,PROT_READ,MAP_PRIVATE,fileOpen,0);
+  mapPtr = ptr;
+
+  ptr      = readMapIntLine(ptr, tab);
+  tetraPtr = ptr;
+
+  nbElems      = tab[0];
+  nbNodes      = tab[1];
+  nbInputNodes = tab[2];
+
+  nodeAssigne = new int[ nbNodes+1 ];
+
+  // Reading the nodeId
+  for (int i=0; i < 4*nbElems; i++)
+    nodeId = strtol(ptr, &ptr, 10);
+
+  // Reading the nodeCoor and update the nodeMap
+  for (int iNode=0; iNode < nbNodes; iNode++) {
+    for (int iCoor=0; iCoor < 3; iCoor++)
+      coord[ iCoor ] = strtod(ptr, &ptr);
+    nodeAssigne[ iNode+1 ] = 1;
+    if ( (iNode+1) > nbInputNodes ) {
+      nodeAssigne[ iNode+1 ] = 0;
+      aNewNode = theMeshDS->AddNode( coord[0],coord[1],coord[2] );
+      theGhs3dIdToNodeMap.insert(make_pair( (iNode+1), aNewNode ));
+    }
+  }
+
+  // Reading the number of triangles which corresponds to the number of shapes
+  nbTriangle = strtol(ptr, &ptr, 10);
+
+  for (int i=0; i < 3*nbShape; i++)
+    triangleId = strtol(ptr, &ptr, 10);
+
+  shapePtr = ptr;
+
+  // Associating the tetrahedrons to the shapes
+  shapeID = compoundID;
+  for (int iElem = 0; iElem < nbElems; iElem++) {
+    for (int iNode = 0; iNode < 4; iNode++) {
+      ID = strtol(tetraPtr, &tetraPtr, 10);
+      itOnNode = theGhs3dIdToNodeMap.find(ID);
+      node[ iNode ] = itOnNode->second;
+      nodeID[ iNode ] = ID;
+    }
+    aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
+    if ( nbShape > 1 ) {
+      ghs3dShapeID = strtol(shapePtr, &shapePtr, 10) - IdShapeRef;
+      if ( tabID[ ghs3dShapeID ] == 0 ) {
+        if (iElem == 0)
+          aSolid = tabShape[0];
+        aSolid = findShape(node, aSolid, tabShape, tabBox, nbShape);
+        shapeID = theMeshDS->ShapeToIndex( aSolid );
+        tabID[ ghs3dShapeID ] = shapeID;
       }
       else
-      {
-        node[ iNode ] = IdNode->second;
-      }
+        shapeID = tabID[ ghs3dShapeID ];
     }
-    // create a tetrahedron with orientation as for MED
-    SMDS_MeshElement* aTet = theMesh->AddVolume( node[1], node[0], node[2], node[3] );
-    theMesh->SetMeshElementOnShape( aTet, shapeID );
+    // set new nodes and tetrahedron on to the shape
+    for ( int i=0; i<4; i++ ) {
+      if ( nodeAssigne[ nodeID[i] ] == 0 )
+        theMeshDS->SetNodeInVolume( node[i], shapeID );
+    }
+    theMeshDS->SetMeshElementOnShape( aTet, shapeID );
+    if ( (iElem + 1) == nbElems )
+      cout << nbElems << " tetrahedrons have been associated to " << nbShape << " shapes" << endl;
+  }
+  munmap(mapPtr, length);
+  close(fileOpen);
+
+  delete [] tab;
+  delete [] tabID;
+  delete [] nodeID;
+  delete [] coord;
+  delete [] node;
+
+  return true;
+}
+
+//=======================================================================
+//function : readResultFile
+//purpose  : 
+//=======================================================================
+
+static bool readResultFile(const int                      fileOpen,
+                           SMESHDS_Mesh*                  theMeshDS,
+                           TopoDS_Shape                   aSolid,
+                           vector <const SMDS_MeshNode*>& theNodeByGhs3dId) {
+
+  struct stat  status;
+  size_t       length;
+
+  char *ptr, *mapPtr;
+  char *tetraPtr;
+  char *shapePtr;
+
+  int fileStat;
+  int nbElems, nbNodes, nbInputNodes;
+  int nodeId, triangleId;
+  int nbTriangle;
+  int ID, shapeID;
+
+  int *tab;
+  double *coord;
+  const SMDS_MeshNode **node;
+
+  tab   = new int[3];
+  coord = new double[3];
+  node  = new const SMDS_MeshNode*[4];
+
+  SMDS_MeshNode * aNewNode;
+  map <int,const SMDS_MeshNode*>::iterator IdNode;
+  SMDS_MeshElement* aTet;
+
+  // Read the file state
+  fileStat = fstat(fileOpen, &status);
+  length   = status.st_size;
+
+  // Mapping the result file into memory
+  ptr = (char *) mmap(0,length,PROT_READ,MAP_PRIVATE,fileOpen,0);
+  mapPtr = ptr;
+
+  ptr      = readMapIntLine(ptr, tab);
+  tetraPtr = ptr;
+
+  nbElems      = tab[0];
+  nbNodes      = tab[1];
+  nbInputNodes = tab[2];
+
+  theNodeByGhs3dId.resize( nbNodes );
+
+  // Reading the nodeId
+  for (int i=0; i < 4*nbElems; i++)
+    nodeId = strtol(ptr, &ptr, 10);
+
+  // Reading the nodeCoor and update the nodeMap
+  shapeID = theMeshDS->ShapeToIndex( aSolid );
+  for (int iNode=0; iNode < nbNodes; iNode++) {
+    for (int iCoor=0; iCoor < 3; iCoor++)
+      coord[ iCoor ] = strtod(ptr, &ptr);
+    if ((iNode+1) > nbInputNodes) {
+      aNewNode = theMeshDS->AddNode( coord[0],coord[1],coord[2] );
+      theMeshDS->SetNodeInVolume( aNewNode, shapeID );
+      theNodeByGhs3dId[ iNode ] = aNewNode;
+    }
   }
 
-  // ------------------------
-  // record 3:
-  // read and set nodes' XYZ
-  // ------------------------
-  GHS3DPlugin_ReadLine( aPtr, aBuffer, theFile, aLineNb );
-  for (int iNode = 0; iNode < nbNodes; iNode++)
-  {
-    // read 3 coordinates
-    double coord [3];
-    for (int iCoord = 0; iCoord < 3; iCoord++)
-    {
-      if (!aPtr || ! getDouble ( coord[ iCoord ], aPtr ))
-      {
-        GHS3DPlugin_ReadLine( aPtr, aBuffer, theFile, aLineNb );
-        if (!aPtr || ! getDouble ( coord[ iCoord ], aPtr ))
-        {
-          MESSAGE( "Cant read " << (iCoord+1) << "-th node coord on line " << aLineNb );
-          return false;
-        }
-      }
+  // Reading the triangles
+  nbTriangle = strtol(ptr, &ptr, 10);
+
+  for (int i=0; i < 3*nbTriangle; i++)
+    triangleId = strtol(ptr, &ptr, 10);
+
+  shapePtr = ptr;
+
+  // Associating the tetrahedrons to the shapes
+  for (int iElem = 0; iElem < nbElems; iElem++) {
+    for (int iNode = 0; iNode < 4; iNode++) {
+      ID = strtol(tetraPtr, &tetraPtr, 10);
+      node[ iNode ] = theNodeByGhs3dId[ ID-1 ];
     }
-    // do not move old nodes
-    int ID = iNode + 1;
-    if (ID <= nbInputNodes)
-      continue;
-    // find a node
-    map <int,const SMDS_MeshNode*>::iterator IdNode = theGhs3dIdToNodeMap.find( ID );
-    ASSERT ( IdNode != theGhs3dIdToNodeMap.end());
-    SMDS_MeshNode* node = const_cast<SMDS_MeshNode*> ( (*IdNode).second );
-
-    // set XYZ
-    theMesh->MoveNode( node, coord[0], coord[1], coord[2] );
+    aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
+    shapeID = theMeshDS->ShapeToIndex( aSolid );
+    theMeshDS->SetMeshElementOnShape( aTet, shapeID );
   }
+  if ( nbElems )
+    cout << nbElems << " tetrahedrons have been associated to " << nbTriangle << " shapes" << endl;
+  munmap(mapPtr, length);
+  close(fileOpen);
 
-  return nbElems;
+  delete [] tab;
+  delete [] coord;
+  delete [] node;
+
+  return true;
 }
 
 //=======================================================================
@@ -399,6 +733,36 @@ static TCollection_AsciiString getTmpDir()
   return aTmpDir;
 }
 
+//================================================================================
+/*!
+ * \brief Look for a line containing a text in a file
+  * \retval bool - true if the line is found
+ */
+//================================================================================
+
+static bool findLineContaing(const TCollection_AsciiString& theText,
+                             const TCollection_AsciiString& theFile,
+                             TCollection_AsciiString &      theFoundLine)
+{
+  bool found = false;
+  if ( FILE * aFile = fopen( theFile.ToCString(), "r" ))
+  {
+    char * aPtr;
+    char aBuffer[ GHS3DPlugin_BUFLENGTH ];
+    int aLineNb = 0;
+    do {
+      GHS3DPlugin_ReadLine( aPtr, aBuffer, aFile, aLineNb );
+      if ( aPtr ) {
+        theFoundLine = aPtr;
+        found = theFoundLine.Search( theText ) >= 0;
+      }
+    } while ( aPtr && !found );
+
+    fclose( aFile );
+  }
+  return found;
+}
+
 //=============================================================================
 /*!
  *Here we are going to use the GHS3D mesher
@@ -408,9 +772,36 @@ static TCollection_AsciiString getTmpDir()
 bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                                 const TopoDS_Shape& theShape)
 {
-  MESSAGE("GHS3DPlugin_GHS3D::Compute");
-
+  bool Ok(false);
   SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
+
+  _nbShape = countShape( meshDS, TopAbs_SOLID ); // we count the number of shapes
+
+  // create bounding box for every shape inside the compound
+
+  int iShape = 0;
+  TopoDS_Shape* tabShape;
+  double**      tabBox;
+  tabShape = new TopoDS_Shape[_nbShape];
+  tabBox   = new double*[_nbShape];
+  for (int i=0; i<_nbShape; i++)
+    tabBox[i] = new double[6];
+  Standard_Real Xmin, Ymin, Zmin, Xmax, Ymax, Zmax;
+
+  TopExp_Explorer expBox (meshDS->ShapeToMesh(), TopAbs_SOLID);
+  for (; expBox.More(); expBox.Next()) {
+    tabShape[iShape] = expBox.Current();
+    Bnd_Box BoundingBox;
+    BRepBndLib::Add(expBox.Current(), BoundingBox);
+    BoundingBox.Get(Xmin, Ymin, Zmin, Xmax, Ymax, Zmax);
+    tabBox[iShape][0] = Xmin; tabBox[iShape][1] = Xmax;
+    tabBox[iShape][2] = Ymin; tabBox[iShape][3] = Ymax;
+    tabBox[iShape][4] = Zmin; tabBox[iShape][5] = Zmax;
+    iShape++;
+  }
+
+  cout << endl;
+  cout << "Ghs3d execution..." << endl;
 
   // make a unique working file name
   // to avoid access to the same files by eg different users
@@ -440,23 +831,22 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   ofstream aFacesFile  ( aFacesFileName.ToCString()  , ios::out);
   ofstream aPointsFile ( aPointsFileName.ToCString() , ios::out);
-  bool Ok =
+
+  Ok =
 #ifdef WIN32
     aFacesFile->is_open() && aPointsFile->is_open();
 #else
     aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
 #endif
-  if (!Ok)
-  {
+  if (!Ok) {
     INFOS( "Can't write into " << aTmpDir.ToCString());
-    return false;
+    return error(SMESH_Comment("Can't write into ") << aTmpDir);
   }
   map <int,int> aSmdsToGhs3dIdMap;
   map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
 
-  Ok =
-    (writePoints( aPointsFile, meshDS, aSmdsToGhs3dIdMap, aGhs3dIdToNodeMap ) &&
-     writeFaces ( aFacesFile, meshDS, theShape, aSmdsToGhs3dIdMap ));
+  Ok = writePoints( aPointsFile, meshDS, aSmdsToGhs3dIdMap, aGhs3dIdToNodeMap ) &&
+       writeFaces ( aFacesFile,  meshDS, aSmdsToGhs3dIdMap );
 
   aFacesFile.close();
   aPointsFile.close();
@@ -466,7 +856,185 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       OSD_File( aFacesFileName ).Remove();
       OSD_File( aPointsFileName ).Remove();
     }
-    return false;
+    return error(COMPERR_BAD_INPUT_MESH);
+  }
+
+  // -----------------
+  // run ghs3d mesher              WIN32???
+  // -----------------
+
+  // ghs3d need to know amount of memory it may use (MB).
+  // Default memory is defined at ghs3d installation but it may be not enough,
+  // so allow to use about all available memory
+
+  TCollection_AsciiString memory;
+#ifndef WIN32
+  struct sysinfo si;
+  int err = sysinfo( &si );
+  if ( err == 0 ) {
+    int freeMem = si.totalram * si.mem_unit / 1024 / 1024;
+    memory = "-m ";
+    memory += int( 0.7 * freeMem );
+  }
+#endif
+
+  MESSAGE("GHS3DPlugin_GHS3D::Compute");
+  TCollection_AsciiString cmd( "ghs3d " ); // command to run
+  cmd +=
+    memory +                     // memory
+    " -c0 -f " + aGenericName +  // file to read
+         " 1>" + aLogFileName;   // dump into file
+
+  system( cmd.ToCString() ); // run
+
+  cout << endl;
+  cout << "End of Ghs3d execution !" << endl;
+
+  // --------------
+  // read a result
+  // --------------
+
+  // Mapping the result file
+
+  int fileOpen;
+  fileOpen = open( aResultFileName.ToCString(), O_RDONLY);
+  if ( fileOpen < 0 ) {
+    cout << endl;
+    cout << "Can't open the " << aResultFileName.ToCString() << " GHS3D output file" << endl;
+    Ok = false;
+  }
+  else
+    Ok = readResultFile( fileOpen, meshDS, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap );
+
+  // ---------------------
+  // remove working files
+  // ---------------------
+
+  if ( Ok )
+  {
+    OSD_File( aLogFileName ).Remove();
+  }
+  else if ( OSD_File( aLogFileName ).Size() > 0 )
+  {
+    INFOS( "GHS3D Error, see the " << aLogFileName.ToCString() << " file" );
+
+    // get problem description from the log file
+    SMESH_Comment comment;
+    TCollection_AsciiString foundLine;
+    if ( findLineContaing( "has expired",aLogFileName,foundLine) &&
+         foundLine.Search("Licence") >= 0)
+    {
+      foundLine.LeftAdjust();
+      comment << foundLine;
+    }
+    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine))
+    {
+      foundLine.LeftAdjust();
+      comment << foundLine;
+    }
+    if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
+    {
+      comment << "Too many elements generated for a trial version.\n";
+    }
+    if ( comment.empty() )
+      comment << "See " << aLogFileName << " for problem description";
+    else
+      comment << "See " << aLogFileName << " for more information";
+    error(COMPERR_ALGO_FAILED, comment);
+  }
+  else
+  {
+    // the log file is empty
+    OSD_File( aLogFileName ).Remove();
+    INFOS( "GHS3D Error, command '" << cmd.ToCString() << "' failed" );
+    error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
+  }
+
+  if ( !getenv("GHS3D_KEEP_FILES") ) {
+    OSD_File( aFacesFileName ).Remove();
+    OSD_File( aPointsFileName ).Remove();
+    OSD_File( aResultFileName ).Remove();
+    OSD_File( aBadResFileName ).Remove();
+    OSD_File( aBbResFileName ).Remove();
+  }
+  cout << "<" << aResultFileName.ToCString() << "> GHS3D output file ";
+  if ( !Ok )
+    cout << "not ";
+  cout << "treated !" << endl;
+  cout << endl;
+
+  _nbShape = 0;    // re-initializing _nbShape for the next Compute() method call
+  delete [] tabShape;
+  delete [] tabBox;
+
+  return Ok;
+}
+
+//=============================================================================
+/*!
+ *Here we are going to use the GHS3D mesher w/o geometry
+ */
+//=============================================================================
+bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
+                                SMESH_MesherHelper* aHelper)
+{
+  MESSAGE("GHS3DPlugin_GHS3D::Compute()");
+
+  SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
+  TopoDS_Shape theShape = aHelper->GetSubShape();
+
+  // make a unique working file name
+  // to avoid access to the same files by eg different users
+  
+  TCollection_AsciiString aGenericName, aTmpDir = getTmpDir();
+  aGenericName = aTmpDir + "GHS3D_";
+#ifdef WIN32
+  aGenericName += GetCurrentProcessId();
+#else
+  aGenericName += getpid();
+#endif
+  aGenericName += "_";
+  aGenericName += meshDS->ShapeToIndex( theShape );
+
+  TCollection_AsciiString aFacesFileName, aPointsFileName, aResultFileName;
+  TCollection_AsciiString aBadResFileName, aBbResFileName, aLogFileName;
+  aFacesFileName  = aGenericName + ".faces";  // in faces
+  aPointsFileName = aGenericName + ".points"; // in points
+  aResultFileName = aGenericName + ".noboite";// out points and volumes
+  aBadResFileName = aGenericName + ".boite";  // out bad result
+  aBbResFileName  = aGenericName + ".bb";     // out vertex stepsize
+  aLogFileName    = aGenericName + ".log";    // log
+
+  // -----------------
+  // make input files
+  // -----------------
+
+  ofstream aFacesFile  ( aFacesFileName.ToCString()  , ios::out);
+  ofstream aPointsFile  ( aPointsFileName.ToCString()  , ios::out);
+  bool Ok =
+#ifdef WIN32
+    aFacesFile->is_open() && aPointsFile->is_open();
+#else
+    aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
+#endif
+
+  if (!Ok)
+    return error( SMESH_Comment("Can't write into ") << aTmpDir.ToCString());
+
+  vector <const SMDS_MeshNode*> aNodeByGhs3dId;
+
+  Ok = (writeFaces ( aFacesFile, meshDS, aNodeByGhs3dId ) &&
+        writePoints( aPointsFile, meshDS, aNodeByGhs3dId));
+  
+  aFacesFile.close();
+  aPointsFile.close();
+  
+  if ( ! Ok ) {
+    if ( !getenv("GHS3D_KEEP_FILES") ) {
+      OSD_File( aFacesFileName ).Remove();
+      OSD_File( aPointsFileName ).Remove();
+    }
+    return error(COMPERR_BAD_INPUT_MESH);
   }
 
   // -----------------
@@ -477,49 +1045,84 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // Default memory is defined at ghs3d installation but it may be not enough,
   // so allow to use about all available memory
   TCollection_AsciiString memory;
-#ifndef WIN32
+#ifdef WIN32
+  // ????
+#else
   struct sysinfo si;
   int err = sysinfo( &si );
-  if ( err == 0 ) {
+  if ( !err ) {
+    int freeMem = si.totalram * si.mem_unit / 1024 / 1024;
     memory = "-m ";
-    memory += int ( 0.8 * ( si.freeram + si.freeswap ) * si.mem_unit / 1024 / 1024 );
+    memory += int( 0.7 * freeMem );
   }
 #endif
-
+  
   TCollection_AsciiString cmd( "ghs3d " ); // command to run
   cmd +=
-    memory +                   // memory
-      " -f " + aGenericName +  // file to read
-        " 1>" + aLogFileName;  // dump into file
-
+    memory +                 // memory
+    " -f " + aGenericName +  // file to read
+    " 1>" + aLogFileName;    // dump into file
+  
+  
+  
   system( cmd.ToCString() ); // run
 
   // --------------
   // read a result
   // --------------
-
-  FILE * aResultFile = fopen( aResultFileName.ToCString(), "r" );
-  if (aResultFile)
-  {
-    Ok = readResult( aResultFile, meshDS, theShape, aGhs3dIdToNodeMap );
-    fclose(aResultFile);
-  }
-  else
+  int fileOpen;
+  fileOpen = open( aResultFileName.ToCString(), O_RDONLY);
+  if ( fileOpen < 0 ) {
+    cout << endl;
+    cout << "Error when opening the " << aResultFileName.ToCString() << " file" << endl;
+    cout << endl;
     Ok = false;
-
+  }
+  else {
+    Ok = readResultFile( fileOpen, meshDS, theShape ,aNodeByGhs3dId );
+  }
+  
   // ---------------------
   // remove working files
   // ---------------------
 
-  if ( Ok ) {
+  if ( Ok )
+  {
     OSD_File( aLogFileName ).Remove();
   }
-  else if ( OSD_File( aLogFileName ).Size() > 0 ) {
-    INFOS( "GHS3D Error: see " << aLogFileName.ToCString() );
+  else if ( OSD_File( aLogFileName ).Size() > 0 )
+  {
+    INFOS( "GHS3D Error, see the " << aLogFileName.ToCString() << " file" );
+
+    // get problem description from the log file
+    SMESH_Comment comment;
+    TCollection_AsciiString foundLine;
+    if ( findLineContaing( "has expired",aLogFileName,foundLine) &&
+         foundLine.Search("Licence") >= 0)
+    {
+      foundLine.LeftAdjust();
+      comment << foundLine;
+    }
+    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine))
+    {
+      foundLine.LeftAdjust();
+      comment << foundLine;
+    }
+    if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
+    {
+      comment << "Too many elements generated for a trial version.\n";
+    }
+    if ( comment.empty() )
+      comment << "See " << aLogFileName << " for problem description";
+    else
+      comment << "See " << aLogFileName << " for more information";
+    error(COMPERR_ALGO_FAILED, comment);
   }
   else {
+    // the log file is empty
     OSD_File( aLogFileName ).Remove();
-    INFOS( "GHS3D Error: command '" << cmd.ToCString() << "' failed" );
+    INFOS( "GHS3D Error, command '" << cmd.ToCString() << "' failed" );
+    error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
   }
 
   if ( !getenv("GHS3D_KEEP_FILES") )
@@ -533,7 +1136,6 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   
   return Ok;
 }
-
 
 //=============================================================================
 /*!

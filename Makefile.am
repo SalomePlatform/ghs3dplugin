@@ -16,36 +16,29 @@
 #
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
-# -* Makefile *- 
+# -* Makefile *-
 #
-# Author : Edward AGAPOV (OCC)
-# Module : GHS3DPLUGIN
-# Date : 10/01/2004
+# Author : Patrick GOLDBRONN (CEA)
+# Date : 28/06/2001
+#  Modified by : Alexander BORODIN (OCN) - autotools usage
+# $Header:
 #
-#
 
-# source path
-top_srcdir=@top_srcdir@
-top_builddir=..
-srcdir=@srcdir@
-VPATH=.:@srcdir@
+include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-@COMMENCE@
 
-# .po files to transform in .qm
-PO_FILES = GHS3DPlugin_icons.po
+SUBDIRS = idl adm_local resources src bin 
 
-LIB_SRC = \
-	GHS3DPlugin_GHS3D.cxx \
-	GHS3DPlugin_GHS3D_i.cxx \
-	GHS3DPlugin_i.cxx
+DIST_SUBDIRS = idl adm_local resources src bin 
 
-LIB_SERVER_IDL = GHS3DPlugin_Algorithm.idl
+DISTCLEANFILES = a.out aclocal.m4 configure
 
-# Libraries targets
-LIB = libGHS3DEngine.la
+salomeinclude_DATA=GHS3DPLUGIN_version.h
 
-#CXXFLAGS += $(QT_INCLUDES)
-#LDFLAGS  += $(QT_LIBS)
+EXTRA_DIST+= \
+	build_configure \
+	clean_configure \
+	LICENCE
 
-@CONCLUDE@
+dist-hook:
+	rm -rf `find $(distdir) -name CVS`

@@ -14,6 +14,7 @@
                label-id="Tetrahedron (GHS3D)"
                icon-id="mesh_algo_tetra.png"
                input="TRIA,QUAD"
+	       need-geom="false"
                dim="3"/>
   </algorithms>
 </meshers-group>
