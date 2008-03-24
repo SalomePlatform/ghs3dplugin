@@ -216,11 +216,11 @@ CHECK_OPENGL
 
 echo
 echo ---------------------------------------------
-echo testing MSG2QM
+echo testing QT
 echo ---------------------------------------------
 echo
 
-CHECK_MSG2QM
+CHECK_QT
 
 echo
 echo ---------------------------------------------
