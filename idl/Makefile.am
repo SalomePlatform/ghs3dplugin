@@ -41,6 +41,7 @@ lib_LTLIBRARIES = libSalomeIDLGHS3DPLUGIN.la
 nodist_libSalomeIDLGHS3DPLUGIN_la_SOURCES = \
 	GHS3DPlugin_AlgorithmSK.cc \
 	GHS3DPlugin_AlgorithmDynSK.cc
+GHS3DPlugin_AlgorithmDynSK.cc: GHS3DPlugin_AlgorithmSK.cc
 
 # header files must be exported: other modules have to use this library
 nodist_salomeinclude_HEADERS= $(BASEIDL_FILES:%.idl=%.hh)

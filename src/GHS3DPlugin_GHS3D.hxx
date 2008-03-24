@@ -18,6 +18,7 @@
 //
 //=============================================================================
 // File      : GHS3DPlugin_GHS3D.hxx
+// Author    : Edward AGAPOV, modified by Lioka RAZAFINDRAZAKA (CEA) 09/02/2007
 // Project   : SALOME
 // Copyright : CEA 2003
 // $Header$
@@ -41,7 +42,15 @@ public:
                                SMESH_Hypothesis::Hypothesis_Status& aStatus);
 
   virtual bool Compute(SMESH_Mesh&         aMesh,
-		       const TopoDS_Shape& aShape);
+               const TopoDS_Shape& aShape);
+
+  virtual bool Compute(SMESH_Mesh&         theMesh,
+                       SMESH_MesherHelper* aHelper);
+
+  ostream & SaveTo(ostream & save);
+  istream & LoadFrom(istream & load);
+  friend ostream & operator << (ostream & save, GHS3DPlugin_GHS3D & hyp);
+  friend istream & operator >> (istream & load, GHS3DPlugin_GHS3D & hyp);
 
 private:
   int _iShape;
