@@ -407,7 +407,7 @@ string GHS3DPlugin_Hypothesis::GetFileName(const GHS3DPlugin_Hypothesis* hyp)
   aGenericName += getpid();
 #endif
   aGenericName += "_";
-  aGenericName += Abs((Standard_Integer) & aGenericName);
+  aGenericName += Abs((Standard_Integer)(long) & aGenericName);
 
   return aGenericName.ToCString();
 }
