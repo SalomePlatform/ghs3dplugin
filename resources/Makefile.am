@@ -28,4 +28,6 @@
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
 dist_salomeres_DATA = \
-	GHS3DPlugin.xml
+	GHS3DPlugin.xml \
+	mesh_hypo_ghs3d.png \
+	mesh_tree_hypo_ghs3d.png

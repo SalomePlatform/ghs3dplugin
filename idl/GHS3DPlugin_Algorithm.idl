@@ -26,6 +26,7 @@
 #ifndef _GHS3D_Algorithm_IDL_
 #define _GHS3D_Algorithm_IDL_
 
+#include "SALOME_Exception.idl"
 #include "SMESH_Hypothesis.idl"
 
 /*!
@@ -40,6 +41,45 @@ module GHS3DPlugin
   {
   };
 
+  /*!
+   * Parameters of "Tetrahedron (GHS3D)" algorithm
+   */
+  interface GHS3DPlugin_Hypothesis : SMESH::SMESH_Hypothesis
+  {
+    /*!
+     * To mesh "holes" in a solid or not. Default is to mesh.
+     */
+    void SetToMeshHoles(in boolean toMesh);
+    boolean GetToMeshHoles();
+    /*!
+     * Maximal size of memory to be used by the algorithm (in Megabytes).
+     * Negative value means not to use this option
+     */
+    void SetMaximumMemory(in short MB);
+    short GetMaximumMemory();
+    /*!
+     * Initial size of memory to be used by the algorithm (in Megabytes) in
+     * automatic memory adjustment mode. Default is zero.
+     * Negative value means not to use this option
+     */
+    void SetInitialMemory(in short MB);
+    short GetInitialMemory();
+    /*!
+     * Optimization level: 0-none, 1-light, 2-medium, 3-strong. Default is medium
+     */
+    void SetOptimizationLevel(in short level) raises (SALOME::SALOME_Exception);
+    short GetOptimizationLevel();
+    /*!
+     * Path to working directory
+     */
+    void SetWorkingDirectory(in string path) raises (SALOME::SALOME_Exception);
+    string GetWorkingDirectory();
+    /*!
+     * To keep working files or remove them. Log file remains in case of errors anyway.
+     */
+    void SetKeepFiles(in boolean toKeep);
+    boolean GetKeepFiles();
+  };
 };
 
 #endif

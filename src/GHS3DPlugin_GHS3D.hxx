@@ -30,6 +30,7 @@
 #include "SMESH_3D_Algo.hxx"
 
 class SMESH_Mesh;
+class GHS3DPlugin_Hypothesis;
 
 class GHS3DPlugin_GHS3D: public SMESH_3D_Algo
 {
@@ -37,24 +38,21 @@ public:
   GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen);
   virtual ~GHS3DPlugin_GHS3D();
 
-  virtual bool CheckHypothesis(SMESH_Mesh&                          aMesh,
-                               const TopoDS_Shape&                  aShape,
-                               SMESH_Hypothesis::Hypothesis_Status& aStatus);
+  virtual bool CheckHypothesis(SMESH_Mesh&         aMesh,
+                               const TopoDS_Shape& aShape,
+                               Hypothesis_Status&  aStatus);
 
   virtual bool Compute(SMESH_Mesh&         aMesh,
-               const TopoDS_Shape& aShape);
+                       const TopoDS_Shape& aShape);
 
   virtual bool Compute(SMESH_Mesh&         theMesh,
                        SMESH_MesherHelper* aHelper);
 
-  ostream & SaveTo(ostream & save);
-  istream & LoadFrom(istream & load);
-  friend ostream & operator << (ostream & save, GHS3DPlugin_GHS3D & hyp);
-  friend istream & operator >> (istream & load, GHS3DPlugin_GHS3D & hyp);
-
 private:
-  int _iShape;
-  int _nbShape;
+  int  _iShape;
+  int  _nbShape;
+  bool _keepFiles;
+  const GHS3DPlugin_Hypothesis* _hyp;
 };
 
 #endif

@@ -27,6 +27,8 @@
 using namespace std;
 
 #include "GHS3DPlugin_GHS3D.hxx"
+#include "GHS3DPlugin_Hypothesis.hxx"
+
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
 #include "SMESH_Comment.hxx"
@@ -90,6 +92,7 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   _onlyUnaryInput = false; // Compute() will be called on a compound of solids
   _iShape=0;
   _nbShape=0;
+  _compatibleHypothesis.push_back("GHS3D_Parameters");
 }
 
 //=============================================================================
@@ -109,12 +112,21 @@ GHS3DPlugin_GHS3D::~GHS3DPlugin_GHS3D()
  */
 //=============================================================================
 
-bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&                          aMesh,
-                                          const TopoDS_Shape&                  aShape,
-                                          SMESH_Hypothesis::Hypothesis_Status& aStatus )
+bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
+                                          const TopoDS_Shape& aShape,
+                                          Hypothesis_Status&  aStatus )
 {
-//  MESSAGE("GHS3DPlugin_GHS3D::CheckHypothesis");
   aStatus = SMESH_Hypothesis::HYP_OK;
+
+  // there is only one compatible Hypothesis so far
+  _hyp = 0;
+  _keepFiles = false;
+  const list <const SMESHDS_Hypothesis * >& hyps = GetUsedHypothesis(aMesh, aShape);
+  if ( !hyps.empty() )
+    _hyp = static_cast<const GHS3DPlugin_Hypothesis*> ( hyps.front() );
+  if ( _hyp )
+    _keepFiles = _hyp->GetKeepFiles();
+
   return true;
 }
 
@@ -503,7 +515,8 @@ static bool readResultFile(const int                       fileOpen,
   int nbTriangle;
   int ID, shapeID, ghs3dShapeID;
   int IdShapeRef = 1;
-  int compoundID = theMeshDS->ShapeToIndex( theMeshDS->ShapeToMesh() );
+  int compoundID =
+    nbShape ? theMeshDS->ShapeToIndex( tabShape[0] ) : theMeshDS->ShapeToIndex( theMeshDS->ShapeToMesh() );
 
   int *tab, *tabID, *nodeID, *nodeAssigne;
   double *coord;
@@ -592,9 +605,9 @@ static bool readResultFile(const int                       fileOpen,
         theMeshDS->SetNodeInVolume( node[i], shapeID );
     }
     theMeshDS->SetMeshElementOnShape( aTet, shapeID );
-    if ( (iElem + 1) == nbElems )
-      cout << nbElems << " tetrahedrons have been associated to " << nbShape << " shapes" << endl;
   }
+  if ( nbElems )
+    cout << nbElems << " tetrahedrons have been associated to " << nbShape << " shapes" << endl;
   munmap(mapPtr, length);
   close(fileOpen);
 
@@ -705,34 +718,6 @@ static bool readResultFile(const int                      fileOpen,
   return true;
 }
 
-//=======================================================================
-//function : getTmpDir
-//purpose  : 
-//=======================================================================
-
-static TCollection_AsciiString getTmpDir()
-{
-  TCollection_AsciiString aTmpDir;
-
-  char *Tmp_dir = getenv("SALOME_TMP_DIR");
-  if(Tmp_dir != NULL) {
-    aTmpDir = Tmp_dir;
-#ifdef WIN32
-    if(aTmpDir.Value(aTmpDir.Length()) != '\\') aTmpDir+='\\';
-#else
-    if(aTmpDir.Value(aTmpDir.Length()) != '/') aTmpDir+='/';
-#endif      
-  }
-  else {
-#ifdef WIN32
-    aTmpDir = TCollection_AsciiString("C:\\");
-#else
-    aTmpDir = TCollection_AsciiString("/tmp/");
-#endif
-  }
-  return aTmpDir;
-}
-
 //================================================================================
 /*!
  * \brief Look for a line containing a text in a file
@@ -800,21 +785,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     iShape++;
   }
 
-  cout << endl;
-  cout << "Ghs3d execution..." << endl;
-
-  // make a unique working file name
+  // a unique working file name
   // to avoid access to the same files by eg different users
-  
-  TCollection_AsciiString aGenericName, aTmpDir = getTmpDir();
-  aGenericName = aTmpDir + "GHS3D_";
-#ifdef WIN32
-  aGenericName += GetCurrentProcessId();
-#else
-  aGenericName += getpid();
-#endif
-  aGenericName += "_";
-  aGenericName += meshDS->ShapeToIndex( theShape );
+  TCollection_AsciiString aGenericName
+    = (char*) GHS3DPlugin_Hypothesis::GetFileName(_hyp).c_str();
 
   TCollection_AsciiString aFacesFileName, aPointsFileName, aResultFileName;
   TCollection_AsciiString aBadResFileName, aBbResFileName, aLogFileName;
@@ -839,8 +813,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
 #endif
   if (!Ok) {
-    INFOS( "Can't write into " << aTmpDir.ToCString());
-    return error(SMESH_Comment("Can't write into ") << aTmpDir);
+    INFOS( "Can't write into " << aFacesFileName);
+    return error(SMESH_Comment("Can't write into ") << aFacesFileName);
   }
   map <int,int> aSmdsToGhs3dIdMap;
   map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
@@ -852,7 +826,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   aPointsFile.close();
 
   if ( ! Ok ) {
-    if ( !getenv("GHS3D_KEEP_FILES") ) {
+    if ( !_keepFiles ) {
       OSD_File( aFacesFileName ).Remove();
       OSD_File( aPointsFileName ).Remove();
     }
@@ -860,30 +834,16 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
 
   // -----------------
-  // run ghs3d mesher              WIN32???
+  // run ghs3d mesher
   // -----------------
 
-  // ghs3d need to know amount of memory it may use (MB).
-  // Default memory is defined at ghs3d installation but it may be not enough,
-  // so allow to use about all available memory
+  TCollection_AsciiString cmd( (char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp ).c_str() );
+  cmd += TCollection_AsciiString(" -f ") + aGenericName;  // file to read
+  cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
 
-  TCollection_AsciiString memory;
-#ifndef WIN32
-  struct sysinfo si;
-  int err = sysinfo( &si );
-  if ( err == 0 ) {
-    int freeMem = si.totalram * si.mem_unit / 1024 / 1024;
-    memory = "-m ";
-    memory += int( 0.7 * freeMem );
-  }
-#endif
-
-  MESSAGE("GHS3DPlugin_GHS3D::Compute");
-  TCollection_AsciiString cmd( "ghs3d " ); // command to run
-  cmd +=
-    memory +                     // memory
-    " -c0 -f " + aGenericName +  // file to read
-         " 1>" + aLogFileName;   // dump into file
+  cout << endl;
+  cout << "Ghs3d execution..." << endl;
+  cout << cmd << endl;
 
   system( cmd.ToCString() ); // run
 
@@ -912,7 +872,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if ( Ok )
   {
-    OSD_File( aLogFileName ).Remove();
+    if ( !_keepFiles )
+      OSD_File( aLogFileName ).Remove();
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
@@ -927,12 +888,13 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       foundLine.LeftAdjust();
       comment << foundLine;
     }
-    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine))
+    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine) ||
+         findLineContaing( " ERR ",aLogFileName,foundLine))
     {
       foundLine.LeftAdjust();
       comment << foundLine;
     }
-    if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
+    else if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
     {
       comment << "Too many elements generated for a trial version.\n";
     }
@@ -950,7 +912,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
   }
 
-  if ( !getenv("GHS3D_KEEP_FILES") ) {
+  if ( !_keepFiles ) {
     OSD_File( aFacesFileName ).Remove();
     OSD_File( aPointsFileName ).Remove();
     OSD_File( aResultFileName ).Remove();
@@ -983,18 +945,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
   TopoDS_Shape theShape = aHelper->GetSubShape();
 
-  // make a unique working file name
+  // a unique working file name
   // to avoid access to the same files by eg different users
-  
-  TCollection_AsciiString aGenericName, aTmpDir = getTmpDir();
-  aGenericName = aTmpDir + "GHS3D_";
-#ifdef WIN32
-  aGenericName += GetCurrentProcessId();
-#else
-  aGenericName += getpid();
-#endif
-  aGenericName += "_";
-  aGenericName += meshDS->ShapeToIndex( theShape );
+  TCollection_AsciiString aGenericName
+    = (char*) GHS3DPlugin_Hypothesis::GetFileName(_hyp).c_str();
 
   TCollection_AsciiString aFacesFileName, aPointsFileName, aResultFileName;
   TCollection_AsciiString aBadResFileName, aBbResFileName, aLogFileName;
@@ -1019,7 +973,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #endif
 
   if (!Ok)
-    return error( SMESH_Comment("Can't write into ") << aTmpDir.ToCString());
+    return error( SMESH_Comment("Can't write into ") << aPointsFileName);
 
   vector <const SMDS_MeshNode*> aNodeByGhs3dId;
 
@@ -1030,7 +984,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   aPointsFile.close();
   
   if ( ! Ok ) {
-    if ( !getenv("GHS3D_KEEP_FILES") ) {
+    if ( !_keepFiles ) {
       OSD_File( aFacesFileName ).Remove();
       OSD_File( aPointsFileName ).Remove();
     }
@@ -1038,32 +992,12 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
 
   // -----------------
-  // run ghs3d mesher              WIN32???
+  // run ghs3d mesher
   // -----------------
 
-  // ghs3d need to know amount of memory it may use (MB).
-  // Default memory is defined at ghs3d installation but it may be not enough,
-  // so allow to use about all available memory
-  TCollection_AsciiString memory;
-#ifdef WIN32
-  // ????
-#else
-  struct sysinfo si;
-  int err = sysinfo( &si );
-  if ( !err ) {
-    int freeMem = si.totalram * si.mem_unit / 1024 / 1024;
-    memory = "-m ";
-    memory += int( 0.7 * freeMem );
-  }
-#endif
-  
-  TCollection_AsciiString cmd( "ghs3d " ); // command to run
-  cmd +=
-    memory +                 // memory
-    " -f " + aGenericName +  // file to read
-    " 1>" + aLogFileName;    // dump into file
-  
-  
+  TCollection_AsciiString cmd( (char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp ).c_str() );
+  cmd += TCollection_AsciiString(" -f ") + aGenericName;  // file to read
+  cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
   
   system( cmd.ToCString() ); // run
 
@@ -1088,7 +1022,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if ( Ok )
   {
-    OSD_File( aLogFileName ).Remove();
+    if ( !_keepFiles )
+      OSD_File( aLogFileName ).Remove();
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
@@ -1103,12 +1038,13 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       foundLine.LeftAdjust();
       comment << foundLine;
     }
-    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine))
+    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine) ||
+         findLineContaing( " ERR ",aLogFileName,foundLine))
     {
       foundLine.LeftAdjust();
       comment << foundLine;
     }
-    if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
+    else if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
     {
       comment << "Too many elements generated for a trial version.\n";
     }
@@ -1125,7 +1061,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
   }
 
-  if ( !getenv("GHS3D_KEEP_FILES") )
+  if ( !_keepFiles )
   {
     OSD_File( aFacesFileName ).Remove();
     OSD_File( aPointsFileName ).Remove();
@@ -1135,48 +1071,4 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
   
   return Ok;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & GHS3DPlugin_GHS3D::SaveTo(ostream & save)
-{
-  return save;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & GHS3DPlugin_GHS3D::LoadFrom(istream & load)
-{
-  return load;
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-ostream & operator << (ostream & save, GHS3DPlugin_GHS3D & hyp)
-{
-  return hyp.SaveTo( save );
-}
-
-//=============================================================================
-/*!
- *  
- */
-//=============================================================================
-
-istream & operator >> (istream & load, GHS3DPlugin_GHS3D & hyp)
-{
-  return hyp.LoadFrom( load );
 }
