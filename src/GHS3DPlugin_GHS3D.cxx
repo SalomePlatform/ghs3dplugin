@@ -268,6 +268,7 @@ static bool writeFaces (ofstream &            theFile,
       aShape      = tabShape[i];
       shapeID     = tabID[i];
       theSubMesh  = theMesh->MeshElements( aShape );
+      if ( !theSubMesh ) continue;
       itOnSubMesh = theSubMesh->GetElements();
       while ( itOnSubMesh->more() ) {
         aFace   = itOnSubMesh->next();
