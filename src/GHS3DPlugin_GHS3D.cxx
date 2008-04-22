@@ -748,6 +748,177 @@ static bool findLineContaing(const TCollection_AsciiString& theText,
   return found;
 }
 
+//================================================================================
+/*!
+ * \brief Provide human readable text by error code reported by ghs3d
+ */
+//================================================================================
+
+static TCollection_AsciiString translateError(const TCollection_AsciiString& errorLine)
+{
+  int beg = errorLine.Location("ERR ", 1, errorLine.Length());
+  if ( !beg ) return errorLine;
+
+  TCollection_AsciiString errCodeStr = errorLine.SubString( beg + 4 , errorLine.Length());
+  if ( !errCodeStr.IsIntegerValue() )
+    return errorLine;
+  Standard_Integer errCode = errCodeStr.IntegerValue();
+
+  int codeEnd = beg + 7;
+  while ( codeEnd < errorLine.Length() && isdigit( errorLine.Value(codeEnd+1) ))
+    codeEnd++;
+  TCollection_AsciiString error = errorLine.SubString( beg, codeEnd ) + ": ";
+
+  switch ( errCode ) {
+  case 0:
+    return "The surface mesh includes a face of type type other than edge, "
+      "triangle or quadrilateral. This face type is not supported.";
+  case 1:
+    return error + "Not enough memory for the face table";
+  case 2:
+    return error + "Not enough memory";
+  case 3:
+    return error + "Not enough memory";
+  case 4:
+    return error + "Face is ignored";
+  case 5:
+    return error + errorLine.SubString( beg + 5, errorLine.Length()) +
+      ": End of file. Some data are missing in the file.";
+  case 6:
+    return error + errorLine.SubString( beg + 5, errorLine.Length()) +
+      ": Read error on the file. There are wrong data in the file.";
+  case 7:
+    return error + "the metric file is inadequate (dimension other than 3).";
+  case 8:
+    return error + "the metric file is inadequate (values not per vertices).";
+  case 9:
+      return error + "the metric file contains more than one field.";
+  case 10:
+    return error + "the number of values in the \".bb\" (metric file) is incompatible with the expected"
+      "value of number of mesh vertices in the \".noboite\" file.";
+  case 12:
+    return error + "Too many sub-domains";
+  case 13:
+    return error + "the number of vertices is negative or null.";
+  case 14:
+    return error + "the number of faces is negative or null.";
+  case 15:
+    return error + "A facehas a null vertex.";
+  case 22:
+    return error + "incompatible data";
+  case 131:
+    return error + "the number of vertices is negative or null.";
+  case 132:
+    return error + "the number of vertices is negative or null (in the \".mesh\" file).";
+  case 133:
+    return error + "the number of faces is negative or null.";
+  case 1000:
+    return error + "A face appears more than once in the input surface mesh.";
+  case 1001:
+    return error + "An edge appears more than once in the input surface mesh.";
+  case 1002:
+    return error + "A face has a vertex negative or null.";
+  case 1003:
+    return error + "NOT ENOUGH MEMORY";
+  case 2000:
+    return error + "Not enough available memory.";
+  case 2002:
+    return error + "Some initial points cannot be inserted. The surface mesh is probably very bad "
+      "in terms of quality or the input list of points is wrong";
+  case 2003:
+    return error + "Some vertices are too close to one another or coincident.";
+  case 2004:
+    return error + "Some vertices are too close to one another or coincident.";
+  case 2012:
+    return error + "A vertex cannot be inserted.";
+  case 2014:
+    return error + "There are at least two points considered as coincident";
+  case 2103:
+    return error + "Some vertices are too close to one another or coincident";
+  case 3000:
+    return error + "The surface mesh regeneration step has failed";
+  case 3009:
+    return error + "Constrained edge cannot be enforced";
+  case 3019:
+    return error + "Constrained face cannot be enforced";
+  case 3029:
+    return error + "Missing faces";
+  case 3100:
+    return error + "No guess to start the definition of the connected component(s)";
+  case 3101:
+    return error + "The surface mesh includes at least one hole. The domain is not well defined";
+  case 3102:
+    return error + "Impossible to define a component";
+  case 3103:
+    return error + "The surface edge intersects another surface edge";
+  case 3104:
+    return error + "The surface edge intersects the surface face";
+  case 3105:
+    return error + "One boundary point lies within a surface face";
+  case 3106:
+    return error + "One surface edge intersects a surface face";
+  case 3107:
+    return error + "One boundary point lies within a surface edge";
+  case 3108:
+    return error + "Insufficient memory ressources detected due to a bad quality surface mesh leading "
+      "to too many swaps";
+  case 3109:
+    return error + "Edge is unique (i.e., bounds a hole in the surface)";
+  case 3122:
+    return error + "Presumably, the surface mesh is not compatible with the domain being processed";
+  case 3123:
+    return error + "Too many components, too many sub-domain";
+  case 3209:
+    return error + "The surface mesh includes at least one hole. "
+      "Therefore there is no domain properly defined";
+  case 3300:
+    return error + "Statistics.";
+  case 3400:
+    return error + "Statistics.";
+  case 3500:
+    return error + "Warning, it is dramatically tedious to enforce the boundary items";
+  case 4000:
+    return error + "Not enough memory at this time, nevertheless, the program continues. "
+      "The expected mesh will be correct but not really as large as required";
+  case 4002:
+    return error + "see above error code, resulting quality may be poor.";
+  case 4003:
+    return error + "Not enough memory at this time, nevertheless, the program continues (warning)";
+  case 8000:
+    return error + "Unknown face type.";
+  case 8005:
+  case 8006:
+    return error + errorLine.SubString( beg + 5, errorLine.Length()) +
+      ": End of file. Some data are missing in the file.";
+  case 9000:
+    return error + "A too small volume element is detected";
+  case 9001:
+    return error + "There exists at least a null or negative volume element";
+  case 9002:
+    return error + "There exist null or negative volume elements";
+  case 9003:
+    return error + "A too small volume element is detected. A face is considered being degenerated";
+  case 9100:
+    return error + "Some element is suspected to be very bad shaped or wrong";
+  case 9102:
+    return error + "A too bad quality face is detected. This face is considered degenerated";
+  case 9112:
+    return error + "A too bad quality face is detected. This face is degenerated";
+  case 9122:
+    return error + "Presumably, the surface mesh is not compatible with the domain being processed";
+  case 9999:
+    return error + "Abnormal error occured, contact hotline";
+  case 23600:
+    return error + "Not enough memory for the face table";
+  case 23601:
+    return error + "The algorithm cannot run further. "
+      "The surface mesh is probably very bad in terms of quality.";
+  case 23602:
+    return error + "Bad vertex number";
+  }
+  return errorLine;
+}
+
 //=============================================================================
 /*!
  *Here we are going to use the GHS3D mesher
@@ -892,7 +1063,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
          findLineContaing( " ERR ",aLogFileName,foundLine))
     {
       foundLine.LeftAdjust();
-      comment << foundLine;
+      comment << translateError( foundLine );
     }
     else if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
     {
@@ -901,7 +1072,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     if ( comment.empty() )
       comment << "See " << aLogFileName << " for problem description";
     else
-      comment << "See " << aLogFileName << " for more information";
+      comment << "\nSee " << aLogFileName << " for more information";
     error(COMPERR_ALGO_FAILED, comment);
   }
   else
@@ -1042,7 +1213,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
          findLineContaing( " ERR ",aLogFileName,foundLine))
     {
       foundLine.LeftAdjust();
-      comment << foundLine;
+      comment << translateError( foundLine );
     }
     else if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
     {
@@ -1051,7 +1222,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     if ( comment.empty() )
       comment << "See " << aLogFileName << " for problem description";
     else
-      comment << "See " << aLogFileName << " for more information";
+      comment << "\nSee " << aLogFileName << " for more information";
     error(COMPERR_ALGO_FAILED, comment);
   }
   else {
