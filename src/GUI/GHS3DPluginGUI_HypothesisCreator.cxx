@@ -132,7 +132,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myMaximumMemoryCheck = new QCheckBox( tr("MAX_MEMORY_SIZE"), myAdvGroup );
 
   myMaximumMemorySpin = new QSpinBox( myAdvGroup );
-  myMaximumMemorySpin->setMinValue( 20 );
+  myMaximumMemorySpin->setMinValue( 1 );
   myMaximumMemorySpin->setMaxValue( maxAvailableMemory() );
   myMaximumMemorySpin->setLineStep( 10 );
   new QLabel( tr("MEGABYTE"), myAdvGroup);
@@ -140,7 +140,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myInitialMemoryCheck = new QCheckBox( tr("INIT_MEMORY_SIZE"), myAdvGroup );
 
   myInitialMemorySpin = new QSpinBox( myAdvGroup );
-  myInitialMemorySpin->setMinValue( 20 );
+  myInitialMemorySpin->setMinValue( 1 );
   myInitialMemorySpin->setMaxValue( maxAvailableMemory() );
   myInitialMemorySpin->setLineStep( 10 );
   new QLabel( tr("MEGABYTE"), myAdvGroup);
