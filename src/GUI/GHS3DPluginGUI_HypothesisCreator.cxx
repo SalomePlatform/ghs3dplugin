@@ -269,13 +269,20 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
     if( isCreation() )
       SMESH::SetName( SMESH::FindSObject( h ), h_data.myName.latin1() );
 
-    h->SetToMeshHoles      ( h_data.myToMeshHoles       );
-    h->SetMaximumMemory    ( h_data.myMaximumMemory     );
-    h->SetInitialMemory    ( h_data.myInitialMemory     );
-    h->SetInitialMemory    ( h_data.myInitialMemory     );
-    h->SetOptimizationLevel( h_data.myOptimizationLevel );
-    h->SetKeepFiles        ( h_data.myKeepFiles         );
-    h->SetWorkingDirectory ( h_data.myWorkingDir        );
+    if ( h->GetToMeshHoles() != h_data.myToMeshHoles ) // avoid duplication of DumpPython commands
+      h->SetToMeshHoles      ( h_data.myToMeshHoles       );
+    if ( h->GetMaximumMemory() != h_data.myMaximumMemory )
+      h->SetMaximumMemory    ( h_data.myMaximumMemory     );
+    if ( h->GetInitialMemory() != h_data.myInitialMemory )
+      h->SetInitialMemory    ( h_data.myInitialMemory     );
+    if ( h->GetInitialMemory() != h_data.myInitialMemory )
+      h->SetInitialMemory    ( h_data.myInitialMemory     );
+    if ( h->GetOptimizationLevel() != h_data.myOptimizationLevel )
+      h->SetOptimizationLevel( h_data.myOptimizationLevel );
+    if ( h->GetKeepFiles() != h_data.myKeepFiles )
+      h->SetKeepFiles        ( h_data.myKeepFiles         );
+    if (h->GetWorkingDirectory() != h_data.myWorkingDir )
+      h->SetWorkingDirectory ( h_data.myWorkingDir        );
   }
   catch(const SALOME::SALOME_Exception& ex)
   {
