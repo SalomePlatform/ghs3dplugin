@@ -63,7 +63,10 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToMeshHoles()
 //=======================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetMaximumMemory(CORBA::Short MB)
+   throw ( SALOME::SALOME_Exception )
 {
+  if ( MB == 0 )
+    THROW_SALOME_CORBA_EXCEPTION( "Invalid memory size",SALOME::BAD_PARAM );
   ASSERT(myBaseImpl);
   this->GetImpl()->SetMaximumMemory(MB);
   SMESH::TPythonDump() << _this() << ".SetMaximumMemory( " << MB << " )";
@@ -84,7 +87,10 @@ CORBA::Short GHS3DPlugin_Hypothesis_i::GetMaximumMemory()
 //=======================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetInitialMemory(CORBA::Short MB)
+  throw ( SALOME::SALOME_Exception )
 {
+  if ( MB == 0 )
+    THROW_SALOME_CORBA_EXCEPTION( "Invalid memory size",SALOME::BAD_PARAM );
   ASSERT(myBaseImpl);
   this->GetImpl()->SetInitialMemory(MB);
   SMESH::TPythonDump() << _this() << ".SetInitialMemory( " << MB << " )";
