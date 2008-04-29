@@ -156,12 +156,12 @@ static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
 
   gp_Pnt aPnt(pntCoor[0], pntCoor[1], pntCoor[2]);
   BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
-  if ( not(SC.State() == TopAbs_IN) ) {
+  if ( SC.State() != TopAbs_IN || aShape.IsNull() || aShape.ShapeType() != TopAbs_SOLID) {
     for (iShape = 0; iShape < nShape; iShape++) {
       aShape = shape[iShape];
-      if ( not( pntCoor[0] < box[iShape][0] || box[iShape][1] < pntCoor[0] ||
-                pntCoor[1] < box[iShape][2] || box[iShape][3] < pntCoor[1] ||
-                pntCoor[2] < box[iShape][4] || box[iShape][5] < pntCoor[2]) ) {
+      if ( !( pntCoor[0] < box[iShape][0] || box[iShape][1] < pntCoor[0] ||
+              pntCoor[1] < box[iShape][2] || box[iShape][3] < pntCoor[1] ||
+              pntCoor[2] < box[iShape][4] || box[iShape][5] < pntCoor[2]) ) {
         BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
         if (SC.State() == TopAbs_IN)
           break;
@@ -258,13 +258,13 @@ static bool writeFaces (ofstream &            theFile,
         break;
       }
     }
-    if ( not idFound ) {
+    if ( ! idFound ) {
       tabID[i]    = shapeID;
       tabShape[i] = aShape;
     }
   }
   for ( int i =0; i < nbShape; i++ ) {
-    if ( not (tabID[i] == 0) ) {
+    if ( tabID[i] != 0 ) {
       aShape      = tabShape[i];
       shapeID     = tabID[i];
       theSubMesh  = theMesh->MeshElements( aShape );
@@ -573,7 +573,7 @@ static bool readResultFile(const int                       fileOpen,
   // Reading the number of triangles which corresponds to the number of shapes
   nbTriangle = strtol(ptr, &ptr, 10);
 
-  for (int i=0; i < 3*nbShape; i++)
+  for (int i=0; i < 3*nbTriangle; i++)
     triangleId = strtol(ptr, &ptr, 10);
 
   shapePtr = ptr;
@@ -589,21 +589,44 @@ static bool readResultFile(const int                       fileOpen,
     }
     aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
     if ( nbShape > 1 ) {
-      ghs3dShapeID = strtol(shapePtr, &shapePtr, 10) - IdShapeRef;
-      if ( tabID[ ghs3dShapeID ] == 0 ) {
-        if (iElem == 0)
-          aSolid = tabShape[0];
-        aSolid = findShape(node, aSolid, tabShape, tabBox, nbShape);
-        shapeID = theMeshDS->ShapeToIndex( aSolid );
-        tabID[ ghs3dShapeID ] = shapeID;
+      if ( nbTriangle > 1 ) {
+        ghs3dShapeID = strtol(shapePtr, &shapePtr, 10) - IdShapeRef;
+        if ( tabID[ ghs3dShapeID ] == 0 ) {
+          if (iElem == 0)
+            aSolid = tabShape[0];
+          aSolid = findShape(node, aSolid, tabShape, tabBox, nbShape);
+          shapeID = theMeshDS->ShapeToIndex( aSolid );
+          tabID[ ghs3dShapeID ] = shapeID;
+        }
+        else
+          shapeID = tabID[ ghs3dShapeID ];
       }
-      else
-        shapeID = tabID[ ghs3dShapeID ];
+      else {
+        // Case where nbTriangle == 1 while nbShape == 2 encountered
+        // with compound of 2 boxes and "To mesh holes"==False,
+        // so there are no subdomains specified for each tetrahedron.
+        // Try to guess a solid by a node already bound to shape
+        shapeID = 0;
+        for ( int i=0; i<4 && shapeID==0; i++ ) {
+          if ( nodeAssigne[ nodeID[i] ] == 1 &&
+               node[i]->GetPosition()->GetTypeOfPosition() == SMDS_TOP_3DSPACE &&
+               node[i]->GetPosition()->GetShapeId() > 1 )
+          {
+            shapeID = node[i]->GetPosition()->GetShapeId();
+          }
+        }
+        if ( shapeID==0 ) {
+          aSolid = findShape(node, aSolid, tabShape, tabBox, nbShape);
+          shapeID = theMeshDS->ShapeToIndex( aSolid );
+        }
+      }
     }
     // set new nodes and tetrahedron on to the shape
     for ( int i=0; i<4; i++ ) {
-      if ( nodeAssigne[ nodeID[i] ] == 0 )
+      if ( nodeAssigne[ nodeID[i] ] == 0 ) {
         theMeshDS->SetNodeInVolume( node[i], shapeID );
+        nodeAssigne[ nodeID[i] ] = 1;
+      }
     }
     theMeshDS->SetMeshElementOnShape( aTet, shapeID );
   }
@@ -617,6 +640,7 @@ static bool readResultFile(const int                       fileOpen,
   delete [] nodeID;
   delete [] coord;
   delete [] node;
+  delete [] nodeAssigne;
 
   return true;
 }
