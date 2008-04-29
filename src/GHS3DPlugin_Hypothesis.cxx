@@ -176,9 +176,9 @@ bool GHS3DPlugin_Hypothesis::GetKeepFiles() const
 //function : DefaultMeshHoles
 //=======================================================================
 
-bool   GHS3DPlugin_Hypothesis::DefaultMeshHoles()
+bool GHS3DPlugin_Hypothesis::DefaultMeshHoles()
 {
-  return true;
+  return false; // PAL19680
 }
 
 //=======================================================================
