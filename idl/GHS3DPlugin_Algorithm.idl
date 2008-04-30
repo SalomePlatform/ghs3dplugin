@@ -79,6 +79,34 @@ module GHS3DPlugin
      */
     void SetKeepFiles(in boolean toKeep);
     boolean GetKeepFiles();
+    /*!
+     * Verbose level [0-10]
+     *  0 - no standard output,
+     *  2 - prints the data, quality statistics of the skin and final meshes and
+     *     indicates when the final mesh is being saved. In addition the software
+     *     gives indication regarding the CPU time.
+     * 10 - same as 2 plus the main steps in the computation, quality statistics
+     *     histogram of the skin mesh, quality statistics histogram together with
+     *     the characteristics of the final mesh.
+     */
+    void SetVerboseLevel(in short level);
+    short GetVerboseLevel();
+    /*!
+     * To create new nodes
+     */
+    void SetToCreateNewNodes(in boolean toCreate);
+    boolean GetToCreateNewNodes();
+    /*!
+     * To use boundary recovery version which tries to create mesh on a very poor
+     * quality surface mesh
+     */
+    void SetToUseBoundaryRecoveryVersion(in boolean toUse);
+    boolean GetToUseBoundaryRecoveryVersion();
+    /*!
+     * To set hiden/undocumented/advanced options
+     */
+    void SetTextOption(in string option);
+    string GetTextOption();
   };
 };
 

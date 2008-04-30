@@ -74,8 +74,17 @@ msgstr "..."
 msgid "KEEP_WORKING_FILES"
 msgstr "To keep working files"
 
-msgid ""
-msgstr ""
+msgid "VERBOSE_LEVEL"
+msgstr "Verbose level"
+
+msgid "TO_ADD_NODES"
+msgstr "To create new nodes"
+
+msgid "RECOVERY_VERSION"
+msgstr "To use boundary recovery version"
+
+msgid "TEXT_OPTION"
+msgstr "Option as text"
 
 
 msgid "GHS3D_HYPOTHESIS"

@@ -37,12 +37,15 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   _name = "GHS3D_Parameters";
   _param_algo_dim = 3;
 
-  myToMeshHoles       = DefaultMeshHoles();        
-  myMaximumMemory     = -1;//DefaultMaximumMemory();    
-  myInitialMemory     = -1;//DefaultInitialMemory();    
-  myOptimizationLevel = DefaultOptimizationLevel();
-  myWorkingDirectory  = DefaultWorkingDirectory(); 
-  myKeepFiles         = DefaultKeepFiles();        
+  myToMeshHoles                  = DefaultMeshHoles();        
+  myMaximumMemory                = -1;//DefaultMaximumMemory();    
+  myInitialMemory                = -1;//DefaultInitialMemory();    
+  myOptimizationLevel            = DefaultOptimizationLevel();
+  myWorkingDirectory             = DefaultWorkingDirectory(); 
+  myKeepFiles                    = DefaultKeepFiles();
+  myVerboseLevel                 = DefaultVerboseLevel();
+  myToCreateNewNodes             = DefaultToCreateNewNodes();
+  myToUseBoundaryRecoveryVersion = DefaultToUseBoundaryRecoveryVersion();
 }
 
 //=======================================================================
@@ -134,7 +137,7 @@ GHS3DPlugin_Hypothesis::OptimizationLevel GHS3DPlugin_Hypothesis::GetOptimizatio
 //function : SetWorkingDirectory
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis::SetWorkingDirectory(string path)
+void GHS3DPlugin_Hypothesis::SetWorkingDirectory(const string& path)
 {
   if ( myWorkingDirectory != path ) {
     myWorkingDirectory = path;
@@ -171,6 +174,91 @@ bool GHS3DPlugin_Hypothesis::GetKeepFiles() const
 {
   return myKeepFiles;
 }
+
+//=======================================================================
+//function : SetVerboseLevel
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetVerboseLevel(short level)
+{
+  if ( myVerboseLevel != level ) {
+    myVerboseLevel = level;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetVerboseLevel
+//=======================================================================
+
+short GHS3DPlugin_Hypothesis::GetVerboseLevel() const
+{
+  return myVerboseLevel;
+}
+
+//=======================================================================
+//function : SetToCreateNewNodes
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetToCreateNewNodes(bool toCreate)
+{
+  if ( myToCreateNewNodes != toCreate ) {
+    myToCreateNewNodes = toCreate;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetToCreateNewNodes
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::GetToCreateNewNodes() const
+{
+  return myToCreateNewNodes;
+}
+
+//=======================================================================
+//function : SetToUseBoundaryRecoveryVersion
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetToUseBoundaryRecoveryVersion(bool toUse)
+{
+  if ( myToUseBoundaryRecoveryVersion != toUse ) {
+    myToUseBoundaryRecoveryVersion = toUse;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetToUseBoundaryRecoveryVersion
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::GetToUseBoundaryRecoveryVersion() const
+{
+  return myToUseBoundaryRecoveryVersion;
+}
+
+//=======================================================================
+//function : SetTextOption
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetTextOption(const string& option)
+{
+  if ( myTextOption != option ) {
+    myTextOption = option;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetTextOption
+//=======================================================================
+
+string GHS3DPlugin_Hypothesis::GetTextOption() const
+{
+  return myTextOption;
+}
+
 
 //=======================================================================
 //function : DefaultMeshHoles
@@ -252,17 +340,48 @@ bool   GHS3DPlugin_Hypothesis::DefaultKeepFiles()
 }
 
 //=======================================================================
+//function : DefaultVerboseLevel
+//=======================================================================
+
+short  GHS3DPlugin_Hypothesis::DefaultVerboseLevel()
+{
+  return 10;
+}
+
+//=======================================================================
+//function : DefaultToCreateNewNodes
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::DefaultToCreateNewNodes()
+{
+  return true;
+}
+
+//=======================================================================
+//function : DefaultToUseBoundaryRecoveryVersion
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::DefaultToUseBoundaryRecoveryVersion()
+{
+  return false;
+}
+
+//=======================================================================
 //function : SaveTo
 //=======================================================================
 
 ostream & GHS3DPlugin_Hypothesis::SaveTo(ostream & save)
 {
-  save << (int) myToMeshHoles   << " ";
-  save << myMaximumMemory     << " ";
-  save << myInitialMemory     << " ";
-  save << myOptimizationLevel << " ";
-  save << myWorkingDirectory  << " ";
-  save << (int)myKeepFiles    << " ";
+  save << (int) myToMeshHoles                 << " ";
+  save << myMaximumMemory                     << " ";
+  save << myInitialMemory                     << " ";
+  save << myOptimizationLevel                 << " ";
+  save << myWorkingDirectory                  << " ";
+  save << (int)myKeepFiles                    << " ";
+  save << myVerboseLevel                      << " ";
+  save << (int)myToCreateNewNodes             << " ";
+  save << (int)myToUseBoundaryRecoveryVersion << " ";
+  save << myTextOption                        << " ";
   return save;
 }
 
@@ -304,20 +423,38 @@ istream & GHS3DPlugin_Hypothesis::LoadFrom(istream & load)
     if ( myWorkingDirectory == "0") { // myWorkingDirectory was empty
       myKeepFiles = false;
       myWorkingDirectory.clear();
-      return load;
     }
     else if ( myWorkingDirectory == "1" ) {
       myKeepFiles = true;
       myWorkingDirectory.clear();
-      return load;
     }
   }
   else
     load.clear(ios::badbit | load.rdstate());
 
+  if ( !myWorkingDirectory.empty() ) {
+    isOK = (load >> i);
+    if (isOK)
+      myKeepFiles = i;
+    else
+      load.clear(ios::badbit | load.rdstate());
+  }
+
   isOK = (load >> i);
   if (isOK)
-    myKeepFiles = i;
+    myVerboseLevel = (short) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
+
+  isOK = (load >> i);
+  if (isOK)
+    myToCreateNewNodes = (bool) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
+
+  isOK = (load >> myTextOption);
+  if (isOK)
+    ;
   else
     load.clear(ios::badbit | load.rdstate());
 
@@ -346,38 +483,79 @@ string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp)
 #else
   TCollection_AsciiString cmd( "ghs3d.exe" );
 #endif
+  // check if any option is overridden by hyp->myTextOption
+  bool m = hyp ? ( hyp->myTextOption.find("-m") == string::npos ) : true;
+  bool M = hyp ? ( hyp->myTextOption.find("-M") == string::npos ) : true;
+  bool c = hyp ? ( hyp->myTextOption.find("-c") == string::npos ) : true;
+  bool o = hyp ? ( hyp->myTextOption.find("-o") == string::npos ) : true;
+  bool p0= hyp ? ( hyp->myTextOption.find("-p0")== string::npos ) : true;
+  bool C = hyp ? ( hyp->myTextOption.find("-C") == string::npos ) : true;
+  bool v = hyp ? ( hyp->myTextOption.find("-v") == string::npos ) : true;
+
+  // if use boundary recovery version, few options are allowed
+  bool useBndRecovery = !C;
+  if ( !useBndRecovery && hyp )
+    useBndRecovery = hyp->myToUseBoundaryRecoveryVersion;
 
   // ghs3d needs to know amount of memory it may use (MB).
   // Default memory is defined at ghs3d installation but it may be not enough,
   // so allow to use about all available memory
-  short aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
-  cmd += " -m ";
-  if ( aMaximumMemory < 0 )
-    cmd += DefaultMaximumMemory();
-  else
-    cmd += aMaximumMemory;
-  short aInitialMemory = hyp ? hyp->myInitialMemory : -1;
-  cmd += " -M ";
-  if ( aInitialMemory > 0 )
-    cmd += aInitialMemory;
-  else
-    cmd += "100";
-
+  if ( m ) {
+    short aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
+    cmd += " -m ";
+    if ( aMaximumMemory < 0 )
+      cmd += DefaultMaximumMemory();
+    else
+      cmd += aMaximumMemory;
+  }
+  if ( M && !useBndRecovery ) {
+    short aInitialMemory = hyp ? hyp->myInitialMemory : -1;
+    cmd += " -M ";
+    if ( aInitialMemory > 0 )
+      cmd += aInitialMemory;
+    else
+      cmd += "100";
+  }
   // component to mesh
   // 0 , all components to be meshed
   // 1 , only the main ( outermost ) component to be meshed
-  bool aToMeshHoles = hyp ? hyp->myToMeshHoles : DefaultMeshHoles();
-  if ( aToMeshHoles )
-    cmd += " -c 0";
-  else
-    cmd += " -c 1";
+  if ( c && !useBndRecovery ) {
+    bool aToMeshHoles = hyp ? hyp->myToMeshHoles : DefaultMeshHoles();
+    if ( aToMeshHoles )
+      cmd += " -c 0";
+    else
+      cmd += " -c 1";
+  }
 
   // optimization level
-  short aOptimizationLevel = hyp ? hyp->myOptimizationLevel : DefaultOptimizationLevel();
-  if ( aOptimizationLevel >= 0 && aOptimizationLevel < 4 ) {
-    char* level[] = { "none" , "light" , "standard" , "strong" };
-    cmd += " -o ";
-    cmd += level[ aOptimizationLevel ];
+  if ( o && hyp && !useBndRecovery ) {
+    if ( hyp->myOptimizationLevel >= 0 && hyp->myOptimizationLevel < 4 ) {
+      char* level[] = { "none" , "light" , "standard" , "strong" };
+      cmd += " -o ";
+      cmd += level[ hyp->myOptimizationLevel ];
+    }
+  }
+
+  // to create internal nodes
+  if ( p0 && hyp && !hyp->myToCreateNewNodes ) {
+    cmd += " -p0";
+  }
+
+  // verbose mode
+  if ( v && hyp ) {
+    cmd += " -v ";
+    cmd += hyp->myVerboseLevel;
+  }
+
+  // boundary recovery version
+  if ( useBndRecovery ) {
+    cmd += " -C";
+  }
+
+  // options as text
+  if ( hyp && !hyp->myTextOption.empty() ) {
+    cmd += " ";
+    cmd += (char*) hyp->myTextOption.c_str();
   }
 
   return cmd.ToCString();

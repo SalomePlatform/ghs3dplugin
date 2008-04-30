@@ -128,33 +128,76 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   // advanced parameters
   myAdvGroup = new QGroupBox( 3, Qt::Horizontal, fr, "myAdvGroup" );
   lay->addWidget( myAdvGroup );
+  QFrame* anAdvFrame = new QFrame(myAdvGroup, "anAdvFrame");
+  QGridLayout* anAdvLayout = new QGridLayout(anAdvFrame, 8, 3);
+  anAdvLayout->setSpacing(6);
+  anAdvLayout->setAutoAdd(false);
   
-  myMaximumMemoryCheck = new QCheckBox( tr("MAX_MEMORY_SIZE"), myAdvGroup );
+  myMaximumMemoryCheck = new QCheckBox( tr("MAX_MEMORY_SIZE"), anAdvFrame );
 
-  myMaximumMemorySpin = new QSpinBox( myAdvGroup );
+  myMaximumMemorySpin = new QSpinBox( anAdvFrame );
   myMaximumMemorySpin->setMinValue( 1 );
   myMaximumMemorySpin->setMaxValue( maxAvailableMemory() );
   myMaximumMemorySpin->setLineStep( 10 );
-  new QLabel( tr("MEGABYTE"), myAdvGroup);
+  QLabel* aMegabyteLabel = new QLabel( tr("MEGABYTE"), anAdvFrame);
 
-  myInitialMemoryCheck = new QCheckBox( tr("INIT_MEMORY_SIZE"), myAdvGroup );
+  myInitialMemoryCheck = new QCheckBox( tr("INIT_MEMORY_SIZE"), anAdvFrame );
 
-  myInitialMemorySpin = new QSpinBox( myAdvGroup );
+  myInitialMemorySpin = new QSpinBox( anAdvFrame );
   myInitialMemorySpin->setMinValue( 1 );
   myInitialMemorySpin->setMaxValue( maxAvailableMemory() );
   myInitialMemorySpin->setLineStep( 10 );
-  new QLabel( tr("MEGABYTE"), myAdvGroup);
 
-  new QLabel( tr( "WORKING_DIR" ), myAdvGroup );
-  QPushButton* dirBtn = new QPushButton( tr( "SELECT_DIR"), myAdvGroup, "dirBtn");
-  myWorkingDir = new QLineEdit( myAdvGroup, "myWorkingDir");
+  QLabel* aWorkinDirLabel = new QLabel( tr( "WORKING_DIR" ), anAdvFrame );
+  QPushButton* dirBtn = new QPushButton( tr( "SELECT_DIR"), anAdvFrame, "dirBtn");
+  myWorkingDir = new QLineEdit( anAdvFrame, "myWorkingDir");
   myWorkingDir->setReadOnly( true );
   
-  myKeepFiles = new QCheckBox( tr( "KEEP_WORKING_FILES" ), myAdvGroup );
+  myKeepFiles = new QCheckBox( tr( "KEEP_WORKING_FILES" ), anAdvFrame );
+
+  QLabel* aVerboseLevelLabel = new QLabel( tr("VERBOSE_LEVEL"), anAdvFrame);
+  myVerboseLevelSpin = new QSpinBox( anAdvFrame );
+  myVerboseLevelSpin->setMinValue( 0 );
+  myVerboseLevelSpin->setMaxValue( 10 );
+  myVerboseLevelSpin->setLineStep( 1 );
+
+  myToCreateNewNodesCheck = new QCheckBox( tr( "TO_ADD_NODES" ), anAdvFrame );
   
+  myBoundaryRecoveryCheck = new QCheckBox( tr( "RECOVERY_VERSION" ), anAdvFrame );
+
+  QLabel* aTextOptionLabel = new QLabel( tr( "TEXT_OPTION" ), anAdvFrame );
+  myTextOption = new QLineEdit( anAdvFrame, "myTextOption");
+
+
+  anAdvLayout->addWidget(myMaximumMemoryCheck, 0, 0);
+  anAdvLayout->addWidget(myMaximumMemorySpin,  0, 1);
+  anAdvLayout->addWidget(aMegabyteLabel,       0, 2);
+
+  anAdvLayout->addWidget(myInitialMemoryCheck, 1, 0);
+  anAdvLayout->addWidget(myInitialMemorySpin,  1, 1);
+  anAdvLayout->addWidget(aMegabyteLabel,       1, 2);
+
+  anAdvLayout->addWidget(aWorkinDirLabel,      2, 0);
+  anAdvLayout->addWidget(dirBtn,               2, 1);
+  anAdvLayout->addWidget(myWorkingDir,         2, 2);
+
+  anAdvLayout->addWidget(myKeepFiles,          3, 0);
+  
+  anAdvLayout->addWidget(aVerboseLevelLabel,   4, 0);
+  anAdvLayout->addWidget(myVerboseLevelSpin,   4, 1);
+  
+  anAdvLayout->addWidget(myToCreateNewNodesCheck, 5, 0);
+
+  anAdvLayout->addMultiCellWidget(myBoundaryRecoveryCheck, 6, 6, 0, 1);
+
+  anAdvLayout->addWidget(aTextOptionLabel,     7, 0);
+  anAdvLayout->addMultiCellWidget(myTextOption,7, 7, 1, 2);
+  
+
   connect( tab,                  SIGNAL( selected(int) ), this, SLOT( onTabSelected(int) ) );
-  connect( myMaximumMemoryCheck, SIGNAL( toggled(bool) ), this, SLOT( onMemCheckToggled(bool) ));
-  connect( myInitialMemoryCheck, SIGNAL( toggled(bool) ), this, SLOT( onMemCheckToggled(bool) ));
+  connect( myMaximumMemoryCheck, SIGNAL( toggled(bool) ), this, SLOT( onCheckToggled(bool) ));
+  connect( myInitialMemoryCheck, SIGNAL( toggled(bool) ), this, SLOT( onCheckToggled(bool) ));
+  connect( myBoundaryRecoveryCheck,SIGNAL(toggled(bool)), this, SLOT( onCheckToggled(bool) ));
   connect( dirBtn,               SIGNAL( clicked() ),     this, SLOT( onDirBtnClicked() ) );
   
   return fr;
@@ -174,12 +217,22 @@ void GHS3DPluginGUI_HypothesisCreator::onTabSelected(int tab)
   dlg()->adjustSize();
 }
 
-void GHS3DPluginGUI_HypothesisCreator::onMemCheckToggled(bool on)
+void GHS3DPluginGUI_HypothesisCreator::onCheckToggled(bool on)
 {
-  if ( sender() == myMaximumMemoryCheck )
+  const QObject * aSender = sender();
+  if ( aSender == myMaximumMemoryCheck )
     myMaximumMemorySpin->setEnabled( on );
-  else
+
+  else if ( aSender == myInitialMemoryCheck )
     myInitialMemorySpin->setEnabled( on );
+
+  else if ( aSender == myBoundaryRecoveryCheck ) {
+    myOptimizationLevelCombo->setEnabled( !on );
+    myInitialMemorySpin->setEnabled( myInitialMemoryCheck->isChecked() && !on );
+    myInitialMemoryCheck->setEnabled( !on );
+    myOptimizationLevelCombo->setEnabled( !on );
+  }
+ 
 }
 
 void GHS3DPluginGUI_HypothesisCreator::onDirBtnClicked()
@@ -213,14 +266,24 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   myToMeshHolesCheck      ->setChecked    ( data.myToMeshHoles );
   myOptimizationLevelCombo->setCurrentItem( data.myOptimizationLevel );
   myMaximumMemoryCheck    ->setChecked    ( data.myMaximumMemory > 0 );
-  myMaximumMemorySpin     ->setValue      ( std::max( data.myMaximumMemory, myMaximumMemorySpin->minValue() ));
+  myMaximumMemorySpin     ->setValue      ( std::max( data.myMaximumMemory,
+                                                      myMaximumMemorySpin->minValue() ));
   myInitialMemoryCheck    ->setChecked    ( data.myInitialMemory > 0 );
-  myInitialMemorySpin     ->setValue      ( std::max( data.myInitialMemory, myInitialMemorySpin->minValue() ));
+  myInitialMemorySpin     ->setValue      ( std::max( data.myInitialMemory,
+                                                      myInitialMemorySpin->minValue() ));
   myWorkingDir            ->setText       ( data.myWorkingDir );
   myKeepFiles             ->setChecked    ( data.myKeepFiles );
+  myVerboseLevelSpin      ->setValue      ( data.myVerboseLevel );
+  myToCreateNewNodesCheck ->setChecked    ( data.myToCreateNewNodes );
+  myBoundaryRecoveryCheck ->setChecked    ( data.myBoundaryRecovery );
+  myTextOption            ->setText       ( data.myTextOption );
 
-  myMaximumMemorySpin->setEnabled( myMaximumMemoryCheck->isChecked() );
-  myInitialMemorySpin->setEnabled( myInitialMemoryCheck->isChecked() );
+  myOptimizationLevelCombo->setEnabled    ( !data.myBoundaryRecovery );
+  myMaximumMemorySpin     ->setEnabled    ( myMaximumMemoryCheck->isChecked() );
+  myInitialMemorySpin     ->setEnabled    ( myInitialMemoryCheck->isChecked() &&
+                                            !data.myBoundaryRecovery );
+  myInitialMemoryCheck    ->setEnabled    (!data.myBoundaryRecovery );
+  myOptimizationLevelCombo->setEnabled    (!data.myBoundaryRecovery );
 }
 
 QString GHS3DPluginGUI_HypothesisCreator::storeParams() const
@@ -229,13 +292,36 @@ QString GHS3DPluginGUI_HypothesisCreator::storeParams() const
   readParamsFromWidgets( data );
   storeParamsToHypo( data );
   
-  QString valStr = " -c " + QString::number( !data.myToMeshHoles );
-  if ( data.myOptimizationLevel >= 0 && data.myOptimizationLevel < 4 ) {
+  QString valStr = "";
+
+  if ( !data.myBoundaryRecovery )
+    valStr = "-c " + QString::number( !data.myToMeshHoles );
+
+  if ( data.myOptimizationLevel >= 0 && data.myOptimizationLevel < 4 && !data.myBoundaryRecovery) {
     char* level[] = { "none" , "light" , "standard" , "strong" };
     valStr += " -o ";
     valStr += level[ data.myOptimizationLevel ];
   }
-  
+  if ( data.myMaximumMemory > 0 ) {
+    valStr += " -m ";
+    valStr += QString::number( data.myMaximumMemory );
+  }
+  if ( data.myInitialMemory > 0 && !data.myBoundaryRecovery ) {
+    valStr += " -M ";
+    valStr += QString::number( data.myInitialMemory );
+  }
+  valStr += " -v ";
+  valStr += QString::number( data.myVerboseLevel );
+
+  if ( !data.myToCreateNewNodes )
+    valStr += " -p0";
+
+  if ( data.myBoundaryRecovery )
+    valStr += " -C";
+
+  valStr += " ";
+  valStr += data.myTextOption;
+
   return valStr;
 }
 
@@ -254,6 +340,10 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   h_data.myOptimizationLevel = h->GetOptimizationLevel();
   h_data.myKeepFiles         = h->GetKeepFiles();
   h_data.myWorkingDir        = h->GetWorkingDirectory();
+  h_data.myVerboseLevel      = h->GetVerboseLevel();
+  h_data.myToCreateNewNodes  = h->GetToCreateNewNodes();
+  h_data.myBoundaryRecovery  = h->GetToUseBoundaryRecoveryVersion();
+  h_data.myTextOption        = h->GetTextOption();
   
   return true;
 }
@@ -281,8 +371,16 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       h->SetOptimizationLevel( h_data.myOptimizationLevel );
     if ( h->GetKeepFiles() != h_data.myKeepFiles )
       h->SetKeepFiles        ( h_data.myKeepFiles         );
-    if (h->GetWorkingDirectory() != h_data.myWorkingDir )
+    if ( h->GetWorkingDirectory() != h_data.myWorkingDir )
       h->SetWorkingDirectory ( h_data.myWorkingDir        );
+    if ( h->GetVerboseLevel() != h_data.myVerboseLevel )
+      h->SetVerboseLevel     ( h_data.myVerboseLevel );
+    if ( h->GetToCreateNewNodes() != h_data.myToCreateNewNodes )
+      h->SetToCreateNewNodes( h_data.myToCreateNewNodes );
+    if ( h->GetToUseBoundaryRecoveryVersion() != h_data.myBoundaryRecovery )
+      h->SetToUseBoundaryRecoveryVersion( h_data.myBoundaryRecovery );
+    if ( h->GetTextOption() != h_data.myTextOption )
+      h->SetTextOption       ( h_data.myTextOption );
   }
   catch(const SALOME::SALOME_Exception& ex)
   {
@@ -301,6 +399,10 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
   h_data.myOptimizationLevel = myOptimizationLevelCombo->currentItem();
   h_data.myKeepFiles         = myKeepFiles->isChecked();
   h_data.myWorkingDir        = myWorkingDir->text();
+  h_data.myVerboseLevel      = myVerboseLevelSpin->value();
+  h_data.myToCreateNewNodes  = myToCreateNewNodesCheck->isChecked();
+  h_data.myBoundaryRecovery  = myBoundaryRecoveryCheck->isChecked();
+  h_data.myTextOption        = myTextOption->text();
 
   return true;
 }

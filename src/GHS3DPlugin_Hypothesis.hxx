@@ -60,13 +60,41 @@ public:
   /*!
    * Path to working directory
    */
-  void SetWorkingDirectory(string path);
+  void SetWorkingDirectory(const string& path);
   string GetWorkingDirectory() const;
   /*!
    * To keep working files or remove them. Log file remains in case of errors anyway.
    */
   void SetKeepFiles(bool toKeep);
   bool GetKeepFiles() const;
+  /*!
+   * Verbose level [0-10]
+   *  0 - no standard output,
+   *  2 - prints the data, quality statistics of the skin and final meshes and
+   *     indicates when the final mesh is being saved. In addition the software
+   *     gives indication regarding the CPU time.
+   * 10 - same as 2 plus the main steps in the computation, quality statistics
+   *     histogram of the skin mesh, quality statistics histogram together with
+   *     the characteristics of the final mesh.
+   */
+  void SetVerboseLevel(short level);
+  short GetVerboseLevel() const;
+  /*!
+   * To create new nodes
+   */
+  void SetToCreateNewNodes(bool toCreate);
+  bool GetToCreateNewNodes() const;
+  /*!
+   * To use boundary recovery version which tries to create mesh on a very poor
+   * quality surface mesh
+   */
+  void SetToUseBoundaryRecoveryVersion(bool toUse);
+  bool GetToUseBoundaryRecoveryVersion() const;
+  /*!
+   * To set hiden/undocumented/advanced options
+   */
+  void SetTextOption(const string& option);
+  string GetTextOption() const;
 
   static bool   DefaultMeshHoles();
   static short  DefaultMaximumMemory();
@@ -74,6 +102,9 @@ public:
   static short  DefaultOptimizationLevel();
   static string DefaultWorkingDirectory();
   static bool   DefaultKeepFiles();
+  static short  DefaultVerboseLevel();
+  static bool   DefaultToCreateNewNodes();
+  static bool   DefaultToUseBoundaryRecoveryVersion();
 
   /*!
    * \brief Return command to run ghs3d mesher excluding file prefix (-f)
@@ -92,20 +123,22 @@ public:
 
   /*!
    * \brief Does nothing
-   * \param theMesh - the built mesh
-   * \param theShape - the geometry of interest
-   * \retval bool - always false
    */
   virtual bool SetParametersByMesh(const SMESH_Mesh* theMesh, const TopoDS_Shape& theShape);
 
 private:
 
-  bool        myToMeshHoles;
-  short       myMaximumMemory;
-  short       myInitialMemory;
-  short       myOptimizationLevel;
-  std::string myWorkingDirectory;
-  bool        myKeepFiles;
+  bool   myToMeshHoles;
+  short  myMaximumMemory;
+  short  myInitialMemory;
+  short  myOptimizationLevel;
+  bool   myKeepFiles;
+  string myWorkingDirectory;
+  short  myVerboseLevel;
+  bool   myToCreateNewNodes;
+  bool   myToUseBoundaryRecoveryVersion;
+  string myTextOption;
+  
 };
 
 

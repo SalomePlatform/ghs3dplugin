@@ -189,10 +189,96 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetKeepFiles()
   return this->GetImpl()->GetKeepFiles();
 }
 
+//=======================================================================
+//function : SetVerboseLevel
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetVerboseLevel(CORBA::Short level)
+  throw ( SALOME::SALOME_Exception )
+{
+  if (level < 0 || level > 10 )
+    THROW_SALOME_CORBA_EXCEPTION( "Invalid verbose level, valid range is [0-10]",
+                                  SALOME::BAD_PARAM );
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetVerboseLevel(level);
+  SMESH::TPythonDump() << _this() << ".SetVerboseLevel( " << level << " )";
+}
+
+//=======================================================================
+//function : GetVerboseLevel
+//=======================================================================
+
+CORBA::Short GHS3DPlugin_Hypothesis_i::GetVerboseLevel()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetVerboseLevel();
+}
+
+//=======================================================================
+//function : SetToCreateNewNodes
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetToCreateNewNodes(CORBA::Boolean toCreate)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetToCreateNewNodes(toCreate);
+  SMESH::TPythonDump() << _this() << ".SetToCreateNewNodes( " << toCreate << " )";
+}
+
+//=======================================================================
+//function : GetToCreateNewNodes
+//=======================================================================
+
+CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToCreateNewNodes()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetToCreateNewNodes();
+}
+
+//=======================================================================
+//function : SetToUseBoundaryRecoveryVersion
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetToUseBoundaryRecoveryVersion(CORBA::Boolean toUse)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetToUseBoundaryRecoveryVersion(toUse);
+  SMESH::TPythonDump() << _this() << ".SetToUseBoundaryRecoveryVersion( " << toUse << " )";
+}
+
+//=======================================================================
+//function : GetToUseBoundaryRecoveryVersion
+//=======================================================================
+
+CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToUseBoundaryRecoveryVersion()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetToUseBoundaryRecoveryVersion();
+}
+
+//=======================================================================
+//function : SetTextOption
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetTextOption(const char* option)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetTextOption(option);
+  SMESH::TPythonDump() << _this() << ".SetTextOption( '" << option << "' )";
+}
+
+//=======================================================================
+//function : GetTextOption
+//=======================================================================
+
+char* GHS3DPlugin_Hypothesis_i::GetTextOption()
+{
+  ASSERT(myBaseImpl);
+  return CORBA::string_dup( this->GetImpl()->GetTextOption().c_str() );
+}
+
 //=============================================================================
 /*!
- *  GHS3DPlugin_Hypothesis_i::GetImpl
- *
  *  Get implementation
  */
 //=============================================================================
@@ -205,10 +291,6 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetKeepFiles()
 //================================================================================
 /*!
  * \brief Verify whether hypothesis supports given entity type 
-  * \param type - dimension (see SMESH::Dimension enumeration)
-  * \retval CORBA::Boolean - TRUE if dimension is supported, FALSE otherwise
- * 
- * Verify whether hypothesis supports given entity type (see SMESH::Dimension enumeration)
  */
 //================================================================================  
 

@@ -1028,6 +1028,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     }
     return error(COMPERR_BAD_INPUT_MESH);
   }
+  OSD_File( aResultFileName ).Remove(); // needed for boundary recovery module usage
 
   // -----------------
   // run ghs3d mesher
@@ -1186,6 +1187,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     }
     return error(COMPERR_BAD_INPUT_MESH);
   }
+  OSD_File( aResultFileName ).Remove(); // needed for boundary recovery module usage
 
   // -----------------
   // run ghs3d mesher

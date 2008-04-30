@@ -81,6 +81,34 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
    */
   void SetKeepFiles(CORBA::Boolean toKeep);
   CORBA::Boolean GetKeepFiles();
+  /*!
+   * Verbose level [0-10]
+   *  0 - no standard output,
+   *  2 - prints the data, quality statistics of the skin and final meshes and
+   *     indicates when the final mesh is being saved. In addition the software
+   *     gives indication regarding the CPU time.
+   * 10 - same as 2 plus the main steps in the computation, quality statistics
+   *     histogram of the skin mesh, quality statistics histogram together with
+   *     the characteristics of the final mesh.
+   */
+  void SetVerboseLevel(CORBA::Short level) throw ( SALOME::SALOME_Exception );
+  CORBA::Short GetVerboseLevel();
+  /*!
+   * To create new nodes
+   */
+  void SetToCreateNewNodes(CORBA::Boolean toCreate);
+  CORBA::Boolean GetToCreateNewNodes();
+  /*!
+   * To use boundary recovery version which tries to create mesh on a very poor
+   * quality surface mesh
+   */
+  void SetToUseBoundaryRecoveryVersion(CORBA::Boolean toUse);
+  CORBA::Boolean GetToUseBoundaryRecoveryVersion();
+  /*!
+   * To set hiden/undocumented/advanced options
+   */
+  void SetTextOption(const char* option);
+  char* GetTextOption();
 
   // Get implementation
   ::GHS3DPlugin_Hypothesis* GetImpl();

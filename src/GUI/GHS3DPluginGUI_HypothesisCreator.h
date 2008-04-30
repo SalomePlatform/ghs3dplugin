@@ -44,6 +44,11 @@ typedef struct
   bool    myKeepFiles;
   QString myWorkingDir;
   QString myName;
+  short   myVerboseLevel;
+  bool    myToCreateNewNodes;
+  bool    myBoundaryRecovery;
+  QString myTextOption;
+
 } GHS3DHypothesisData;
 
 /*!
@@ -72,7 +77,7 @@ protected:
 protected slots:
 
   void onTabSelected(int);
-  void onMemCheckToggled(bool);
+  void onCheckToggled(bool);
   void onDirBtnClicked();
 
 private:
@@ -94,6 +99,10 @@ private:
   QSpinBox*        myInitialMemorySpin;
   QLineEdit*       myWorkingDir;
   QCheckBox*       myKeepFiles;
+  QSpinBox*        myVerboseLevelSpin;
+  QCheckBox*       myToCreateNewNodesCheck;
+  QCheckBox*       myBoundaryRecoveryCheck;
+  QLineEdit*       myTextOption;
 };
 
 #endif
