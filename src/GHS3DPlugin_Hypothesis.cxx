@@ -452,11 +452,24 @@ istream & GHS3DPlugin_Hypothesis::LoadFrom(istream & load)
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> myTextOption);
+  isOK = (load >> i);
   if (isOK)
-    ;
+    myToUseBoundaryRecoveryVersion = (bool) i;
   else
     load.clear(ios::badbit | load.rdstate());
+
+  isOK = (load >> myTextOption);
+  while (isOK) {
+    string txt;
+    if (load >> txt) {
+      myTextOption += " ";
+      myTextOption += txt;
+    }
+    else
+      isOK = false;
+  }
+//   else
+//     load.clear(ios::badbit | load.rdstate());
 
   return load;
 }
