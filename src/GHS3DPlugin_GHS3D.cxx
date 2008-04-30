@@ -533,6 +533,9 @@ static bool readResultFile(const int                       fileOpen,
   SMDS_MeshNode * aNewNode;
   map <int,const SMDS_MeshNode*>::iterator itOnNode;
   SMDS_MeshElement* aTet;
+#ifdef _DEBUG_
+  set<int> shapeIDs;
+#endif
 
   for (int i=0; i<nbShape; i++)
     tabID[i] = 0;
@@ -629,6 +632,9 @@ static bool readResultFile(const int                       fileOpen,
       }
     }
     theMeshDS->SetMeshElementOnShape( aTet, shapeID );
+#ifdef _DEBUG_
+    shapeIDs.insert( shapeID );
+#endif
   }
   if ( nbElems )
     cout << nbElems << " tetrahedrons have been associated to " << nbShape << " shapes" << endl;
@@ -641,6 +647,17 @@ static bool readResultFile(const int                       fileOpen,
   delete [] coord;
   delete [] node;
   delete [] nodeAssigne;
+
+#ifdef _DEBUG_
+  if ( shapeIDs.size() != nbShape ) {
+    cout << "Only " << shapeIDs.size() << " solids of " << nbShape << " found" << endl;
+    for (int i=0; i<nbShape; i++) {
+      shapeID = theMeshDS->ShapeToIndex( tabShape[i] );
+      if ( shapeIDs.find( shapeID ) == shapeIDs.end() )
+        cout << "  Solid #" << shapeID << " not found" << endl;
+    }
+  }
+#endif
 
   return true;
 }
