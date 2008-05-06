@@ -147,6 +147,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myInitialMemorySpin->setMinValue( 1 );
   myInitialMemorySpin->setMaxValue( maxAvailableMemory() );
   myInitialMemorySpin->setLineStep( 10 );
+  QLabel* aMegabyteLabel2 = new QLabel( tr("MEGABYTE"), anAdvFrame);
 
   QLabel* aWorkinDirLabel = new QLabel( tr( "WORKING_DIR" ), anAdvFrame );
   QPushButton* dirBtn = new QPushButton( tr( "SELECT_DIR"), anAdvFrame, "dirBtn");
@@ -175,7 +176,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
 
   anAdvLayout->addWidget(myInitialMemoryCheck, 1, 0);
   anAdvLayout->addWidget(myInitialMemorySpin,  1, 1);
-  anAdvLayout->addWidget(aMegabyteLabel,       1, 2);
+  anAdvLayout->addWidget(aMegabyteLabel2,       1, 2);
 
   anAdvLayout->addWidget(aWorkinDirLabel,      2, 0);
   anAdvLayout->addWidget(dirBtn,               2, 1);
