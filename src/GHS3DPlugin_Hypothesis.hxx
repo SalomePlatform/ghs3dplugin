@@ -39,7 +39,7 @@ public:
    * To mesh "holes" in a solid or not. Default is to mesh.
    */
   void SetToMeshHoles(bool toMesh);
-  bool GetToMeshHoles() const;
+  bool GetToMeshHoles(bool checkFreeOption = false) const;
   /*!
    * Maximal size of memory to be used by the algorithm (in Megabytes)
    */
@@ -109,7 +109,8 @@ public:
   /*!
    * \brief Return command to run ghs3d mesher excluding file prefix (-f)
    */
-  static std::string CommandToRun(const GHS3DPlugin_Hypothesis* hyp);
+  static std::string CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
+                                  const bool                    hasShapeToMesh=true);
   /*!
    * \brief Return a unique file name
    */

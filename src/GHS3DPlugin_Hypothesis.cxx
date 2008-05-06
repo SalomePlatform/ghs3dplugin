@@ -64,8 +64,14 @@ void GHS3DPlugin_Hypothesis::SetToMeshHoles(bool toMesh)
 //function : GetToMeshHoles
 //=======================================================================
 
-bool GHS3DPlugin_Hypothesis::GetToMeshHoles() const
+bool GHS3DPlugin_Hypothesis::GetToMeshHoles(bool checkFreeOption) const
 {
+  if (checkFreeOption && !myTextOption.empty()) {
+    if ( myTextOption.find("-c 0"))
+      return true;
+    if ( myTextOption.find("-c 1"))
+      return false;
+  }
   return myToMeshHoles;
 }
 
@@ -489,7 +495,8 @@ bool GHS3DPlugin_Hypothesis::SetParametersByMesh(const SMESH_Mesh* ,const TopoDS
  */
 //================================================================================
 
-string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp)
+string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
+                                            const bool                    hasShapeToMesh)
 {
 #ifndef WIN32
   TCollection_AsciiString cmd( "ghs3d" );
@@ -533,11 +540,16 @@ string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp)
   // 0 , all components to be meshed
   // 1 , only the main ( outermost ) component to be meshed
   if ( c && !useBndRecovery ) {
-    bool aToMeshHoles = hyp ? hyp->myToMeshHoles : DefaultMeshHoles();
-    if ( aToMeshHoles )
+    // We always run GHS3D with "to mesh holes'==TRUE (see PAL19680)
+    if ( hasShapeToMesh )
       cmd += " -c 0";
-    else
-      cmd += " -c 1";
+    else {
+      bool aToMeshHoles = hyp ? hyp->myToMeshHoles : DefaultMeshHoles();
+      if ( aToMeshHoles )
+        cmd += " -c 0";
+      else
+        cmd += " -c 1";
+    }
   }
 
   // optimization level

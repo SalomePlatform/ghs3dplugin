@@ -139,7 +139,8 @@ static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
                               TopoDS_Shape        aShape,
                               const TopoDS_Shape  shape[],
                               double**            box,
-                              const int           nShape) {
+                              const int           nShape,
+                              TopAbs_State *      state = 0) {
   double *pntCoor;
   int iShape, nbNode = 4;
 
@@ -156,6 +157,7 @@ static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
 
   gp_Pnt aPnt(pntCoor[0], pntCoor[1], pntCoor[2]);
   BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
+  if (state) *state = SC.State();
   if ( SC.State() != TopAbs_IN || aShape.IsNull() || aShape.ShapeType() != TopAbs_SOLID) {
     for (iShape = 0; iShape < nShape; iShape++) {
       aShape = shape[iShape];
@@ -163,6 +165,7 @@ static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
               pntCoor[1] < box[iShape][2] || box[iShape][3] < pntCoor[1] ||
               pntCoor[2] < box[iShape][4] || box[iShape][5] < pntCoor[2]) ) {
         BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
+        if (state) *state = SC.State();
         if (SC.State() == TopAbs_IN)
           break;
       }
@@ -501,7 +504,8 @@ static bool readResultFile(const int                       fileOpen,
                            TopoDS_Shape                    tabShape[],
                            double**                        tabBox,
                            const int                       nbShape,
-                           map <int,const SMDS_MeshNode*>& theGhs3dIdToNodeMap) {
+                           map <int,const SMDS_MeshNode*>& theGhs3dIdToNodeMap,
+                           bool                            toMeshHoles) {
 
   struct stat status;
   size_t      length;
@@ -524,7 +528,7 @@ static bool readResultFile(const int                       fileOpen,
   const SMDS_MeshNode **node;
 
   tab    = new int[3];
-  tabID  = new int[nbShape];
+  //tabID  = new int[nbShape];
   nodeID = new int[4];
   coord  = new double[3];
   node   = new const SMDS_MeshNode*[4];
@@ -536,9 +540,6 @@ static bool readResultFile(const int                       fileOpen,
 #ifdef _DEBUG_
   set<int> shapeIDs;
 #endif
-
-  for (int i=0; i<nbShape; i++)
-    tabID[i] = 0;
 
   // Read the file state
   fileStat = fstat(fileOpen, &status);
@@ -557,29 +558,39 @@ static bool readResultFile(const int                       fileOpen,
 
   nodeAssigne = new int[ nbNodes+1 ];
 
+  if (nbShape > 0)
+    aSolid = tabShape[0];
+
   // Reading the nodeId
   for (int i=0; i < 4*nbElems; i++)
     nodeId = strtol(ptr, &ptr, 10);
 
   // Reading the nodeCoor and update the nodeMap
-  for (int iNode=0; iNode < nbNodes; iNode++) {
+  for (int iNode=1; iNode <= nbNodes; iNode++) {
     for (int iCoor=0; iCoor < 3; iCoor++)
       coord[ iCoor ] = strtod(ptr, &ptr);
-    nodeAssigne[ iNode+1 ] = 1;
-    if ( (iNode+1) > nbInputNodes ) {
-      nodeAssigne[ iNode+1 ] = 0;
+    nodeAssigne[ iNode ] = 1;
+    if ( iNode > nbInputNodes ) {
+      nodeAssigne[ iNode ] = 0;
       aNewNode = theMeshDS->AddNode( coord[0],coord[1],coord[2] );
-      theGhs3dIdToNodeMap.insert(make_pair( (iNode+1), aNewNode ));
+      theGhs3dIdToNodeMap.insert(theGhs3dIdToNodeMap.end(), make_pair( iNode, aNewNode ));
     }
   }
 
   // Reading the number of triangles which corresponds to the number of shapes
   nbTriangle = strtol(ptr, &ptr, 10);
 
+  tabID  = new int[nbTriangle];
+  for (int i=0; i<nbTriangle; i++)
+    tabID[i] = 0;
+
   for (int i=0; i < 3*nbTriangle; i++)
     triangleId = strtol(ptr, &ptr, 10);
 
   shapePtr = ptr;
+
+  if ( nbTriangle <= nbShape ) // no holes
+    toMeshHoles = true; // not avoid creating tetras in holes
 
   // Associating the tetrahedrons to the shapes
   shapeID = compoundID;
@@ -590,52 +601,68 @@ static bool readResultFile(const int                       fileOpen,
       node[ iNode ] = itOnNode->second;
       nodeID[ iNode ] = ID;
     }
-    aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
-    if ( nbShape > 1 ) {
-      if ( nbTriangle > 1 ) {
-        ghs3dShapeID = strtol(shapePtr, &shapePtr, 10) - IdShapeRef;
-        if ( tabID[ ghs3dShapeID ] == 0 ) {
-          if (iElem == 0)
-            aSolid = tabShape[0];
-          aSolid = findShape(node, aSolid, tabShape, tabBox, nbShape);
+    // We always run GHS3D with "to mesh holes'==TRUE but we must not create
+    // tetras within holes depending on hypo option,
+    // so we first check if aTet is inside a hole and then create it 
+    //aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
+    if ( nbTriangle > 1 ) {
+      shapeID = -1; // negative shapeID means not to create tetras if !toMeshHoles
+      ghs3dShapeID = strtol(shapePtr, &shapePtr, 10) - IdShapeRef;
+      if ( tabID[ ghs3dShapeID ] == 0 ) {
+        TopAbs_State state;
+        aSolid = findShape(node, aSolid, tabShape, tabBox, nbShape, &state);
+        if ( toMeshHoles || state == TopAbs_IN )
           shapeID = theMeshDS->ShapeToIndex( aSolid );
-          tabID[ ghs3dShapeID ] = shapeID;
-        }
-        else
-          shapeID = tabID[ ghs3dShapeID ];
+        tabID[ ghs3dShapeID ] = shapeID;
       }
-      else {
-        // Case where nbTriangle == 1 while nbShape == 2 encountered
-        // with compound of 2 boxes and "To mesh holes"==False,
-        // so there are no subdomains specified for each tetrahedron.
-        // Try to guess a solid by a node already bound to shape
-        shapeID = 0;
-        for ( int i=0; i<4 && shapeID==0; i++ ) {
-          if ( nodeAssigne[ nodeID[i] ] == 1 &&
-               node[i]->GetPosition()->GetTypeOfPosition() == SMDS_TOP_3DSPACE &&
-               node[i]->GetPosition()->GetShapeId() > 1 )
-          {
-            shapeID = node[i]->GetPosition()->GetShapeId();
-          }
+      else
+        shapeID = tabID[ ghs3dShapeID ];
+    }
+    else if ( nbShape > 1 ) {
+      // Case where nbTriangle == 1 while nbShape == 2 encountered
+      // with compound of 2 boxes and "To mesh holes"==False,
+      // so there are no subdomains specified for each tetrahedron.
+      // Try to guess a solid by a node already bound to shape
+      shapeID = 0;
+      for ( int i=0; i<4 && shapeID==0; i++ ) {
+        if ( nodeAssigne[ nodeID[i] ] == 1 &&
+             node[i]->GetPosition()->GetTypeOfPosition() == SMDS_TOP_3DSPACE &&
+             node[i]->GetPosition()->GetShapeId() > 1 )
+        {
+          shapeID = node[i]->GetPosition()->GetShapeId();
         }
-        if ( shapeID==0 ) {
-          aSolid = findShape(node, aSolid, tabShape, tabBox, nbShape);
-          shapeID = theMeshDS->ShapeToIndex( aSolid );
-        }
+      }
+      if ( shapeID==0 ) {
+        aSolid = findShape(node, aSolid, tabShape, tabBox, nbShape);
+        shapeID = theMeshDS->ShapeToIndex( aSolid );
       }
     }
-    // set new nodes and tetrahedron on to the shape
+    // set new nodes and tetrahedron onto the shape
     for ( int i=0; i<4; i++ ) {
       if ( nodeAssigne[ nodeID[i] ] == 0 ) {
-        theMeshDS->SetNodeInVolume( node[i], shapeID );
-        nodeAssigne[ nodeID[i] ] = 1;
+        if ( shapeID > 0 )
+          theMeshDS->SetNodeInVolume( node[i], shapeID );
+        nodeAssigne[ nodeID[i] ] = shapeID;
       }
     }
-    theMeshDS->SetMeshElementOnShape( aTet, shapeID );
+    if ( toMeshHoles || shapeID > 0 ) {
+      aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
+      theMeshDS->SetMeshElementOnShape( aTet, shapeID );
+    }
 #ifdef _DEBUG_
     shapeIDs.insert( shapeID );
 #endif
   }
+  // Remove nodes of tetras inside holes if !toMeshHoles
+  if ( !toMeshHoles ) {
+    itOnNode = theGhs3dIdToNodeMap.find( nbInputNodes );
+    for ( ; itOnNode != theGhs3dIdToNodeMap.end(); ++itOnNode) {
+      ID = itOnNode->first;
+      if ( nodeAssigne[ ID ] < 0 )
+        theMeshDS->RemoveFreeNode( itOnNode->second, 0 );
+    }
+  }
+
   if ( nbElems )
     cout << nbElems << " tetrahedrons have been associated to " << nbShape << " shapes" << endl;
   munmap(mapPtr, length);
@@ -1077,8 +1104,12 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     cout << "Can't open the " << aResultFileName.ToCString() << " GHS3D output file" << endl;
     Ok = false;
   }
-  else
-    Ok = readResultFile( fileOpen, meshDS, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap );
+  else {
+    bool toMeshHoles =
+      _hyp ? _hyp->GetToMeshHoles(true) : GHS3DPlugin_Hypothesis::DefaultMeshHoles();
+    Ok = readResultFile( fileOpen, meshDS, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap,
+                         toMeshHoles );
+  }
 
   // ---------------------
   // remove working files
@@ -1210,7 +1241,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // run ghs3d mesher
   // -----------------
 
-  TCollection_AsciiString cmd( (char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp ).c_str() );
+  TCollection_AsciiString cmd =
+    (char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp, false ).c_str();
   cmd += TCollection_AsciiString(" -f ") + aGenericName;  // file to read
   cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
   
