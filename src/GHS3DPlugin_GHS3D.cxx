@@ -33,13 +33,30 @@ using namespace std;
 #include "SMESH_Mesh.hxx"
 #include "SMESH_Comment.hxx"
 #include "SMESH_MesherHelper.hxx"
+#include "SMESH_MeshEditor.hxx"
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
 
+#include <BRepAdaptor_Surface.hxx>
+#include <BRepBndLib.hxx>
+#include <BRepClass3d_SolidClassifier.hxx>
+#include <BRep_Tool.hxx>
+#include <Bnd_Box.hxx>
+#include <GeomAPI_ProjectPointOnSurf.hxx>
+#include <OSD_File.hxx>
+#include <Precision.hxx>
+#include <Quantity_Parameter.hxx>
+#include <Standard_ErrorHandler.hxx>
+#include <Standard_Failure.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
-#include <OSD_File.hxx>
+#include <TopTools_IndexedMapOfShape.hxx>
+#include <TopTools_ListIteratorOfListOfShape.hxx>
+#include <TopoDS.hxx>
+//#include <BRepClass_FaceClassifier.hxx>
+//#include <BRepGProp.hxx>
+//#include <GProp_GProps.hxx>
 
 #include "utilities.h"
 
@@ -49,14 +66,6 @@ using namespace std;
 
 //#include <Standard_Stream.hxx>
 
-#include <BRepGProp.hxx>
-#include <BRepBndLib.hxx>
-#include <BRepClass_FaceClassifier.hxx>
-#include <BRepClass3d_SolidClassifier.hxx>
-#include <TopAbs.hxx>
-#include <Bnd_Box.hxx>
-#include <GProp_GProps.hxx>
-#include <Precision.hxx>
 
 #define castToNode(n) static_cast<const SMDS_MeshNode *>( n );
 
@@ -140,30 +149,23 @@ static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
                               const TopoDS_Shape  shape[],
                               double**            box,
                               const int           nShape,
-                              TopAbs_State *      state = 0) {
-  double *pntCoor;
-  int iShape, nbNode = 4;
+                              TopAbs_State *      state = 0)
+{
+  gp_XYZ aPnt(0,0,0);
+  int j, iShape, nbNode = 4;
 
-  pntCoor = new double[3];
-  for ( int i=0; i<3; i++ ) {
-    pntCoor[i] = 0;
-    for ( int j=0; j<nbNode; j++ ) {
-      if ( i == 0) pntCoor[i] += aNode[j]->X();
-      if ( i == 1) pntCoor[i] += aNode[j]->Y();
-      if ( i == 2) pntCoor[i] += aNode[j]->Z();
-    }
-    pntCoor[i] /= nbNode;
-  }
+  for ( j=0; j<nbNode; j++ )
+    aPnt += gp_XYZ( aNode[j]->X(), aNode[j]->Y(), aNode[j]->Z() );
+  aPnt /= nbNode;
 
-  gp_Pnt aPnt(pntCoor[0], pntCoor[1], pntCoor[2]);
   BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
   if (state) *state = SC.State();
   if ( SC.State() != TopAbs_IN || aShape.IsNull() || aShape.ShapeType() != TopAbs_SOLID) {
     for (iShape = 0; iShape < nShape; iShape++) {
       aShape = shape[iShape];
-      if ( !( pntCoor[0] < box[iShape][0] || box[iShape][1] < pntCoor[0] ||
-              pntCoor[1] < box[iShape][2] || box[iShape][3] < pntCoor[1] ||
-              pntCoor[2] < box[iShape][4] || box[iShape][5] < pntCoor[2]) ) {
+      if ( !( aPnt.X() < box[iShape][0] || box[iShape][1] < aPnt.X() ||
+              aPnt.Y() < box[iShape][2] || box[iShape][3] < aPnt.Y() ||
+              aPnt.Z() < box[iShape][4] || box[iShape][5] < aPnt.Z()) ) {
         BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
         if (state) *state = SC.State();
         if (SC.State() == TopAbs_IN)
@@ -495,18 +497,115 @@ static bool writePoints (ofstream &                            theFile,
 }
 
 //=======================================================================
+//function : findShapeID
+//purpose  : find the solid corresponding to GHS3D sub-domain following
+//           the technique propsed in GHS3D manual in chapter
+//           "B.4 Subdomain (sub-region) assignment"
+//=======================================================================
+
+static int findShapeID(SMESH_Mesh&          mesh,
+                       const SMDS_MeshNode* node1,
+                       const SMDS_MeshNode* node2,
+                       const SMDS_MeshNode* node3)
+{
+  const int invalidID = 0;
+  SMESHDS_Mesh* meshDS = mesh.GetMeshDS();
+
+  // face th enodes belong to
+  const SMDS_MeshElement * face = meshDS->FindFace(node1,node2,node3);
+  if ( !face )
+    return invalidID;
+
+  // geom face the face assigned to
+  SMESH_MeshEditor editor(&mesh);
+  int geomFaceID = editor.FindShape( face );
+  if ( !geomFaceID )
+    return invalidID;
+  TopoDS_Shape shape = meshDS->IndexToShape( geomFaceID );
+  if ( shape.IsNull() || shape.ShapeType() != TopAbs_FACE )
+    return invalidID;
+  TopoDS_Face geomFace = TopoDS::Face( shape );
+
+  // solids bounded by geom face
+  TopTools_IndexedMapOfShape solids;
+  TopTools_ListIteratorOfListOfShape ansIt = mesh.GetAncestors(geomFace);
+  for ( ; ansIt.More(); ansIt.Next() ) {
+    if ( ansIt.Value().ShapeType() == TopAbs_SOLID )
+      solids.Add( ansIt.Value() );
+  }
+  // analyse found solids
+  if ( solids.Extent() == 0 )
+    return invalidID;
+  if ( solids.Extent() == 1 )
+    return meshDS->ShapeToIndex( solids(1) );
+
+  // find orientation of geom face within the first solid
+  TopoDS_Shape solid1 = solids(1);
+  TopExp_Explorer fExp( solid1, TopAbs_FACE );
+  for ( ; fExp.More(); fExp.Next() )
+    if ( geomFace.IsSame( fExp.Current() )) {
+      geomFace = TopoDS::Face( fExp.Current() );
+      break;
+    }
+  if ( !fExp.More() )
+    return invalidID; // face not found
+
+  // find UV of node1 on geomFace
+  SMESH_MesherHelper helper( mesh );
+  gp_XY uv = helper.GetNodeUV( geomFace, node1 );
+
+  // check that uv is correct
+  gp_Pnt node1Pnt ( node1->X(), node1->Y(), node1->Z() );
+  double tol = BRep_Tool::Tolerance( geomFace );
+  BRepAdaptor_Surface surface( geomFace );
+  if ( node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol ) {
+    // project node1 onto geomFace to get right UV
+    GeomAPI_ProjectPointOnSurf projector( node1Pnt, surface.Surface().Surface() );
+    if ( !projector.IsDone() || projector.NbPoints() < 1 )
+      return invalidID;
+    Quantity_Parameter U,V;
+    projector.LowerDistanceParameters(U,V);
+    uv = gp_XY( U,V );
+  }
+  // normale to face at node1
+  gp_Pnt node2Pnt ( node2->X(), node2->Y(), node2->Z() );
+  gp_Pnt node3Pnt ( node3->X(), node3->Y(), node3->Z() );
+  gp_Vec vec12( node1Pnt, node2Pnt );
+  gp_Vec vec13( node1Pnt, node3Pnt );
+  gp_Vec meshNormal = vec12 ^ vec13;
+  if ( meshNormal.SquareMagnitude() < DBL_MIN )
+    return invalidID;
+  
+  // normale to geomFace at UV
+  gp_Vec du, dv;
+  surface.D1( uv.X(), uv.Y(), node1Pnt, du, dv );
+  gp_Vec geomNormal = du ^ dv;
+  if ( geomNormal.SquareMagnitude() < DBL_MIN )
+    return findShapeID( mesh, node2, node3, node1 );
+  if ( geomFace.Orientation() == TopAbs_REVERSED )
+    geomNormal.Reverse();
+
+  // compare normals
+  bool isReverse = ( meshNormal * geomNormal ) < 0;
+  if ( isReverse )
+    return meshDS->ShapeToIndex( solids(2) );
+  else
+    return meshDS->ShapeToIndex( solid1 );
+}
+                       
+//=======================================================================
 //function : readResultFile
 //purpose  : 
 //=======================================================================
 
 static bool readResultFile(const int                       fileOpen,
-                           SMESHDS_Mesh*                   theMeshDS,
+                           SMESH_Mesh&                     theMesh,
                            TopoDS_Shape                    tabShape[],
                            double**                        tabBox,
                            const int                       nbShape,
                            map <int,const SMDS_MeshNode*>& theGhs3dIdToNodeMap,
-                           bool                            toMeshHoles) {
-
+                           bool                            toMeshHoles)
+{
   struct stat status;
   size_t      length;
 
@@ -514,9 +613,11 @@ static bool readResultFile(const int                       fileOpen,
   char *tetraPtr;
   char *shapePtr;
 
+  SMESHDS_Mesh* theMeshDS = theMesh.GetMeshDS();
+
   int fileStat;
   int nbElems, nbNodes, nbInputNodes;
-  int nodeId, triangleId;
+  int nodeId/*, triangleId*/;
   int nbTriangle;
   int ID, shapeID, ghs3dShapeID;
   int IdShapeRef = 1;
@@ -577,15 +678,30 @@ static bool readResultFile(const int                       fileOpen,
     }
   }
 
-  // Reading the number of triangles which corresponds to the number of shapes
+  // Reading the number of triangles which corresponds to the number of sub-domains
   nbTriangle = strtol(ptr, &ptr, 10);
 
-  tabID  = new int[nbTriangle];
-  for (int i=0; i<nbTriangle; i++)
+  tabID = new int[nbTriangle];
+  for (int i=0; i < nbTriangle; i++) {
     tabID[i] = 0;
-
-  for (int i=0; i < 3*nbTriangle; i++)
-    triangleId = strtol(ptr, &ptr, 10);
+    // find the solid corresponding to GHS3D sub-domain following
+    // the technique propsed in GHS3D manual in chapter
+    // "B.4 Subdomain (sub-region) assignment"
+    int nodeId1 = strtol(ptr, &ptr, 10);
+    int nodeId2 = strtol(ptr, &ptr, 10);
+    int nodeId3 = strtol(ptr, &ptr, 10);
+    const SMDS_MeshNode* n1 = theGhs3dIdToNodeMap[ nodeId1 ];
+    const SMDS_MeshNode* n2 = theGhs3dIdToNodeMap[ nodeId2 ];
+    const SMDS_MeshNode* n3 = theGhs3dIdToNodeMap[ nodeId3 ];
+    try {
+      OCC_CATCH_SIGNALS;
+      tabID[i] = findShapeID( theMesh, n1, n2, n3 );
+#ifdef _DEBUG_
+      cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << endl;
+#endif
+    } catch ( Standard_Failure ) {
+    } catch (...) {}
+  }
 
   shapePtr = ptr;
 
@@ -1107,7 +1223,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   else {
     bool toMeshHoles =
       _hyp ? _hyp->GetToMeshHoles(true) : GHS3DPlugin_Hypothesis::DefaultMeshHoles();
-    Ok = readResultFile( fileOpen, meshDS, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap,
+    Ok = readResultFile( fileOpen, theMesh, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap,
                          toMeshHoles );
   }
 
