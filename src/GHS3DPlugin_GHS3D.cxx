@@ -499,7 +499,7 @@ static bool writePoints (ofstream &                            theFile,
 //=======================================================================
 //function : findShapeID
 //purpose  : find the solid corresponding to GHS3D sub-domain following
-//           the technique propsed in GHS3D manual in chapter
+//           the technique proposed in GHS3D manual in chapter
 //           "B.4 Subdomain (sub-region) assignment"
 //=======================================================================
 
@@ -685,7 +685,7 @@ static bool readResultFile(const int                       fileOpen,
   for (int i=0; i < nbTriangle; i++) {
     tabID[i] = 0;
     // find the solid corresponding to GHS3D sub-domain following
-    // the technique propsed in GHS3D manual in chapter
+    // the technique proposed in GHS3D manual in chapter
     // "B.4 Subdomain (sub-region) assignment"
     int nodeId1 = strtol(ptr, &ptr, 10);
     int nodeId2 = strtol(ptr, &ptr, 10);
