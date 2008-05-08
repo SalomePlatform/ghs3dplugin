@@ -690,17 +690,19 @@ static bool readResultFile(const int                       fileOpen,
     int nodeId1 = strtol(ptr, &ptr, 10);
     int nodeId2 = strtol(ptr, &ptr, 10);
     int nodeId3 = strtol(ptr, &ptr, 10);
-    const SMDS_MeshNode* n1 = theGhs3dIdToNodeMap[ nodeId1 ];
-    const SMDS_MeshNode* n2 = theGhs3dIdToNodeMap[ nodeId2 ];
-    const SMDS_MeshNode* n3 = theGhs3dIdToNodeMap[ nodeId3 ];
-    try {
-      OCC_CATCH_SIGNALS;
-      tabID[i] = findShapeID( theMesh, n1, n2, n3 );
+    if ( nbTriangle > 1 ) {
+      const SMDS_MeshNode* n1 = theGhs3dIdToNodeMap[ nodeId1 ];
+      const SMDS_MeshNode* n2 = theGhs3dIdToNodeMap[ nodeId2 ];
+      const SMDS_MeshNode* n3 = theGhs3dIdToNodeMap[ nodeId3 ];
+      try {
+        OCC_CATCH_SIGNALS;
+        tabID[i] = findShapeID( theMesh, n1, n2, n3 );
 #ifdef _DEBUG_
-      cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << endl;
+        cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << endl;
 #endif
-    } catch ( Standard_Failure ) {
-    } catch (...) {}
+      } catch ( Standard_Failure ) {
+      } catch (...) {}
+    }
   }
 
   shapePtr = ptr;
