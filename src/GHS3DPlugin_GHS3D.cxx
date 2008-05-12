@@ -41,6 +41,7 @@ using namespace std;
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepClass3d_SolidClassifier.hxx>
+#include <BRepTools.hxx>
 #include <BRep_Tool.hxx>
 #include <Bnd_Box.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
@@ -85,6 +86,8 @@ extern "C"
 #include <sys/stat.h>
 #include <fcntl.h>
 }
+
+#define HOLE_ID -1
 
 //=============================================================================
 /*!
@@ -506,7 +509,8 @@ static bool writePoints (ofstream &                            theFile,
 static int findShapeID(SMESH_Mesh&          mesh,
                        const SMDS_MeshNode* node1,
                        const SMDS_MeshNode* node2,
-                       const SMDS_MeshNode* node3)
+                       const SMDS_MeshNode* node3,
+                       const bool           toMeshHoles)
 {
   const int invalidID = 0;
   SMESHDS_Mesh* meshDS = mesh.GetMeshDS();
@@ -527,20 +531,33 @@ static int findShapeID(SMESH_Mesh&          mesh,
   TopoDS_Face geomFace = TopoDS::Face( shape );
 
   // solids bounded by geom face
-  TopTools_IndexedMapOfShape solids;
+  TopTools_IndexedMapOfShape solids, shells;
   TopTools_ListIteratorOfListOfShape ansIt = mesh.GetAncestors(geomFace);
   for ( ; ansIt.More(); ansIt.Next() ) {
-    if ( ansIt.Value().ShapeType() == TopAbs_SOLID )
-      solids.Add( ansIt.Value() );
+    switch ( ansIt.Value().ShapeType() ) {
+    case TopAbs_SOLID:
+      solids.Add( ansIt.Value() ); break;
+    case TopAbs_SHELL:
+      shells.Add( ansIt.Value() ); break;
+    default:;
+    }
   }
   // analyse found solids
-  if ( solids.Extent() == 0 )
+  if ( solids.Extent() == 0 || shells.Extent() == 0)
     return invalidID;
+
+  const TopoDS_Solid& solid1 = TopoDS::Solid( solids(1) );
   if ( solids.Extent() == 1 )
-    return meshDS->ShapeToIndex( solids(1) );
+  {
+    if ( toMeshHoles )
+      return meshDS->ShapeToIndex( solid1 );
+
+    // - are we at a hole boundary face?
+    if ( shells(1).IsSame( BRepTools::OuterShell( solid1 )) )
+      return meshDS->ShapeToIndex( solid1 ); // - no
+  }
 
   // find orientation of geom face within the first solid
-  TopoDS_Shape solid1 = solids(1);
   TopExp_Explorer fExp( solid1, TopAbs_FACE );
   for ( ; fExp.More(); fExp.Next() )
     if ( geomFace.IsSame( fExp.Current() )) {
@@ -581,16 +598,19 @@ static int findShapeID(SMESH_Mesh&          mesh,
   surface.D1( uv.X(), uv.Y(), node1Pnt, du, dv );
   gp_Vec geomNormal = du ^ dv;
   if ( geomNormal.SquareMagnitude() < DBL_MIN )
-    return findShapeID( mesh, node2, node3, node1 );
+    return findShapeID( mesh, node2, node3, node1, toMeshHoles );
   if ( geomFace.Orientation() == TopAbs_REVERSED )
     geomNormal.Reverse();
 
   // compare normals
   bool isReverse = ( meshNormal * geomNormal ) < 0;
-  if ( isReverse )
-    return meshDS->ShapeToIndex( solids(2) );
-  else
+  if ( !isReverse )
     return meshDS->ShapeToIndex( solid1 );
+
+  if ( solids.Extent() == 1 )
+    return HOLE_ID; // we are inside a hole
+  else
+    return meshDS->ShapeToIndex( solids(2) );
 }
                        
 //=======================================================================
@@ -696,7 +716,7 @@ static bool readResultFile(const int                       fileOpen,
       const SMDS_MeshNode* n3 = theGhs3dIdToNodeMap[ nodeId3 ];
       try {
         OCC_CATCH_SIGNALS;
-        tabID[i] = findShapeID( theMesh, n1, n2, n3 );
+        tabID[i] = findShapeID( theMesh, n1, n2, n3, toMeshHoles );
 #ifdef _DEBUG_
         cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << endl;
 #endif
@@ -724,7 +744,7 @@ static bool readResultFile(const int                       fileOpen,
     // so we first check if aTet is inside a hole and then create it 
     //aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
     if ( nbTriangle > 1 ) {
-      shapeID = -1; // negative shapeID means not to create tetras if !toMeshHoles
+      shapeID = HOLE_ID; // negative shapeID means not to create tetras if !toMeshHoles
       ghs3dShapeID = strtol(shapePtr, &shapePtr, 10) - IdShapeRef;
       if ( tabID[ ghs3dShapeID ] == 0 ) {
         TopAbs_State state;
@@ -758,12 +778,12 @@ static bool readResultFile(const int                       fileOpen,
     // set new nodes and tetrahedron onto the shape
     for ( int i=0; i<4; i++ ) {
       if ( nodeAssigne[ nodeID[i] ] == 0 ) {
-        if ( shapeID > 0 )
+        if ( shapeID != HOLE_ID )
           theMeshDS->SetNodeInVolume( node[i], shapeID );
         nodeAssigne[ nodeID[i] ] = shapeID;
       }
     }
-    if ( toMeshHoles || shapeID > 0 ) {
+    if ( toMeshHoles || shapeID != HOLE_ID ) {
       aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
       theMeshDS->SetMeshElementOnShape( aTet, shapeID );
     }
@@ -776,7 +796,7 @@ static bool readResultFile(const int                       fileOpen,
     itOnNode = theGhs3dIdToNodeMap.find( nbInputNodes );
     for ( ; itOnNode != theGhs3dIdToNodeMap.end(); ++itOnNode) {
       ID = itOnNode->first;
-      if ( nodeAssigne[ ID ] < 0 )
+      if ( nodeAssigne[ ID ] == HOLE_ID )
         theMeshDS->RemoveFreeNode( itOnNode->second, 0 );
     }
   }
