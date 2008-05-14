@@ -21,7 +21,7 @@
                icon-id="mesh_tree_hypo_ghs3d.png"
                input="TRIA,QUAD"
 	       need-geom="false"
-               hypos="GHS3D_Parameters"
+               opt-hypos="GHS3D_Parameters"
                dim="3"/>
   </algorithms>
 </meshers-group>
