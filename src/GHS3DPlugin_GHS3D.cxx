@@ -24,6 +24,7 @@
 // Copyright : CEA 2003
 // $Header$
 //=============================================================================
+
 using namespace std;
 
 #include "GHS3DPlugin_GHS3D.hxx"
@@ -37,6 +38,8 @@ using namespace std;
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
+#include "SMDS_FaceOfNodes.hxx"
+#include "SMDS_VolumeOfNodes.hxx"
 
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepBndLib.hxx>
@@ -105,6 +108,7 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   _iShape=0;
   _nbShape=0;
   _compatibleHypothesis.push_back("GHS3D_Parameters");
+  _requireShape = false; // can work without shape
 }
 
 //=============================================================================
@@ -195,15 +199,6 @@ static char* readMapIntLine(char* ptr, int tab[]) {
   }
   return ptr;
 }
-
-//=======================================================================
-//function : readLine
-//purpose  : 
-//=======================================================================
-
-#define GHS3DPlugin_BUFLENGTH 256
-#define GHS3DPlugin_ReadLine(aPtr,aBuf,aFile,aLineNb) \
-{  aPtr = fgets( aBuf, GHS3DPlugin_BUFLENGTH - 2, aFile ); aLineNb++; DUMP(endl); }
 
 //=======================================================================
 //function : countShape
@@ -432,8 +427,8 @@ static bool writePoints (ofstream &                       theFile,
   while ( it->more() )
   {
     node = it->next();
-    theSmdsToGhs3dIdMap.insert( map <int,int>::value_type( node->GetID(), aGhs3dID ));
-    theGhs3dIdToNodeMap.insert (map <int,const SMDS_MeshNode*>::value_type( aGhs3dID, node ));
+    theSmdsToGhs3dIdMap.insert( make_pair( node->GetID(), aGhs3dID ));
+    theGhs3dIdToNodeMap.insert( make_pair( aGhs3dID, node ));
     aGhs3dID++;
 
     // X Y Z DUMMY_INT
@@ -925,207 +920,6 @@ static bool readResultFile(const int                      fileOpen,
   return true;
 }
 
-//================================================================================
-/*!
- * \brief Look for a line containing a text in a file
-  * \retval bool - true if the line is found
- */
-//================================================================================
-
-static bool findLineContaing(const TCollection_AsciiString& theText,
-                             const TCollection_AsciiString& theFile,
-                             TCollection_AsciiString &      theFoundLine)
-{
-  bool found = false;
-  if ( FILE * aFile = fopen( theFile.ToCString(), "r" ))
-  {
-    char * aPtr;
-    char aBuffer[ GHS3DPlugin_BUFLENGTH ];
-    int aLineNb = 0;
-    do {
-      GHS3DPlugin_ReadLine( aPtr, aBuffer, aFile, aLineNb );
-      if ( aPtr ) {
-        theFoundLine = aPtr;
-        found = theFoundLine.Search( theText ) >= 0;
-      }
-    } while ( aPtr && !found );
-
-    fclose( aFile );
-  }
-  return found;
-}
-
-//================================================================================
-/*!
- * \brief Provide human readable text by error code reported by ghs3d
- */
-//================================================================================
-
-static TCollection_AsciiString translateError(const TCollection_AsciiString& errorLine)
-{
-  int beg = errorLine.Location("ERR ", 1, errorLine.Length());
-  if ( !beg ) return errorLine;
-
-  TCollection_AsciiString errCodeStr = errorLine.SubString( beg + 4 , errorLine.Length());
-  if ( !errCodeStr.IsIntegerValue() )
-    return errorLine;
-  Standard_Integer errCode = errCodeStr.IntegerValue();
-
-  int codeEnd = beg + 7;
-  while ( codeEnd < errorLine.Length() && isdigit( errorLine.Value(codeEnd+1) ))
-    codeEnd++;
-  TCollection_AsciiString error = errorLine.SubString( beg, codeEnd ) + ": ";
-
-  switch ( errCode ) {
-  case 0:
-    return "The surface mesh includes a face of type type other than edge, "
-      "triangle or quadrilateral. This face type is not supported.";
-  case 1:
-    return error + "Not enough memory for the face table";
-  case 2:
-    return error + "Not enough memory";
-  case 3:
-    return error + "Not enough memory";
-  case 4:
-    return error + "Face is ignored";
-  case 5:
-    return error + errorLine.SubString( beg + 5, errorLine.Length()) +
-      ": End of file. Some data are missing in the file.";
-  case 6:
-    return error + errorLine.SubString( beg + 5, errorLine.Length()) +
-      ": Read error on the file. There are wrong data in the file.";
-  case 7:
-    return error + "the metric file is inadequate (dimension other than 3).";
-  case 8:
-    return error + "the metric file is inadequate (values not per vertices).";
-  case 9:
-      return error + "the metric file contains more than one field.";
-  case 10:
-    return error + "the number of values in the \".bb\" (metric file) is incompatible with the expected"
-      "value of number of mesh vertices in the \".noboite\" file.";
-  case 12:
-    return error + "Too many sub-domains";
-  case 13:
-    return error + "the number of vertices is negative or null.";
-  case 14:
-    return error + "the number of faces is negative or null.";
-  case 15:
-    return error + "A facehas a null vertex.";
-  case 22:
-    return error + "incompatible data";
-  case 131:
-    return error + "the number of vertices is negative or null.";
-  case 132:
-    return error + "the number of vertices is negative or null (in the \".mesh\" file).";
-  case 133:
-    return error + "the number of faces is negative or null.";
-  case 1000:
-    return error + "A face appears more than once in the input surface mesh.";
-  case 1001:
-    return error + "An edge appears more than once in the input surface mesh.";
-  case 1002:
-    return error + "A face has a vertex negative or null.";
-  case 1003:
-    return error + "NOT ENOUGH MEMORY";
-  case 2000:
-    return error + "Not enough available memory.";
-  case 2002:
-    return error + "Some initial points cannot be inserted. The surface mesh is probably very bad "
-      "in terms of quality or the input list of points is wrong";
-  case 2003:
-    return error + "Some vertices are too close to one another or coincident.";
-  case 2004:
-    return error + "Some vertices are too close to one another or coincident.";
-  case 2012:
-    return error + "A vertex cannot be inserted.";
-  case 2014:
-    return error + "There are at least two points considered as coincident";
-  case 2103:
-    return error + "Some vertices are too close to one another or coincident";
-  case 3000:
-    return error + "The surface mesh regeneration step has failed";
-  case 3009:
-    return error + "Constrained edge cannot be enforced";
-  case 3019:
-    return error + "Constrained face cannot be enforced";
-  case 3029:
-    return error + "Missing faces";
-  case 3100:
-    return error + "No guess to start the definition of the connected component(s)";
-  case 3101:
-    return error + "The surface mesh includes at least one hole. The domain is not well defined";
-  case 3102:
-    return error + "Impossible to define a component";
-  case 3103:
-    return error + "The surface edge intersects another surface edge";
-  case 3104:
-    return error + "The surface edge intersects the surface face";
-  case 3105:
-    return error + "One boundary point lies within a surface face";
-  case 3106:
-    return error + "One surface edge intersects a surface face";
-  case 3107:
-    return error + "One boundary point lies within a surface edge";
-  case 3108:
-    return error + "Insufficient memory ressources detected due to a bad quality surface mesh leading "
-      "to too many swaps";
-  case 3109:
-    return error + "Edge is unique (i.e., bounds a hole in the surface)";
-  case 3122:
-    return error + "Presumably, the surface mesh is not compatible with the domain being processed";
-  case 3123:
-    return error + "Too many components, too many sub-domain";
-  case 3209:
-    return error + "The surface mesh includes at least one hole. "
-      "Therefore there is no domain properly defined";
-  case 3300:
-    return error + "Statistics.";
-  case 3400:
-    return error + "Statistics.";
-  case 3500:
-    return error + "Warning, it is dramatically tedious to enforce the boundary items";
-  case 4000:
-    return error + "Not enough memory at this time, nevertheless, the program continues. "
-      "The expected mesh will be correct but not really as large as required";
-  case 4002:
-    return error + "see above error code, resulting quality may be poor.";
-  case 4003:
-    return error + "Not enough memory at this time, nevertheless, the program continues (warning)";
-  case 8000:
-    return error + "Unknown face type.";
-  case 8005:
-  case 8006:
-    return error + errorLine.SubString( beg + 5, errorLine.Length()) +
-      ": End of file. Some data are missing in the file.";
-  case 9000:
-    return error + "A too small volume element is detected";
-  case 9001:
-    return error + "There exists at least a null or negative volume element";
-  case 9002:
-    return error + "There exist null or negative volume elements";
-  case 9003:
-    return error + "A too small volume element is detected. A face is considered being degenerated";
-  case 9100:
-    return error + "Some element is suspected to be very bad shaped or wrong";
-  case 9102:
-    return error + "A too bad quality face is detected. This face is considered degenerated";
-  case 9112:
-    return error + "A too bad quality face is detected. This face is degenerated";
-  case 9122:
-    return error + "Presumably, the surface mesh is not compatible with the domain being processed";
-  case 9999:
-    return error + "Abnormal error occured, contact hotline";
-  case 23600:
-    return error + "Not enough memory for the face table";
-  case 23601:
-    return error + "The algorithm cannot run further. "
-      "The surface mesh is probably very bad in terms of quality.";
-  case 23602:
-    return error + "Bad vertex number";
-  }
-  return errorLine;
-}
-
 //=============================================================================
 /*!
  *Here we are going to use the GHS3D mesher
@@ -1240,6 +1034,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   if ( fileOpen < 0 ) {
     cout << endl;
     cout << "Can't open the " << aResultFileName.ToCString() << " GHS3D output file" << endl;
+    cout << "Log: " << aLogFileName << endl;
     Ok = false;
   }
   else {
@@ -1260,32 +1055,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
-    INFOS( "GHS3D Error, see the " << aLogFileName.ToCString() << " file" );
-
     // get problem description from the log file
-    SMESH_Comment comment;
-    TCollection_AsciiString foundLine;
-    if ( findLineContaing( "has expired",aLogFileName,foundLine) &&
-         foundLine.Search("Licence") >= 0)
-    {
-      foundLine.LeftAdjust();
-      comment << foundLine;
-    }
-    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine) ||
-         findLineContaing( " ERR ",aLogFileName,foundLine))
-    {
-      foundLine.LeftAdjust();
-      comment << translateError( foundLine );
-    }
-    else if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
-    {
-      comment << "Too many elements generated for a trial version.\n";
-    }
-    if ( comment.empty() )
-      comment << "See " << aLogFileName << " for problem description";
-    else
-      comment << "\nSee " << aLogFileName << " for more information";
-    error(COMPERR_ALGO_FAILED, comment);
+    _Ghs2smdsConvertor conv( aGhs3dIdToNodeMap );
+    storeErrorDescription( aLogFileName, conv );
   }
   else
   {
@@ -1394,6 +1166,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   if ( fileOpen < 0 ) {
     cout << endl;
     cout << "Error when opening the " << aResultFileName.ToCString() << " file" << endl;
+    cout << "Log: " << aLogFileName << endl;
     cout << endl;
     Ok = false;
   }
@@ -1412,32 +1185,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
-    INFOS( "GHS3D Error, see the " << aLogFileName.ToCString() << " file" );
-
     // get problem description from the log file
-    SMESH_Comment comment;
-    TCollection_AsciiString foundLine;
-    if ( findLineContaing( "has expired",aLogFileName,foundLine) &&
-         foundLine.Search("Licence") >= 0)
-    {
-      foundLine.LeftAdjust();
-      comment << foundLine;
-    }
-    if ( findLineContaing( "%% ERROR",aLogFileName,foundLine) ||
-         findLineContaing( " ERR ",aLogFileName,foundLine))
-    {
-      foundLine.LeftAdjust();
-      comment << translateError( foundLine );
-    }
-    else if ( findLineContaing( "%% NO SAVING OPERATION",aLogFileName,foundLine))
-    {
-      comment << "Too many elements generated for a trial version.\n";
-    }
-    if ( comment.empty() )
-      comment << "See " << aLogFileName << " for problem description";
-    else
-      comment << "\nSee " << aLogFileName << " for more information";
-    error(COMPERR_ALGO_FAILED, comment);
+    _Ghs2smdsConvertor conv( aNodeByGhs3dId );
+    storeErrorDescription( aLogFileName, conv );
   }
   else {
     // the log file is empty
@@ -1457,3 +1207,493 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   
   return Ok;
 }
+
+//================================================================================
+/*!
+ * \brief Provide human readable text by error code reported by ghs3d
+ */
+//================================================================================
+
+static string translateError(const int errNum)
+{
+  switch ( errNum ) {
+  case 0:
+    return "The surface mesh includes a face of type other than edge, "
+      "triangle or quadrilateral. This face type is not supported.";
+  case 1:
+    return "Not enough memory for the face table.";
+  case 2:
+    return "Not enough memory.";
+  case 3:
+    return "Not enough memory.";
+  case 4:
+    return "Face is ignored.";
+  case 5:
+    return "End of file. Some data are missing in the file.";
+  case 6:
+    return "Read error on the file. There are wrong data in the file.";
+  case 7:
+    return "the metric file is inadequate (dimension other than 3).";
+  case 8:
+    return "the metric file is inadequate (values not per vertices).";
+  case 9:
+    return "the metric file contains more than one field.";
+  case 10:
+    return "the number of values in the \".bb\" (metric file) is incompatible with the expected"
+      "value of number of mesh vertices in the \".noboite\" file.";
+  case 12:
+    return "Too many sub-domains.";
+  case 13:
+    return "the number of vertices is negative or null.";
+  case 14:
+    return "the number of faces is negative or null.";
+  case 15:
+    return "A face has a null vertex.";
+  case 22:
+    return "incompatible data.";
+  case 131:
+    return "the number of vertices is negative or null.";
+  case 132:
+    return "the number of vertices is negative or null (in the \".mesh\" file).";
+  case 133:
+    return "the number of faces is negative or null.";
+  case 1000:
+    return "A face appears more than once in the input surface mesh.";
+  case 1001:
+    return "An edge appears more than once in the input surface mesh.";
+  case 1002:
+    return "A face has a vertex negative or null.";
+  case 1003:
+    return "NOT ENOUGH MEMORY.";
+  case 2000:
+    return "Not enough available memory.";
+  case 2002:
+    return "Some initial points cannot be inserted. The surface mesh is probably very bad "
+      "in terms of quality or the input list of points is wrong.";
+  case 2003:
+    return "Some vertices are too close to one another or coincident.";
+  case 2004:
+    return "Some vertices are too close to one another or coincident.";
+  case 2012:
+    return "A vertex cannot be inserted.";
+  case 2014:
+    return "There are at least two points considered as coincident.";
+  case 2103:
+    return "Some vertices are too close to one another or coincident.";
+  case 3000:
+    return "The surface mesh regeneration step has failed.";
+  case 3009:
+    return "Constrained edge cannot be enforced.";
+  case 3019:
+    return "Constrained face cannot be enforced.";
+  case 3029:
+    return "Missing faces.";
+  case 3100:
+    return "No guess to start the definition of the connected component(s).";
+  case 3101:
+    return "The surface mesh includes at least one hole. The domain is not well defined.";
+  case 3102:
+    return "Impossible to define a component.";
+  case 3103:
+    return "The surface edge intersects another surface edge.";
+  case 3104:
+    return "The surface edge intersects the surface face.";
+  case 3105:
+    return "One boundary point lies within a surface face.";
+  case 3106:
+    return "One surface edge intersects a surface face.";
+  case 3107:
+    return "One boundary point lies within a surface edge.";
+  case 3108:
+    return "Insufficient memory ressources detected due to a bad quality surface mesh leading "
+      "to too many swaps.";
+  case 3109:
+    return "Edge is unique (i.e., bounds a hole in the surface).";
+  case 3122:
+    return "Presumably, the surface mesh is not compatible with the domain being processed.";
+  case 3123:
+    return "Too many components, too many sub-domain.";
+  case 3209:
+    return "The surface mesh includes at least one hole. "
+      "Therefore there is no domain properly defined.";
+  case 3300:
+    return "Statistics.";
+  case 3400:
+    return "Statistics.";
+  case 3500:
+    return "Warning, it is dramatically tedious to enforce the boundary items.";
+  case 4000:
+    return "Not enough memory at this time, nevertheless, the program continues. "
+      "The expected mesh will be correct but not really as large as required.";
+  case 4002:
+    return "see above error code, resulting quality may be poor.";
+  case 4003:
+    return "Not enough memory at this time, nevertheless, the program continues (warning).";
+  case 8000:
+    return "Unknown face type.";
+  case 8005:
+  case 8006:
+    return "End of file. Some data are missing in the file.";
+  case 9000:
+    return "A too small volume element is detected.";
+  case 9001:
+    return "There exists at least a null or negative volume element.";
+  case 9002:
+    return "There exist null or negative volume elements.";
+  case 9003:
+    return "A too small volume element is detected. A face is considered being degenerated.";
+  case 9100:
+    return "Some element is suspected to be very bad shaped or wrong.";
+  case 9102:
+    return "A too bad quality face is detected. This face is considered degenerated.";
+  case 9112:
+    return "A too bad quality face is detected. This face is degenerated.";
+  case 9122:
+    return "Presumably, the surface mesh is not compatible with the domain being processed.";
+  case 9999:
+    return "Abnormal error occured, contact hotline.";
+  case 23600:
+    return "Not enough memory for the face table.";
+  case 23601:
+    return "The algorithm cannot run further. "
+      "The surface mesh is probably very bad in terms of quality.";
+  case 23602:
+    return "Bad vertex number.";
+  }
+  return "";
+}
+
+//================================================================================
+/*!
+ * \brief Retrieve from a string given number of integers
+ */
+//================================================================================
+
+static char* getIds( char* ptr, int nbIds, vector<int>& ids )
+{
+  ids.clear();
+  ids.reserve( nbIds );
+  while ( nbIds )
+  {
+    while ( !isdigit( *ptr )) ++ptr;
+    if ( ptr[-1] == '-' ) --ptr;
+    ids.push_back( strtol( ptr, &ptr, 10 ));
+    --nbIds;
+  }
+  return ptr;
+}
+
+//================================================================================
+/*!
+ * \brief Retrieve problem description form a log file
+ *  \retval bool - always false
+ */
+//================================================================================
+
+bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& logFile,
+                                              const _Ghs2smdsConvertor &     toSmdsConvertor )
+{
+  // open file
+#ifdef WNT
+  int file = ::_open (logFile.ToCString(), _O_RDONLY|_O_BINARY);
+#else
+  int file = ::open (logFile.ToCString(), O_RDONLY);
+#endif
+  if ( file < 0 )
+    return error( SMESH_Comment("See ") << logFile << " for problem description");
+
+  // get file size
+//   struct stat status;
+//   fstat(file, &status);
+//   size_t length = status.st_size;
+  off_t length = lseek( file, 0, SEEK_END);
+  lseek( file, 0, SEEK_SET);
+
+  // read file
+  vector< char > buf( length );
+  int nBytesRead = ::read (file, & buf[0], length);
+  ::close (file);
+  char* ptr = & buf[0];
+  char* bufEnd = ptr + nBytesRead;
+
+  SMESH_Comment errDescription;
+
+  enum { NODE = 1, EDGE, TRIA, VOL, ID = 1 };
+
+  // look for errors "ERR #"
+
+  set<string> foundErrorStr; // to avoid reporting same error several times
+  set<int>    elemErrorNums; // not to report different types of errors with bad elements
+  while ( ++ptr < bufEnd )
+  {
+    if ( strncmp( ptr, "ERR ", 4 ) != 0 )
+      continue;
+
+    list<const SMDS_MeshElement*> badElems;
+    vector<int> nodeIds;
+
+    ptr += 4;
+    char* errBeg = ptr;
+    int   errNum = strtol(ptr, &ptr, 10);
+    switch ( errNum ) { // we treat errors enumerated in [SALOME platform 0019316] issue
+    case 0015:
+      // The face number (numfac) with vertices (f 1, f 2, f 3) has a null vertex.
+      ptr = getIds(ptr, NODE, nodeIds);
+      ptr = getIds(ptr, TRIA, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 1000: // ERR  1000 :  1 3 2
+      // Face (f 1, f 2, f 3) appears more than once in the input surface mesh.
+      ptr = getIds(ptr, TRIA, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 1001:
+      // Edge (e1, e2) appears more than once in the input surface mesh
+      ptr = getIds(ptr, EDGE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 1002:
+      // Face (f 1, f 2, f 3) has a vertex negative or null
+      ptr = getIds(ptr, TRIA, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 2004:
+      // Vertex v1 and vertex v2 are too close to one another or coincident (warning).
+      ptr = getIds(ptr, NODE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      ptr = getIds(ptr, NODE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 2012:
+      // Vertex v1 cannot be inserted (warning).
+      ptr = getIds(ptr, NODE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 2014:
+      // There are at least two points whose distance is dist, i.e., considered as coincident
+    case 2103: // ERR  2103 :  16 WITH  3
+      // Vertex v1 and vertex v2 are too close to one another or coincident (warning).
+      ptr = getIds(ptr, NODE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      ptr = getIds(ptr, NODE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 3009:
+      // Constrained edge (e1, e2) cannot be enforced (warning).
+      ptr = getIds(ptr, EDGE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 3019:
+      // Constrained face (f 1, f 2, f 3) cannot be enforced
+      ptr = getIds(ptr, TRIA, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 3103: // ERR  3103 :  1 2 WITH  7 3
+      // The surface edge (e1, e2) intersects another surface edge (e3, e4)
+      ptr = getIds(ptr, EDGE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      ptr = getIds(ptr, EDGE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 3104: // ERR  3104 :  9 10 WITH  1 2 3
+      // The surface edge (e1, e2) intersects the surface face (f 1, f 2, f 3)
+      ptr = getIds(ptr, EDGE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      ptr = getIds(ptr, TRIA, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 3105: // ERR  3105 :  8 IN  2 3 5
+      // One boundary point (say p1) lies within a surface face (f 1, f 2, f 3)
+      ptr = getIds(ptr, NODE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      ptr = getIds(ptr, TRIA, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 3106:
+      // One surface edge (say e1, e2) intersects a surface face (f 1, f 2, f 3)
+      ptr = getIds(ptr, EDGE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      ptr = getIds(ptr, TRIA, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 3107: // ERR  3107 :  2 IN  4 1
+      // One boundary point (say p1) lies within a surface edge (e1, e2) (stop).
+      ptr = getIds(ptr, NODE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      ptr = getIds(ptr, EDGE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 3109: // ERR  3109 :  EDGE  5 6 UNIQUE
+      // Edge (e1, e2) is unique (i.e., bounds a hole in the surface)
+      ptr = getIds(ptr, EDGE, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 9000: // ERR  9000 
+      //  ELEMENT  261 WITH VERTICES :  7 396 -8 242 
+      //  VOLUME   : -1.11325045E+11 W.R.T. EPSILON   0.
+      // A too small volume element is detected. Are reported the index of the element,
+      // its four vertex indices, its volume and the tolerance threshold value
+      ptr = getIds(ptr, ID, nodeIds);
+      ptr = getIds(ptr, VOL, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      // even if all nodes found, volume it most probably invisible,
+      // add its faces to demenstrate it anyhow
+      {
+        vector<int> faceNodes( nodeIds.begin(), --nodeIds.end() ); // 012
+        badElems.push_back( toSmdsConvertor.getElement(faceNodes));
+        faceNodes[2] = nodeIds[3]; // 013
+        badElems.push_back( toSmdsConvertor.getElement(faceNodes));
+        faceNodes[1] = nodeIds[2]; // 023
+        badElems.push_back( toSmdsConvertor.getElement(faceNodes));
+        faceNodes[0] = nodeIds[1]; // 123
+        badElems.push_back( toSmdsConvertor.getElement(faceNodes));
+      }
+      break;
+    case 9001: // ERR  9001
+      //  %% NUMBER OF NEGATIVE VOLUME TETS  :  1 
+      //  %% THE LARGEST NEGATIVE TET        :   1.75376581E+11 
+      //  %%  NUMBER OF NULL VOLUME TETS     :  0
+      // There exists at least a null or negative volume element
+      break;
+    case 9002:
+      // There exist n null or negative volume elements
+      break;
+    case 9003:
+      // A too small volume element is detected
+      break;
+    case 9102:
+      // A too bad quality face is detected. This face is considered degenerated,
+      // its index, its three vertex indices together with its quality value are reported
+      break; // same as next
+    case 9112: // ERR  9112 
+      //  FACE   2 WITH VERTICES :  4 2 5 
+      //  SMALL INRADIUS :   0.
+      // A too bad quality face is detected. This face is degenerated,
+      // its index, its three vertex indices together with its inradius are reported
+      ptr = getIds(ptr, ID, nodeIds);
+      ptr = getIds(ptr, TRIA, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      // add triangle edges as it most probably has zero area and hence invisible
+      {
+        vector<int> edgeNodes(2);
+        edgeNodes[0] = nodeIds[0]; edgeNodes[1] = nodeIds[1]; // 0-1
+        badElems.push_back( toSmdsConvertor.getElement(edgeNodes));
+        edgeNodes[1] = nodeIds[2]; // 0-2
+        badElems.push_back( toSmdsConvertor.getElement(edgeNodes));
+        edgeNodes[0] = nodeIds[1]; // 1-2
+        badElems.push_back( toSmdsConvertor.getElement(edgeNodes));
+      }
+      break;
+    }
+
+    bool isNewError = foundErrorStr.insert( string( errBeg, ptr )).second;
+    if ( !isNewError )
+      continue; // not to report same error several times
+
+//     const SMDS_MeshElement* nullElem = 0;
+//     bool allElemsOk = ( find( badElems.begin(), badElems.end(), nullElem) == badElems.end());
+
+//     if ( allElemsOk && !badElems.empty() && !elemErrorNums.empty() ) {
+//       bool oneMoreErrorType = elemErrorNums.insert( errNum ).second;
+//       if ( oneMoreErrorType )
+//         continue; // not to report different types of errors with bad elements
+//     }
+
+    // store bad elements
+    //if ( allElemsOk ) {
+      list<const SMDS_MeshElement*>::iterator elem = badElems.begin();
+      for ( ; elem != badElems.end(); ++elem )
+        addBadInputElement( *elem );
+      //}
+
+    // make error text
+    string text = translateError( errNum );
+    if ( errDescription.find( text ) == text.npos ) {
+      if ( !errDescription.empty() )
+        errDescription << "\n";
+      errDescription << text;
+    }
+
+  } // end while
+
+  if ( errDescription.empty() ) { // no errors found
+    char msg[] = "connection to server failed";
+    if ( search( &buf[0], bufEnd, msg, msg + strlen(msg)) != bufEnd )
+      errDescription << "Licence problems.";
+  }
+
+  if ( errDescription.empty() )
+    errDescription << "See " << logFile << " for problem description";
+  else
+    errDescription << "\nSee " << logFile << " for more information";
+
+  return error( errDescription );
+}
+
+//================================================================================
+/*!
+ * \brief Creates _Ghs2smdsConvertor
+ */
+//================================================================================
+
+_Ghs2smdsConvertor::_Ghs2smdsConvertor( const map <int,const SMDS_MeshNode*> & ghs2NodeMap)
+  :_ghs2NodeMap( & ghs2NodeMap ), _nodeByGhsId( 0 )
+{
+}
+
+//================================================================================
+/*!
+ * \brief Creates _Ghs2smdsConvertor
+ */
+//================================================================================
+
+_Ghs2smdsConvertor::_Ghs2smdsConvertor( const vector <const SMDS_MeshNode*> &  nodeByGhsId)
+  : _ghs2NodeMap( 0 ), _nodeByGhsId( &nodeByGhsId )
+{
+}
+
+//================================================================================
+/*!
+ * \brief Return SMDS element by ids of GHS3D nodes
+ */
+//================================================================================
+
+const SMDS_MeshElement* _Ghs2smdsConvertor::getElement(const vector<int>& ghsNodes) const
+{
+  size_t nbNodes = ghsNodes.size();
+  vector<const SMDS_MeshNode*> nodes( nbNodes, 0 );
+  for ( size_t i = 0; i < nbNodes; ++i ) {
+    int ghsNode = ghsNodes[ i ];
+    if ( _ghs2NodeMap ) {
+      map <int,const SMDS_MeshNode*>::const_iterator in = _ghs2NodeMap->find( ghsNode);
+      if ( in == _ghs2NodeMap->end() )
+        return 0;
+      nodes[ i ] = in->second;
+    }
+    else {
+      if ( ghsNode < 1 || ghsNode > _nodeByGhsId->size() )
+        return 0;
+      nodes[ i ] = (*_nodeByGhsId)[ ghsNode-1 ];
+    }
+  }
+  if ( nbNodes == 1 )
+    return nodes[0];
+
+  if ( nbNodes == 2 ) {
+    const SMDS_MeshElement* edge= SMDS_Mesh::FindEdge( nodes[0], nodes[1] );
+    if ( !edge )
+      edge = new SMDS_MeshEdge( nodes[0], nodes[1] );
+    return edge;
+  }
+  if ( nbNodes == 3 ) {
+    const SMDS_MeshElement* face = SMDS_Mesh::FindFace( nodes );
+    if ( !face )
+      face = new SMDS_FaceOfNodes( nodes[0], nodes[1], nodes[2] );
+    return face;
+  }
+  if ( nbNodes == 4 )
+    return new SMDS_VolumeOfNodes( nodes[0], nodes[1], nodes[2], nodes[3] );
+
+  return 0;
+}
+

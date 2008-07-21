@@ -29,8 +29,14 @@
 
 #include "SMESH_3D_Algo.hxx"
 
+#include <map>
+#include <vector>
+
 class SMESH_Mesh;
 class GHS3DPlugin_Hypothesis;
+class SMDS_MeshNode;
+class TCollection_AsciiString;
+class _Ghs2smdsConvertor;
 
 class GHS3DPlugin_GHS3D: public SMESH_3D_Algo
 {
@@ -49,10 +55,30 @@ public:
                        SMESH_MesherHelper* aHelper);
 
 private:
+
+  bool storeErrorDescription(const TCollection_AsciiString& logFile,
+                             const _Ghs2smdsConvertor &     toSmdsConvertor );
+
   int  _iShape;
   int  _nbShape;
   bool _keepFiles;
   const GHS3DPlugin_Hypothesis* _hyp;
+};
+
+/*!
+ * \brief Convertor of GHS3D elements to SMDS ones
+ */
+class _Ghs2smdsConvertor
+{
+  const std::map <int,const SMDS_MeshNode*> * _ghs2NodeMap;
+  const std::vector <const SMDS_MeshNode*> *  _nodeByGhsId;
+
+public:
+  _Ghs2smdsConvertor( const std::map <int,const SMDS_MeshNode*> & ghs2NodeMap);
+
+  _Ghs2smdsConvertor( const std::vector <const SMDS_MeshNode*> &  nodeByGhsId);
+
+  const SMDS_MeshElement* getElement(const std::vector<int>& ghsNodes) const;
 };
 
 #endif
