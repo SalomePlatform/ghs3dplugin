@@ -7,14 +7,21 @@
 
 <meshers-group name="GHS3D"
                resources="GHS3DPlugin"
-               server-lib="libGHS3DEngine.so"
-               gui-lib="">
+               server-lib="GHS3DEngine"
+               gui-lib="GHS3DPluginGUI">
+  <hypotheses>
+    <hypothesis type="GHS3D_Parameters"
+		label-id="GHS3D Parameters"
+		icon-id="mesh_hypo_ghs3d.png"
+		dim="3"/>
+  </hypotheses>
   <algorithms>
     <algorithm type="GHS3D_3D"
                label-id="Tetrahedron (GHS3D)"
-               icon-id="mesh_algo_tetra.png"
+               icon-id="mesh_tree_hypo_ghs3d.png"
                input="TRIA,QUAD"
 	       need-geom="false"
+               opt-hypos="GHS3D_Parameters"
                dim="3"/>
   </algorithms>
 </meshers-group>

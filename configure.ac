@@ -206,43 +206,64 @@ AC_SUBST_FILE(CORBA)
 corba=make_$ORB
 CORBA=adm_local/unix/$corba
 
-echo
-echo ---------------------------------------------
-echo testing openGL
-echo ---------------------------------------------
-echo
+GHS3DPLUGIN_WITH_GUI=yes
 
-CHECK_OPENGL
+AM_CONDITIONAL(GHS3DPLUGIN_ENABLE_GUI, [test "${GHS3DPLUGIN_WITH_GUI}" = "yes"])
+
+if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
+
+    echo
+    echo ---------------------------------------------
+    echo testing openGL
+    echo ---------------------------------------------
+    echo
+
+    CHECK_OPENGL
+
+    echo
+    echo ---------------------------------------------
+    echo testing QT
+    echo ---------------------------------------------
+    echo
+
+    CHECK_QT
+
+    echo
+    echo ---------------------------------------------
+    echo testing VTK
+    echo ---------------------------------------------
+    echo
+
+    CHECK_VTK
+
+    echo
+    echo ---------------------------------------------
+    echo Testing GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_SALOME_GUI
+
+    echo
+    echo ---------------------------------------------
+    echo Testing full GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_CORBA_IN_GUI
+    if test "x${CORBA_IN_GUI}" != "xyes"; then
+      echo "failed : For configure GHS3DPLUGIN module necessary full GUI !"
+      exit
+    fi
+fi
 
 echo
 echo ---------------------------------------------
-echo testing QT
-echo ---------------------------------------------
-echo
-
-CHECK_QT
-
-echo
-echo ---------------------------------------------
-echo testing VTK
-echo ---------------------------------------------
-echo
-
-CHECK_VTK
-
-echo
-echo ---------------------------------------------
-echo testing HDF5
+echo Testing HDF5
 echo ---------------------------------------------
 echo
 
 CHECK_HDF5
-
-echo
-echo ---------------------------------------------
-echo Testing OpenCascade
-echo ---------------------------------------------
-echo
 
 echo
 echo ---------------------------------------------
@@ -251,6 +272,12 @@ echo ---------------------------------------------
 echo
 
 CHECK_BOOST
+
+echo
+echo ---------------------------------------------
+echo Testing OpenCascade
+echo ---------------------------------------------
+echo
 
 CHECK_CAS
 
@@ -261,26 +288,6 @@ echo ---------------------------------------------
 echo
 
 CHECK_HTML_GENERATORS
-
-echo
-echo ---------------------------------------------
-echo Testing GUI
-echo ---------------------------------------------
-echo
-
-CHECK_SALOME_GUI
-
-echo
-echo ---------------------------------------------
-echo Testing full GUI
-echo ---------------------------------------------
-echo
-
-CHECK_CORBA_IN_GUI
-if test "x${CORBA_IN_GUI}" != "xyes"; then
-  echo "failed : For configure CALCULATOR module necessary full GUI !"
-  exit
-fi
 
 echo
 echo ---------------------------------------------
@@ -298,22 +305,14 @@ echo
 
 CHECK_GEOM
 
-# echo
-# echo ---------------------------------------------
-# echo Testing Med
-# echo ---------------------------------------------
-# echo
-# 
-# CHECK_MED
-# 
-# echo
-# echo ---------------------------------------------
-# echo Testing Netgen
-# echo ---------------------------------------------
-# echo
-# 
-# CHECK_NETGEN
-# 
+echo
+echo ---------------------------------------------
+echo Testing Med
+echo ---------------------------------------------
+echo
+
+CHECK_MED
+
 echo
 echo ---------------------------------------------
 echo Testing SMesh
@@ -337,7 +336,12 @@ echo ---------------------------------------------
 echo
 
 echo Configure
-variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok SMesh_ok GHS3D_ok"
+if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
+variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok OpenGL_ok qt_ok vtk_ok"
+fi
+if test "${GHS3DPLUGIN_WITH_GUI}" = "no"; then
+variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok"
+fi
 for var in $variables
 do
    printf "   %10s : " `echo \$var | sed -e "s,_ok,,"`
@@ -378,6 +382,7 @@ AC_OUTPUT([ \
   ./bin/Makefile \
   ./GHS3DPLUGIN_version.h \
   ./src/Makefile \
+  ./src/GUI/Makefile \
   ./resources/Makefile \
   ./idl/Makefile \
   Makefile \

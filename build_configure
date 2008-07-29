@@ -11,6 +11,19 @@
 
 ORIG_DIR=`pwd`
 CONF_DIR=`echo $0 | sed -e "s,[^/]*$,,;s,/$,,;s,^$,.,"`
+GHS3DPLUGIN_WITH_GUI="yes"
+
+for option
+do
+  case $option in
+      -with-gui | --with-gui)
+          GHS3DPLUGIN_WITH_GUI="yes"
+          break;;
+      -without-gui | --without-gui | -with-gui=no | --with-gui=no)
+          GHS3DPLUGIN_WITH_GUI="no"
+          break;;
+  esac
+done
 
 ########################################################################
 # Test if the KERNEL_ROOT_DIR is set correctly
@@ -44,6 +57,14 @@ if test ! -d "${GEOM_ROOT_DIR}"; then
 fi
 
 ########################################################################
+# Test if the MED_ROOT_DIR is set correctly
+
+if test ! -d "${MED_ROOT_DIR}"; then
+    echo "failed : MED_ROOT_DIR variable is not correct !"
+    exit
+fi
+
+########################################################################
 # Test if the SMESH_ROOT_DIR is set correctly
 
 if test ! -d "${SMESH_ROOT_DIR}"; then
@@ -53,6 +74,11 @@ fi
 
 cd ${CONF_DIR}
 ABS_CONF_DIR=`pwd`
+
+#######################################################################
+# Update configure.ac script: to set GHS3DPLUGIN_WITH_GUI variable
+sed -e s/GHS3DPLUGIN_WITH_GUI=[a-z]*/GHS3DPLUGIN_WITH_GUI=${GHS3DPLUGIN_WITH_GUI}/g configure.ac > configure.tmp
+mv -f configure.tmp configure.ac
 
 mkdir -p salome_adm/unix/config_files
 #cp -f ${KERNEL_ROOT_DIR}/salome_adm/unix/config_files/* salome_adm/unix/config_files
@@ -82,11 +108,20 @@ cp -f ${KERNEL_ROOT_DIR}/salome_adm/unix/SALOMEconfig.h.in salome_adm/unix
 #   autom4te.cache (directory)
 echo "====================================================== aclocal"
 
-aclocal -I adm_local/unix/config_files \
-        -I ${KERNEL_ROOT_DIR}/salome_adm/unix/config_files \
-	-I ${GUI_ROOT_DIR}/adm_local/unix/config_files \
-	-I ${GEOM_ROOT_DIR}/adm_local/unix/config_files \
-	-I ${SMESH_ROOT_DIR}/adm_local/unix/config_files || exit 1
+if test ${GHS3DPLUGIN_WITH_GUI} = yes; then
+  aclocal -I adm_local/unix/config_files \
+          -I ${KERNEL_ROOT_DIR}/salome_adm/unix/config_files \
+          -I ${GUI_ROOT_DIR}/adm_local/unix/config_files \
+          -I ${MED_ROOT_DIR}/adm_local/unix/config_files \
+          -I ${GEOM_ROOT_DIR}/adm_local/unix/config_files \
+          -I ${SMESH_ROOT_DIR}/adm_local/unix/config_files || exit 1
+else
+  aclocal -I adm_local/unix/config_files \
+          -I ${KERNEL_ROOT_DIR}/salome_adm/unix/config_files \
+          -I ${MED_ROOT_DIR}/adm_local/unix/config_files \
+          -I ${GEOM_ROOT_DIR}/adm_local/unix/config_files \
+          -I ${SMESH_ROOT_DIR}/adm_local/unix/config_files || exit 1
+fi
 
 # ____________________________________________________________________
 # libtoolize creates some configuration files (ltmain.sh,

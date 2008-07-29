@@ -27,25 +27,21 @@
 
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-if GHS3DPLUGIN_ENABLE_GUI
-  SUBDIRS = GUI
-endif
-
 # header files 
 salomeinclude_HEADERS =
 
 # Libraries targets
-lib_LTLIBRARIES = libGHS3DEngine.la
+lib_LTLIBRARIES = libGHS3DPluginGUI.la
 
-dist_libGHS3DEngine_la_SOURCES = \
-	GHS3DPlugin_GHS3D.cxx \
-	GHS3DPlugin_GHS3D_i.cxx \
-	GHS3DPlugin_i.cxx \
-	GHS3DPlugin_Hypothesis.cxx \
-	GHS3DPlugin_Hypothesis_i.cxx
+dist_libGHS3DPluginGUI_la_SOURCES = GHS3DPluginGUI_HypothesisCreator.cxx
 
-libGHS3DEngine_la_CPPFLAGS =  \
+MOC_FILES = GHS3DPluginGUI_HypothesisCreator_moc.cxx
+nodist_libGHS3DPluginGUI_la_SOURCES= $(MOC_FILES)
+
+libGHS3DPluginGUI_la_CPPFLAGS =  \
+	$(QT_INCLUDES)        \
 	$(KERNEL_CXXFLAGS)    \
+	$(GUI_CXXFLAGS)       \
 	$(GEOM_CXXFLAGS)      \
 	$(MED_CXXFLAGS)       \
 	$(SMESH_CXXFLAGS)     \
@@ -53,10 +49,16 @@ libGHS3DEngine_la_CPPFLAGS =  \
 	$(CORBA_CXXFLAGS)     \
 	$(CORBA_INCLUDES)     \
 	$(CAS_CPPFLAGS)       \
+        -I$(srcdir)/..        \
 	-I$(top_builddir)/idl \
 	-I$(top_builddir)/salome_adm/unix
 
-libGHS3DEngine_la_LDFLAGS  = \
-	../idl/libSalomeIDLGHS3DPLUGIN.la \
-	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine
-	$(KERNEL_LDFLAGS) -lSalomeGenericObj
+libGHS3DPluginGUI_la_LDFLAGS  = \
+	../../idl/libSalomeIDLGHS3DPLUGIN.la \
+	$(SMESH_LDFLAGS) -lSMESH \
+	$(CAS_KERNEL)
+
+# resources files
+nodist_salomeres_DATA= \
+	GHS3DPlugin_images.qm \
+	GHS3DPlugin_msg_en.qm

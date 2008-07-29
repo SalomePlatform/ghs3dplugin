@@ -32,6 +32,7 @@ using namespace std;
 #include "utilities.h"
 
 #include "GHS3DPlugin_GHS3D_i.hxx"
+#include "GHS3DPlugin_Hypothesis_i.hxx"
 
 template <class T> class GHS3DPlugin_Creator_i:public HypothesisCreator_i<T>
 {
@@ -55,9 +56,12 @@ extern "C"
 
     // Hypotheses
 
-    // Algorithms
+    // Algorithm
     if (strcmp(aHypName, "GHS3D_3D") == 0)
       aCreator = new GHS3DPlugin_Creator_i<GHS3DPlugin_GHS3D_i>;
+    // Hypothesis
+    else if (strcmp(aHypName, "GHS3D_Parameters") == 0)
+      aCreator = new GHS3DPlugin_Creator_i<GHS3DPlugin_Hypothesis_i>;
     else ;
 
     return aCreator;
