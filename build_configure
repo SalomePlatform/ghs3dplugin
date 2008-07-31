@@ -43,9 +43,11 @@ fi
 ########################################################################
 # Test if the GUI_ROOT_DIR is set correctly
 
-if test ! -d "${GUI_ROOT_DIR}"; then
-    echo "failed : GUI_ROOT_DIR variable is not correct !"
-    exit
+if test ${GHS3DPLUGIN_WITH_GUI} = yes; then
+    if test ! -d "${GUI_ROOT_DIR}"; then
+        echo "failed : GUI_ROOT_DIR variable is not correct !"
+        exit
+    fi
 fi
 
 ########################################################################
@@ -87,17 +89,18 @@ mkdir -p salome_adm/unix/config_files
 cp -f ${KERNEL_ROOT_DIR}/salome_adm/unix/SALOMEconfig.h.in salome_adm/unix
 
 #cp -f ${GUI_ROOT_DIR}/adm_local/unix/config_files/* salome_adm/unix/config_files
+#cp -f ${MED_ROOT_DIR}/adm_local/unix/config_files/* salome_adm/unix/config_files
 #cp -f ${GEOM_ROOT_DIR}/adm_local/unix/config_files/* salome_adm/unix/config_files
 #cp -f ${SMESH_ROOT_DIR}/adm_local/unix/config_files/* salome_adm/unix/config_files
 
 # remove KERNEL deprecated configure files
 #for deprecated in ac_cc_warnings.m4 ac_cxx_partial_specialization.m4 \
-#  check_mico.m4 config.guess ltmain.sh ac_cxx_bool.m4 ltconfig ac_cxx_typename.m4 \
+#    check_mico.m4 config.guess ltmain.sh ac_cxx_bool.m4 ltconfig ac_cxx_typename.m4 \
 #    check_pthreads.m4 config.sub libtool.m4 ac_cxx_mutable.m4 missing
 #    do
-#      rm -f salome_adm/unix/config_files/${deprecated}
-#      done
-
+#	rm -f salome_adm/unix/config_files/${deprecated}
+#    done
+		      
 
 # ____________________________________________________________________
 # aclocal creates the aclocal.m4 file from the standard macro and the
