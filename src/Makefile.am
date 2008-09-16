@@ -31,8 +31,15 @@ if GHS3DPLUGIN_ENABLE_GUI
   SUBDIRS = GUI
 endif
 
+DIST_SUBDIRS = GUI
+
 # header files 
-salomeinclude_HEADERS =
+salomeinclude_HEADERS = \
+       GHS3DPlugin_Defs.hxx \
+       GHS3DPlugin_GHS3D.hxx \
+       GHS3DPlugin_GHS3D_i.hxx \
+       GHS3DPlugin_Hypothesis.hxx \
+       GHS3DPlugin_Hypothesis_i.hxx
 
 # Libraries targets
 lib_LTLIBRARIES = libGHS3DEngine.la
@@ -46,13 +53,13 @@ dist_libGHS3DEngine_la_SOURCES = \
 
 libGHS3DEngine_la_CPPFLAGS =  \
 	$(KERNEL_CXXFLAGS)    \
+	$(CAS_CPPFLAGS)       \
 	$(GEOM_CXXFLAGS)      \
 	$(MED_CXXFLAGS)       \
 	$(SMESH_CXXFLAGS)     \
 	$(BOOST_CPPFLAGS)     \
 	$(CORBA_CXXFLAGS)     \
 	$(CORBA_INCLUDES)     \
-	$(CAS_CPPFLAGS)       \
 	-I$(top_builddir)/idl \
 	-I$(top_builddir)/salome_adm/unix
 

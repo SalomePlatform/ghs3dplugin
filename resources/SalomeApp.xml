@@ -1,0 +1,9 @@
+<document>
+  <section name="resources">
+    <parameter name="GHS3DPlugin" value="${GHS3DPLUGIN_ROOT_DIR}/share/salome/resources/ghs3dplugin"/>
+  </section>
+  <section name="SMESH">
+    <!-- Default SMESH module plugins -->
+    <parameter name="plugins" value="NETGENPlugin,GHS3DPlugin"/>
+  </section>
+</document>
