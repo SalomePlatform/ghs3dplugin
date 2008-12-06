@@ -1,4 +1,4 @@
-#  Copyright (C) 2005  CEA/DEN, EDF R&D, OPEN CASCADE, PRINCIPIA R&D
+#  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -14,17 +14,14 @@
 #  License along with this library; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #
-# See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+#  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 # -* Makefile *- 
-#
 # Author : Edward AGAPOV (OCC)
 # Modified by : Alexander BORODIN (OCN) - autotools usage
 # Module : GHS3DPLUGIN
 # Date : 10/01/2004
 #
-#
-
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
 # header files 
