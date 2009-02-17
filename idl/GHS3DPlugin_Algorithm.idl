@@ -1,31 +1,29 @@
-//  Copyright (C) 2003  OPEN CASCADE, EADS/CCR, LIP6, CEA/DEN,
-//  CEDRAT, EDF R&D, LEG, PRINCIPIA R&D, BUREAU VERITAS 
-// 
-//  This library is free software; you can redistribute it and/or 
-//  modify it under the terms of the GNU Lesser General Public 
-//  License as published by the Free Software Foundation; either 
-//  version 2.1 of the License. 
-// 
-//  This library is distributed in the hope that it will be useful, 
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of 
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU 
-//  Lesser General Public License for more details. 
-// 
-//  You should have received a copy of the GNU Lesser General Public 
-//  License along with this library; if not, write to the Free Software 
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA 
-// 
-// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+//  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
 //
+//  This library is free software; you can redistribute it and/or
+//  modify it under the terms of the GNU Lesser General Public
+//  License as published by the Free Software Foundation; either
+//  version 2.1 of the License.
 //
+//  This library is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//  Lesser General Public License for more details.
+//
+//  You should have received a copy of the GNU Lesser General Public
+//  License along with this library; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+//
+//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 //  File   : GHS3D_Algorithm.idl
 //  Author : Julia DOROVSKIKH
 //  $Header$
-
+//
 #ifndef _GHS3D_Algorithm_IDL_
 #define _GHS3D_Algorithm_IDL_
 
+#include "SALOME_Exception.idl"
 #include "SMESH_Hypothesis.idl"
 
 /*!
@@ -40,6 +38,73 @@ module GHS3DPlugin
   {
   };
 
+  /*!
+   * Parameters of "Tetrahedron (GHS3D)" algorithm
+   */
+  interface GHS3DPlugin_Hypothesis : SMESH::SMESH_Hypothesis
+  {
+    /*!
+     * To mesh "holes" in a solid or not. Default is to mesh.
+     */
+    void SetToMeshHoles(in boolean toMesh);
+    boolean GetToMeshHoles();
+    /*!
+     * Maximal size of memory to be used by the algorithm (in Megabytes).
+     * Negative value means not to use this option
+     */
+    void SetMaximumMemory(in short MB) raises (SALOME::SALOME_Exception);
+    short GetMaximumMemory();
+    /*!
+     * Initial size of memory to be used by the algorithm (in Megabytes) in
+     * automatic memory adjustment mode. Default is zero.
+     * Negative value means not to use this option
+     */
+    void SetInitialMemory(in short MB) raises (SALOME::SALOME_Exception);
+    short GetInitialMemory();
+    /*!
+     * Optimization level: 0-none, 1-light, 2-medium, 3-strong. Default is medium
+     */
+    void SetOptimizationLevel(in short level) raises (SALOME::SALOME_Exception);
+    short GetOptimizationLevel();
+    /*!
+     * Path to working directory
+     */
+    void SetWorkingDirectory(in string path) raises (SALOME::SALOME_Exception);
+    string GetWorkingDirectory();
+    /*!
+     * To keep working files or remove them. Log file remains in case of errors anyway.
+     */
+    void SetKeepFiles(in boolean toKeep);
+    boolean GetKeepFiles();
+    /*!
+     * Verbose level [0-10]
+     *  0 - no standard output,
+     *  2 - prints the data, quality statistics of the skin and final meshes and
+     *     indicates when the final mesh is being saved. In addition the software
+     *     gives indication regarding the CPU time.
+     * 10 - same as 2 plus the main steps in the computation, quality statistics
+     *     histogram of the skin mesh, quality statistics histogram together with
+     *     the characteristics of the final mesh.
+     */
+    void SetVerboseLevel(in short level);
+    short GetVerboseLevel();
+    /*!
+     * To create new nodes
+     */
+    void SetToCreateNewNodes(in boolean toCreate);
+    boolean GetToCreateNewNodes();
+    /*!
+     * To use boundary recovery version which tries to create mesh on a very poor
+     * quality surface mesh
+     */
+    void SetToUseBoundaryRecoveryVersion(in boolean toUse);
+    boolean GetToUseBoundaryRecoveryVersion();
+    /*!
+     * To set hiden/undocumented/advanced options
+     */
+    void SetTextOption(in string option);
+    string GetTextOption();
+  };
 };
 
 #endif

@@ -1,5 +1,4 @@
-<?xml version='1.0' encoding='us-ascii'?>
-<!DOCTYPE meshers PUBLIC "" "desktop.dtd">
+<!DOCTYPE TS>
 <!--
   Copyright (C) 2004-2008  CEA/DEN, EDF R&D
 
@@ -20,30 +19,20 @@
   See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 
 -->
-
-<!--  GUI customization for MESH component  -->
-
-<meshers>
-
-<meshers-group name="GHS3D"
-               resources="GHS3DPlugin"
-               server-lib="GHS3DEngine"
-               gui-lib="GHS3DPluginGUI">
-  <hypotheses>
-    <hypothesis type="GHS3D_Parameters"
-		label-id="GHS3D Parameters"
-		icon-id="mesh_hypo_ghs3d.png"
-		dim="3"/>
-  </hypotheses>
-  <algorithms>
-    <algorithm type="GHS3D_3D"
-               label-id="Tetrahedron (GHS3D)"
-               icon-id="mesh_tree_hypo_ghs3d.png"
-               input="TRIA,QUAD"
-	       need-geom="false"
-               opt-hypos="GHS3D_Parameters"
-               dim="3"/>
-  </algorithms>
-</meshers-group>
-
-</meshers>
+<TS version="1.1" >
+    <context>
+        <name>@default</name>
+        <message>
+            <source>ICON_DLG_GHS3D_PARAMETERS</source>
+            <translation>mesh_hypo_ghs3d.png</translation>
+        </message>
+        <message>
+            <source>ICON_SMESH_TREE_ALGO_GHS3D_3D</source>
+            <translation>mesh_tree_hypo_ghs3d.png</translation>
+        </message>
+        <message>
+            <source>ICON_SMESH_TREE_HYPO_GHS3D_Parameters</source>
+            <translation>mesh_tree_hypo_ghs3d.png</translation>
+        </message>
+    </context>
+</TS>

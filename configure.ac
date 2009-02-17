@@ -1,21 +1,32 @@
+#  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License.
+#
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+#
+#  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 #  PLEASE DO NOT MODIFY configure.in FILE
-#
 #  ALL CHANGES WILL BE DISCARDED BY THE NEXT
 #  build_configure COMMAND
-#
 #  CHANGES MUST BE MADE IN configure.in.base FILE
-#
-#
 # Author : Marc Tajchman (CEA)
 # Date : 28/06/2001
 # Modified by : Patrick GOLDBRONN (CEA)
 # Modified by : Marc Tajchman (CEA)
-#
 # Created from configure.in.base
 #
-
-AC_INIT([Salome2 Project GHS3DPLUGIN module],[4.1.1], [webmaster.salome@opencascade.com], [salome])
+AC_INIT([Salome2 Project GHS3DPLUGIN module],[5.1.0], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
 AC_CONFIG_AUX_DIR(salome_adm/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -206,43 +217,64 @@ AC_SUBST_FILE(CORBA)
 corba=make_$ORB
 CORBA=adm_local/unix/$corba
 
-echo
-echo ---------------------------------------------
-echo testing openGL
-echo ---------------------------------------------
-echo
+GHS3DPLUGIN_WITH_GUI=yes
 
-CHECK_OPENGL
+AM_CONDITIONAL(GHS3DPLUGIN_ENABLE_GUI, [test "${GHS3DPLUGIN_WITH_GUI}" = "yes"])
+
+if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
+
+    echo
+    echo ---------------------------------------------
+    echo testing openGL
+    echo ---------------------------------------------
+    echo
+
+    CHECK_OPENGL
+
+    echo
+    echo ---------------------------------------------
+    echo testing QT
+    echo ---------------------------------------------
+    echo
+
+    CHECK_QT
+
+    echo
+    echo ---------------------------------------------
+    echo testing VTK
+    echo ---------------------------------------------
+    echo
+
+    CHECK_VTK
+
+    echo
+    echo ---------------------------------------------
+    echo Testing GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_SALOME_GUI
+
+    echo
+    echo ---------------------------------------------
+    echo Testing full GUI
+    echo ---------------------------------------------
+    echo
+
+    CHECK_CORBA_IN_GUI
+    if test "x${CORBA_IN_GUI}" != "xyes"; then
+      echo "failed : For configure GHS3DPLUGIN module necessary full GUI !"
+      exit
+    fi
+fi
 
 echo
 echo ---------------------------------------------
-echo testing MSG2QM
-echo ---------------------------------------------
-echo
-
-CHECK_MSG2QM
-
-echo
-echo ---------------------------------------------
-echo testing VTK
-echo ---------------------------------------------
-echo
-
-CHECK_VTK
-
-echo
-echo ---------------------------------------------
-echo testing HDF5
+echo Testing HDF5
 echo ---------------------------------------------
 echo
 
 CHECK_HDF5
-
-echo
-echo ---------------------------------------------
-echo Testing OpenCascade
-echo ---------------------------------------------
-echo
 
 echo
 echo ---------------------------------------------
@@ -251,6 +283,12 @@ echo ---------------------------------------------
 echo
 
 CHECK_BOOST
+
+echo
+echo ---------------------------------------------
+echo Testing OpenCascade
+echo ---------------------------------------------
+echo
 
 CHECK_CAS
 
@@ -261,26 +299,6 @@ echo ---------------------------------------------
 echo
 
 CHECK_HTML_GENERATORS
-
-echo
-echo ---------------------------------------------
-echo Testing GUI
-echo ---------------------------------------------
-echo
-
-CHECK_SALOME_GUI
-
-echo
-echo ---------------------------------------------
-echo Testing full GUI
-echo ---------------------------------------------
-echo
-
-CHECK_CORBA_IN_GUI
-if test "x${CORBA_IN_GUI}" != "xyes"; then
-  echo "failed : For configure CALCULATOR module necessary full GUI !"
-  exit
-fi
 
 echo
 echo ---------------------------------------------
@@ -298,22 +316,14 @@ echo
 
 CHECK_GEOM
 
-# echo
-# echo ---------------------------------------------
-# echo Testing Med
-# echo ---------------------------------------------
-# echo
-# 
-# CHECK_MED
-# 
-# echo
-# echo ---------------------------------------------
-# echo Testing Netgen
-# echo ---------------------------------------------
-# echo
-# 
-# CHECK_NETGEN
-# 
+echo
+echo ---------------------------------------------
+echo Testing Med
+echo ---------------------------------------------
+echo
+
+CHECK_MED
+
 echo
 echo ---------------------------------------------
 echo Testing SMesh
@@ -337,7 +347,12 @@ echo ---------------------------------------------
 echo
 
 echo Configure
-variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok SMesh_ok GHS3D_ok"
+if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
+variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok OpenGL_ok qt_ok vtk_ok"
+fi
+if test "${GHS3DPLUGIN_WITH_GUI}" = "no"; then
+variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok"
+fi
 for var in $variables
 do
    printf "   %10s : " `echo \$var | sed -e "s,_ok,,"`
@@ -378,6 +393,7 @@ AC_OUTPUT([ \
   ./bin/Makefile \
   ./GHS3DPLUGIN_version.h \
   ./src/Makefile \
+  ./src/GUI/Makefile \
   ./resources/Makefile \
   ./idl/Makefile \
   Makefile \

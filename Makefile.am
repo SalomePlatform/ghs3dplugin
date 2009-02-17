@@ -1,4 +1,4 @@
-#  Copyright (C) 2005  CEA/DEN, EDF R&D, OPEN CASCADE, PRINCIPIA R&D
+#  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -14,31 +14,42 @@
 #  License along with this library; if not, write to the Free Software
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #
-# See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+#  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 # -* Makefile *-
-#
 # Author : Patrick GOLDBRONN (CEA)
 # Date : 28/06/2001
 #  Modified by : Alexander BORODIN (OCN) - autotools usage
 # $Header:
 #
-
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
+if GHS3DPLUGIN_ENABLE_GUI
+  ACLOCAL_AMFLAGS = -I adm_local/unix/config_files \
+                    -I ${KERNEL_ROOT_DIR}/salome_adm/unix/config_files \
+                    -I ${GUI_ROOT_DIR}/adm_local/unix/config_files \
+                    -I ${MED_ROOT_DIR}/adm_local/unix/config_files \
+                    -I ${GEOM_ROOT_DIR}/adm_local/unix/config_files \
+                    -I ${SMESH_ROOT_DIR}/adm_local/unix/config_files
+else !GHS3DPLUGIN_ENABLE_GUI
+  ACLOCAL_AMFLAGS = -I adm_local/unix/config_files \
+                    -I ${KERNEL_ROOT_DIR}/salome_adm/unix/config_files \
+                    -I ${MED_ROOT_DIR}/adm_local/unix/config_files \
+                    -I ${GEOM_ROOT_DIR}/adm_local/unix/config_files \
+                    -I ${SMESH_ROOT_DIR}/adm_local/unix/config_files
+endif
 
-SUBDIRS = idl adm_local resources src bin 
+SUBDIRS = idl adm_local resources src bin
 
 DIST_SUBDIRS = idl adm_local resources src bin 
 
 DISTCLEANFILES = a.out aclocal.m4 configure
 
-salomeinclude_DATA=GHS3DPLUGIN_version.h
+salomeinclude_DATA = GHS3DPLUGIN_version.h
 
-EXTRA_DIST+= \
+EXTRA_DIST += \
 	build_configure \
-	clean_configure \
-	LICENCE
+	clean_configure
 
 dist-hook:
 	rm -rf `find $(distdir) -name CVS`

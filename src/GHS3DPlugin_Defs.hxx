@@ -16,18 +16,21 @@
 //
 //  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
-//  File   : GHS3DPLUGIN_version.h
-//  Author : Vadim SANDLER
-//  Module : SALOME
+//=============================================================================
+// File      : GHS3DPlugin_Defs.hxx
+// Author    : Alexander A. BORODIN
 //
-#if !defined(__GHS3DPLUGIN_VERSION_H__)
-#define __GHS3DPLUGIN_VERSION_H__
+#ifndef _GHS3DPlugin_DEFS_HXX_
+#define _GHS3DPlugin_DEFS_HXX_
 
-/*
-  GHS3DPLUGIN_VERSION is (major << 16) + (minor << 8) + patch.
-*/
+#ifdef WIN32
+  #ifdef GHS3DPLUGIN_EXPORTS
+    #define GHS3DPLUGIN_EXPORT __declspec( dllexport )
+  #else
+    #define GHS3DPLUGIN_EXPORT __declspec( dllimport )
+  #endif
+#else
+  #define GHS3DPLUGIN_EXPORT
+#endif
 
-#define GHS3DPLUGIN_VERSION_STR "@VERSION@"
-#define GHS3DPLUGIN_VERSION     @XVERSION@
-
-#endif // __GHS3DPLUGIN_VERSION_H__
+#endif
