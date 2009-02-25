@@ -217,11 +217,34 @@ AC_SUBST_FILE(CORBA)
 corba=make_$ORB
 CORBA=adm_local/unix/$corba
 
-GHS3DPLUGIN_WITH_GUI=yes
+echo
+echo ---------------------------------------------
+echo Testing GUI
+echo ---------------------------------------------
+echo
 
-AM_CONDITIONAL(GHS3DPLUGIN_ENABLE_GUI, [test "${GHS3DPLUGIN_WITH_GUI}" = "yes"])
+CHECK_GUI_MODULE
 
-if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
+gui_ok=no
+if test "${SalomeGUI_need}" != "no" -a "${FullGUI_ok}" = "yes" ; then 
+  gui_ok=yes
+fi
+
+AM_CONDITIONAL(GHS3DPLUGIN_ENABLE_GUI, [test "${gui_ok}" = "yes"])
+
+if test "${SalomeGUI_need}" == "yes"; then
+  if test "${FullGUI_ok}" != "yes"; then
+    AC_MSG_WARN(For configure GHS3DPLUGIN module necessary full GUI!)
+  fi
+elif test "${SalomeGUI_need}" == "auto"; then
+  if test "${FullGUI_ok}" != "yes"; then
+    AC_MSG_WARN(Full GUI not found. Build will be done without GUI!)
+  fi
+elif test "${SalomeGUI_need}" == "no"; then
+  echo Build without GUI option has been chosen
+fi
+
+if test "${gui_ok}" = "yes"; then
 
     echo
     echo ---------------------------------------------
@@ -246,26 +269,6 @@ if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
     echo
 
     CHECK_VTK
-
-    echo
-    echo ---------------------------------------------
-    echo Testing GUI
-    echo ---------------------------------------------
-    echo
-
-    CHECK_SALOME_GUI
-
-    echo
-    echo ---------------------------------------------
-    echo Testing full GUI
-    echo ---------------------------------------------
-    echo
-
-    CHECK_CORBA_IN_GUI
-    if test "x${CORBA_IN_GUI}" != "xyes"; then
-      echo "failed : For configure GHS3DPLUGIN module necessary full GUI !"
-      exit
-    fi
 fi
 
 echo
@@ -347,12 +350,14 @@ echo ---------------------------------------------
 echo
 
 echo Configure
-if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
-variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok OpenGL_ok qt_ok vtk_ok"
+if test "${gui_ok}" = "yes"; then
+  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok gui_ok Geom_ok Med_ok SMesh_ok GHS3D_ok OpenGL_ok qt_ok vtk_ok"
+elif test "${SalomeGUI_need}" != "no"; then
+  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok gui_ok Geom_ok Med_ok SMesh_ok GHS3D_ok"
+else
+  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok"
 fi
-if test "${GHS3DPLUGIN_WITH_GUI}" = "no"; then
-variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok"
-fi
+
 for var in $variables
 do
    printf "   %10s : " `echo \$var | sed -e "s,_ok,,"`
