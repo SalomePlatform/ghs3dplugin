@@ -546,11 +546,23 @@ static int findShapeID(SMESH_Mesh&          mesh,
     if ( toMeshHoles )
       return meshDS->ShapeToIndex( solid1 );
 
-    // - are we at a hole boundary face?
+    // - Are we at a hole boundary face?
     if ( shells(1).IsSame( BRepTools::OuterShell( solid1 )) )
-      return meshDS->ShapeToIndex( solid1 ); // - no
+    { // - No, but maybe a hole is bound by two shapes? Does shells(1) touches another shell?
+      bool touch = false;
+      TopExp_Explorer eExp( shells(1), TopAbs_EDGE );
+      // check if any edge of shells(1) belongs to another shell
+      for ( ; eExp.More() && !touch; eExp.Next() ) {
+        ansIt = mesh.GetAncestors( eExp.Current() );
+        for ( ; ansIt.More() && !touch; ansIt.Next() ) {
+          if ( ansIt.Value().ShapeType() == TopAbs_SHELL )
+            touch = ( !ansIt.Value().IsSame( shells(1) ));
+        }
+      }
+      if (!touch)
+        return meshDS->ShapeToIndex( solid1 );
+    }
   }
-
   // find orientation of geom face within the first solid
   TopExp_Explorer fExp( solid1, TopAbs_FACE );
   for ( ; fExp.More(); fExp.Next() )
