@@ -573,29 +573,22 @@ static int findShapeID(SMESH_Mesh&          mesh,
   if ( !fExp.More() )
     return invalidID; // face not found
 
-  // find UV of the center of triangle on geomFace
+  // find UV of node1 on geomFace
   SMESH_MesherHelper helper( mesh );
-  gp_XY UV(0,0);
-  const SMDS_MeshNode* nodes[3] = { node1, node2, node3 };
-  for ( int n = 0; n < 3; ++n )
-  {
-    const SMDS_MeshNode* node = nodes[n]
-    gp_XY uv = helper.GetNodeUV( geomFace, node );
+  gp_XY uv = helper.GetNodeUV( geomFace, node1 );
 
-    // check that uv is correct
-    gp_Pnt nodePnt ( node->X(), node->Y(), node->Z() );
-    double tol = BRep_Tool::Tolerance( geomFace );
-    BRepAdaptor_Surface surface( geomFace );
-    if ( nodePnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol ) {
-      // project node onto geomFace to get right UV
-      GeomAPI_ProjectPointOnSurf projector( nodePnt, surface.Surface().Surface() );
-      if ( !projector.IsDone() || projector.NbPoints() < 1 )
-        return invalidID;
-      Quantity_Parameter U,V;
-      projector.LowerDistanceParameters(U,V);
-      uv = gp_XY( U,V );
-    }
-    UV += uv / 3.;
+  // check that uv is correct
+  gp_Pnt node1Pnt ( node1->X(), node1->Y(), node1->Z() );
+  double tol = BRep_Tool::Tolerance( geomFace );
+  BRepAdaptor_Surface surface( geomFace );
+  if ( node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol ) {
+    // project node1 onto geomFace to get right UV
+    GeomAPI_ProjectPointOnSurf projector( node1Pnt, surface.Surface().Surface() );
+    if ( !projector.IsDone() || projector.NbPoints() < 1 )
+      return invalidID;
+    Quantity_Parameter U,V;
+    projector.LowerDistanceParameters(U,V);
+    uv = gp_XY( U,V );
   }
   // normale to face at node1
   gp_Pnt node2Pnt ( node2->X(), node2->Y(), node2->Z() );
@@ -608,7 +601,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
   
   // normale to geomFace at UV
   gp_Vec du, dv;
-  surface.D1( UV.X(), UV.Y(), node1Pnt, du, dv );
+  surface.D1( uv.X(), uv.Y(), node1Pnt, du, dv );
   gp_Vec geomNormal = du ^ dv;
   if ( geomNormal.SquareMagnitude() < DBL_MIN )
     return findShapeID( mesh, node2, node3, node1, toMeshHoles );
