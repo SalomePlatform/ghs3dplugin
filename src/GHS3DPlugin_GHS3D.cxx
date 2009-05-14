@@ -578,10 +578,14 @@ static int findShapeID(SMESH_Mesh&          mesh,
   BRepAdaptor_Surface surface( geomFace );
   gp_XY UV(0,0);
   const SMDS_MeshNode* nodes[3] = { node1, node2, node3 };
+  const SMDS_MeshNode* nNotOnSeamEdge = 0;
+  for ( int n = 0; !nNotOnSeamEdge && n < 3; ++n )
+    if ( !helper.IsSeamShape( nodes[n]->GetPosition()->GetShapeId() ))
+      nNotOnSeamEdge = nodes[n];
   for ( int n = 0; n < 3; ++n )
   {
     const SMDS_MeshNode* node = nodes[n];
-    gp_XY uv = helper.GetNodeUV( geomFace, node );
+    gp_XY uv = helper.GetNodeUV( geomFace, node, nNotOnSeamEdge );
 
     // check that uv is correct
     gp_Pnt nodePnt ( node->X(), node->Y(), node->Z() );
