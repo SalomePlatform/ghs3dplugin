@@ -160,9 +160,14 @@ static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
   gp_XYZ aPnt(0,0,0);
   int j, iShape, nbNode = 4;
 
-  for ( j=0; j<nbNode; j++ )
-    aPnt += gp_XYZ( aNode[j]->X(), aNode[j]->Y(), aNode[j]->Z() );
-  aPnt /= nbNode;
+  for ( j=0; j<nbNode; j++ ) {
+    gp_XYZ p ( aNode[j]->X(), aNode[j]->Y(), aNode[j]->Z() );
+    if ( aNode[j]->GetPosition()->GetTypeOfPosition() == SMDS_TOP_3DSPACE ) {
+      aPnt = p;
+      break;
+    }
+    aPnt += p;
+  }
 
   BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
   if (state) *state = SC.State();
@@ -509,7 +514,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
   const int invalidID = 0;
   SMESHDS_Mesh* meshDS = mesh.GetMeshDS();
 
-  // face th enodes belong to
+  // face the nodes belong to
   const SMDS_MeshElement * face = meshDS->FindFace(node1,node2,node3);
   if ( !face )
     return invalidID;
@@ -573,35 +578,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
   if ( !fExp.More() )
     return invalidID; // face not found
 
-  // find UV of the center of triangle on geomFace
-  SMESH_MesherHelper helper( mesh );
-  BRepAdaptor_Surface surface( geomFace );
-  gp_XY UV(0,0);
-  const SMDS_MeshNode* nodes[3] = { node1, node2, node3 };
-  const SMDS_MeshNode* nNotOnSeamEdge = 0;
-  for ( int n = 0; !nNotOnSeamEdge && n < 3; ++n )
-    if ( !helper.IsSeamShape( nodes[n]->GetPosition()->GetShapeId() ))
-      nNotOnSeamEdge = nodes[n];
-  for ( int n = 0; n < 3; ++n )
-  {
-    const SMDS_MeshNode* node = nodes[n];
-    gp_XY uv = helper.GetNodeUV( geomFace, node, nNotOnSeamEdge );
-
-    // check that uv is correct
-    gp_Pnt nodePnt ( node->X(), node->Y(), node->Z() );
-    double tol = BRep_Tool::Tolerance( geomFace );
-    if ( nodePnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol ) {
-      // project node onto geomFace to get right UV
-      GeomAPI_ProjectPointOnSurf projector( nodePnt, surface.Surface().Surface() );
-      if ( !projector.IsDone() || projector.NbPoints() < 1 )
-        return invalidID;
-      Quantity_Parameter U,V;
-      projector.LowerDistanceParameters(U,V);
-      uv = gp_XY( U,V );
-    }
-    UV += uv / 3.;
-  }
-  // normale to face at node1
+  // normale to triangle
   gp_Pnt node1Pnt ( node1->X(), node1->Y(), node1->Z() );
   gp_Pnt node2Pnt ( node2->X(), node2->Y(), node2->Z() );
   gp_Pnt node3Pnt ( node3->X(), node3->Y(), node3->Z() );
@@ -610,10 +587,32 @@ static int findShapeID(SMESH_Mesh&          mesh,
   gp_Vec meshNormal = vec12 ^ vec13;
   if ( meshNormal.SquareMagnitude() < DBL_MIN )
     return invalidID;
-  
+
+  // find UV of node1 on geomFace
+  SMESH_MesherHelper helper( mesh ); helper.SetSubShape( geomFace );
+  const SMDS_MeshNode* nNotOnSeamEdge = 0;
+  if ( helper.IsSeamShape( node1->GetPosition()->GetShapeId() ))
+    if ( helper.IsSeamShape( node2->GetPosition()->GetShapeId() ))
+      nNotOnSeamEdge = node3;
+    else
+      nNotOnSeamEdge = node2;
+  gp_XY uv = helper.GetNodeUV( geomFace, node1, nNotOnSeamEdge );
+  // check that uv is correct
+  BRepAdaptor_Surface surface( geomFace );
+  double tol = BRep_Tool::Tolerance( geomFace );
+  if ( node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol ) {
+    GeomAPI_ProjectPointOnSurf projector( node1Pnt, surface.Surface().Surface(), 2 * tol );
+    if ( !projector.IsDone() || projector.NbPoints() < 1 || projector.LowerDistance() > 2 * tol)
+      return invalidID;
+    Quantity_Parameter U,V;
+    projector.LowerDistanceParameters(U,V);
+    if ( node1Pnt.Distance( surface.Value( U, V )) > 2 * tol )
+      return invalidID;
+    uv.SetCoord( U,V );
+  }
   // normale to geomFace at UV
   gp_Vec du, dv;
-  surface.D1( UV.X(), UV.Y(), node1Pnt, du, dv );
+  surface.D1( uv.X(), uv.Y(), node1Pnt, du, dv );
   gp_Vec geomNormal = du ^ dv;
   if ( geomNormal.SquareMagnitude() < DBL_MIN )
     return findShapeID( mesh, node2, node3, node1, toMeshHoles );
@@ -735,6 +734,17 @@ static bool readResultFile(const int                       fileOpen,
       try {
         OCC_CATCH_SIGNALS;
         tabID[i] = findShapeID( theMesh, n1, n2, n3, toMeshHoles );
+        // -- 0020330: Pb with ghs3d as a submesh
+        // check that found shape is to be meshed
+        if ( tabID[i] > 0 ) {
+          const TopoDS_Shape& foundShape = theMeshDS->IndexToShape( tabID[i] );
+          bool isToBeMeshed = false;
+          for ( int iS = 0; !isToBeMeshed && iS < nbShape; ++iS )
+            isToBeMeshed = foundShape.IsSame( tabShape[ iS ]);
+          if ( !isToBeMeshed )
+            tabID[i] = HOLE_ID;
+        }
+        // END -- 0020330: Pb with ghs3d as a submesh
 #ifdef _DEBUG_
         cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << endl;
 #endif
@@ -955,7 +965,12 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   bool Ok(false);
   SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
 
-  _nbShape = countShape( meshDS, TopAbs_SOLID ); // we count the number of shapes
+  // we count the number of shapes
+  // _nbShape = countShape( meshDS, TopAbs_SOLID ); -- 0020330: Pb with ghs3d as a submesh
+  _nbShape = 0;
+  TopExp_Explorer expBox ( theShape, TopAbs_SOLID );
+  for ( ; expBox.More(); expBox.Next() )
+    _nbShape++;
 
   // create bounding box for every shape inside the compound
 
@@ -968,8 +983,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     tabBox[i] = new double[6];
   Standard_Real Xmin, Ymin, Zmin, Xmax, Ymax, Zmax;
 
-  TopExp_Explorer expBox (meshDS->ShapeToMesh(), TopAbs_SOLID);
-  for (; expBox.More(); expBox.Next()) {
+  // TopExp_Explorer expBox (meshDS->ShapeToMesh(), TopAbs_SOLID); -- 0020330:...ghs3d as a submesh
+  for (expBox.ReInit(); expBox.More(); expBox.Next()) {
     tabShape[iShape] = expBox.Current();
     Bnd_Box BoundingBox;
     BRepBndLib::Add(expBox.Current(), BoundingBox);
