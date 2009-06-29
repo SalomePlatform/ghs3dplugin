@@ -58,8 +58,9 @@ using namespace std;
 #include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopoDS.hxx>
 //#include <BRepClass_FaceClassifier.hxx>
-//#include <BRepGProp.hxx>
-//#include <GProp_GProps.hxx>
+#include <TopTools_MapOfShape.hxx>
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
 
 #include "utilities.h"
 
@@ -1735,3 +1736,77 @@ const SMDS_MeshElement* _Ghs2smdsConvertor::getElement(const vector<int>& ghsNod
   return 0;
 }
 
+
+//=============================================================================
+/*!
+ *  
+ */
+//=============================================================================
+bool GHS3DPlugin_GHS3D::Evaluate(SMESH_Mesh& aMesh,
+				 const TopoDS_Shape& aShape,
+				 MapShapeNbElems& aResMap)
+{
+  int nbtri = 0, nbqua = 0;
+  double fullArea = 0.0;
+  for (TopExp_Explorer exp(aShape, TopAbs_FACE); exp.More(); exp.Next()) {
+    TopoDS_Face F = TopoDS::Face( exp.Current() );
+    SMESH_subMesh *sm = aMesh.GetSubMesh(F);
+    MapShapeNbElemsItr anIt = aResMap.find(sm);
+    std::vector<int> aVec = (*anIt).second;
+    nbtri += Max(aVec[3],aVec[4]);
+    nbqua += Max(aVec[5],aVec[6]);
+    GProp_GProps G;
+    BRepGProp::SurfaceProperties(F,G);
+    double anArea = G.Mass();
+    fullArea += anArea;
+  }
+
+  // collect info from edges
+  int nb0d_e = 0, nb1d_e = 0;
+  bool IsQuadratic = false;
+  bool IsFirst = true;
+  TopTools_MapOfShape tmpMap;
+  for (TopExp_Explorer exp(aShape, TopAbs_EDGE); exp.More(); exp.Next()) {
+    TopoDS_Edge E = TopoDS::Edge(exp.Current());
+    if( tmpMap.Contains(E) )
+      continue;
+    tmpMap.Add(E);
+    SMESH_subMesh *aSubMesh = aMesh.GetSubMesh(exp.Current());
+    MapShapeNbElemsItr anIt = aResMap.find(aSubMesh);
+    std::vector<int> aVec = (*anIt).second;
+    nb0d_e += aVec[0];
+    nb1d_e += Max(aVec[1],aVec[2]);
+    if(IsFirst) {
+      IsQuadratic = (aVec[2] > aVec[1]);
+      IsFirst = false;
+    }
+  }
+  tmpMap.Clear();
+
+  double ELen = sqrt(2.* ( fullArea/(nbtri+nbqua*2) ) / sqrt(3.0) );
+
+  GProp_GProps G;
+  BRepGProp::VolumeProperties(aShape,G);
+  double aVolume = G.Mass();
+  double tetrVol = 0.1179*ELen*ELen*ELen;
+  double CoeffQuality = 0.9;
+  int nbVols = (int)aVolume/tetrVol/CoeffQuality;
+  int nb1d_f = (nbtri*3 + nbqua*4 - nb1d_e) / 2;
+  int nb1d_in = (int) ( nbVols*6 - nb1d_e - nb1d_f ) / 5;
+  std::vector<int> aVec(17);
+  for(int i=0; i<17; i++) aVec[i]=0;
+  if( IsQuadratic ) {
+    aVec[0] = nb1d_in/6 + 1 + nb1d_in;
+    aVec[9] = nbVols - nbqua*2;
+    aVec[11] = nbqua;
+  }
+  else {
+    aVec[0] = nb1d_in/6 + 1;
+    aVec[8] = nbVols - nbqua*2;
+    aVec[10] = nbqua;
+  }
+  SMESH_subMesh *sm = aMesh.GetSubMesh(aShape);
+  aResMap.insert(std::make_pair(sm,aVec));
+
+  return true;
+}
