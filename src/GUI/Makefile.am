@@ -47,8 +47,7 @@ libGHS3DPluginGUI_la_CPPFLAGS =  \
 	$(CORBA_INCLUDES)     \
 	$(CAS_CPPFLAGS)       \
         -I$(srcdir)/..        \
-	-I$(top_builddir)/idl \
-	-I$(top_builddir)/salome_adm/unix
+	-I$(top_builddir)/idl
 
 libGHS3DPluginGUI_la_LDFLAGS  = \
 	../../idl/libSalomeIDLGHS3DPLUGIN.la \

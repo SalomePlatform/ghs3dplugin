@@ -27,7 +27,7 @@
 # Created from configure.in.base
 #
 AC_INIT([Salome2 Project GHS3DPLUGIN module],[5.1.2], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
-AC_CONFIG_AUX_DIR(salome_adm/unix/config_files)
+AC_CONFIG_AUX_DIR(adm_local/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([-Wno-portability])
@@ -99,7 +99,7 @@ dnl Fix up the INSTALL macro if it s a relative path. We want the
 dnl full-path to the binary instead.
 case "$INSTALL" in
    *install-sh*)
-      INSTALL="${KERNEL_ROOT_DIR}/salome_adm/unix/config_files/install-sh -c"
+      INSTALL="${KERNEL_ROOT_DIR}/adm_local/unix/config_files/install-sh -c"
       ;;
 esac
 
@@ -390,7 +390,6 @@ AC_OUTPUT_COMMANDS([ \
 # autoscan, the Makefile list is generated in the output file configure.scan.
 # This could be helpfull to update de configuration.
 AC_OUTPUT([ \
-  salome_adm/unix/SALOMEconfig.h \
   adm_local/Makefile \
   adm_local/unix/Makefile \
   adm_local/unix/config_files/Makefile \
