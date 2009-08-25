@@ -1752,6 +1752,12 @@ bool GHS3DPlugin_GHS3D::Evaluate(SMESH_Mesh& aMesh,
     TopoDS_Face F = TopoDS::Face( exp.Current() );
     SMESH_subMesh *sm = aMesh.GetSubMesh(F);
     MapShapeNbElemsItr anIt = aResMap.find(sm);
+    if( anIt==aResMap.end() ) {
+      SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
+      smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,
+					    "Submesh can not be evaluated",this));
+      return false;
+    }
     std::vector<int> aVec = (*anIt).second;
     nbtri += Max(aVec[SMDSEntity_Triangle],aVec[SMDSEntity_Quad_Triangle]);
     nbqua += Max(aVec[SMDSEntity_Quadrangle],aVec[SMDSEntity_Quad_Quadrangle]);
