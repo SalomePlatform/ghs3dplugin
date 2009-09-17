@@ -597,19 +597,20 @@ static int findShapeID(SMESH_Mesh&          mesh,
       nNotOnSeamEdge = node3;
     else
       nNotOnSeamEdge = node2;
-  gp_XY uv = helper.GetNodeUV( geomFace, node1, nNotOnSeamEdge );
+  bool checkUV = true;
+  gp_XY uv = helper.GetNodeUV( geomFace, node1, nNotOnSeamEdge, &checkUV );
   // check that uv is correct
   BRepAdaptor_Surface surface( geomFace );
   double tol = BRep_Tool::Tolerance( geomFace );
-  if ( node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol ) {
-    GeomAPI_ProjectPointOnSurf projector( node1Pnt, surface.Surface().Surface(), 2 * tol );
-    if ( !projector.IsDone() || projector.NbPoints() < 1 || projector.LowerDistance() > 2 * tol)
+  if ( checkUV && node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol ) {
+//     GeomAPI_ProjectPointOnSurf projector( node1Pnt, surface.Surface().Surface(), 2 * tol );
+//     if ( !projector.IsDone() || projector.NbPoints() < 1 || projector.LowerDistance() > 2 * tol)
       return invalidID;
-    Quantity_Parameter U,V;
-    projector.LowerDistanceParameters(U,V);
-    if ( node1Pnt.Distance( surface.Value( U, V )) > 2 * tol )
-      return invalidID;
-    uv.SetCoord( U,V );
+//     Quantity_Parameter U,V;
+//     projector.LowerDistanceParameters(U,V);
+//     if ( node1Pnt.Distance( surface.Value( U, V )) > 2 * tol )
+//       return invalidID;
+//     uv.SetCoord( U,V );
   }
   // normale to geomFace at UV
   gp_Vec du, dv;
@@ -1743,8 +1744,8 @@ const SMDS_MeshElement* _Ghs2smdsConvertor::getElement(const vector<int>& ghsNod
  */
 //=============================================================================
 bool GHS3DPlugin_GHS3D::Evaluate(SMESH_Mesh& aMesh,
-				 const TopoDS_Shape& aShape,
-				 MapShapeNbElems& aResMap)
+                                 const TopoDS_Shape& aShape,
+                                 MapShapeNbElems& aResMap)
 {
   int nbtri = 0, nbqua = 0;
   double fullArea = 0.0;
@@ -1755,7 +1756,7 @@ bool GHS3DPlugin_GHS3D::Evaluate(SMESH_Mesh& aMesh,
     if( anIt==aResMap.end() ) {
       SMESH_ComputeErrorPtr& smError = sm->GetComputeError();
       smError.reset( new SMESH_ComputeError(COMPERR_ALGO_FAILED,
-					    "Submesh can not be evaluated",this));
+                                            "Submesh can not be evaluated",this));
       return false;
     }
     std::vector<int> aVec = (*anIt).second;
@@ -1796,7 +1797,7 @@ bool GHS3DPlugin_GHS3D::Evaluate(SMESH_Mesh& aMesh,
   double aVolume = G.Mass();
   double tetrVol = 0.1179*ELen*ELen*ELen;
   double CoeffQuality = 0.9;
-  int nbVols = (int)aVolume/tetrVol/CoeffQuality;
+  int nbVols = int(aVolume/tetrVol/CoeffQuality);
   int nb1d_f = (nbtri*3 + nbqua*4 - nb1d_e) / 2;
   int nb1d_in = (int) ( nbVols*6 - nb1d_e - nb1d_f ) / 5;
   std::vector<int> aVec(SMDSEntity_Last);
