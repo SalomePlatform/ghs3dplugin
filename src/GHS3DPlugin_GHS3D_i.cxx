@@ -22,12 +22,13 @@
 //  Module : GHS3DPlugin
 //  $Header$
 //
-using namespace std;
 #include "GHS3DPlugin_GHS3D_i.hxx"
 #include "SMESH_Gen.hxx"
 #include "GHS3DPlugin_GHS3D.hxx"
 
 #include "utilities.h"
+
+using namespace std;
 
 //=============================================================================
 /*!

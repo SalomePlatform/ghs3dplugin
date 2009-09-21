@@ -24,7 +24,7 @@
 #define _GHS3DPlugin_DEFS_HXX_
 
 #ifdef WIN32
-  #ifdef GHS3DPLUGIN_EXPORTS
+  #if defined GHS3DPLUGIN_EXPORTS || defined GHS3DEngine_EXPORTS
     #define GHS3DPLUGIN_EXPORT __declspec( dllexport )
   #else
     #define GHS3DPLUGIN_EXPORT __declspec( dllimport )

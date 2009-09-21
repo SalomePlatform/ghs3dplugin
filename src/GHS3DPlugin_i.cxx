@@ -22,13 +22,14 @@
 //  Module : SMESH
 //  $Header$
 //
-using namespace std;
 #include "SMESH_Hypothesis_i.hxx"
 
 #include "utilities.h"
 
 #include "GHS3DPlugin_GHS3D_i.hxx"
 #include "GHS3DPlugin_Hypothesis_i.hxx"
+
+using namespace std;
 
 template <class T> class GHS3DPlugin_Creator_i:public HypothesisCreator_i<T>
 {
@@ -44,6 +45,7 @@ template <class T> class GHS3DPlugin_Creator_i:public HypothesisCreator_i<T>
 
 extern "C"
 {
+  GHS3DPLUGIN_EXPORT
   GenericHypothesisCreator_i* GetHypothesisCreator (const char* aHypName)
   {
     MESSAGE("GetHypothesisCreator " << aHypName);

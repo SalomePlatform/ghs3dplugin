@@ -24,8 +24,6 @@
 // $Header$
 //=============================================================================
 //
-using namespace std;
-
 #include "GHS3DPlugin_GHS3D.hxx"
 #include "GHS3DPlugin_Hypothesis.hxx"
 
@@ -64,9 +62,13 @@ using namespace std;
 
 #include "utilities.h"
 
-#ifndef WIN32
+#ifdef WIN32
+#include <io.h>
+#else
 #include <sys/sysinfo.h>
 #endif
+
+using namespace std;
 
 //#include <Standard_Stream.hxx>
 
@@ -638,6 +640,9 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //=======================================================================
 
 static bool readResultFile(const int                       fileOpen,
+#ifdef WNT
+                           const char*                     fileName,
+#endif
                            SMESH_Mesh&                     theMesh,
                            TopoDS_Shape                    tabShape[],
                            double**                        tabBox,
@@ -686,7 +691,15 @@ static bool readResultFile(const int                       fileOpen,
   length   = status.st_size;
 
   // Mapping the result file into memory
+#ifdef WNT
+  HANDLE fd = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ,
+                         NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  HANDLE hMapObject = CreateFileMapping(fd, NULL, PAGE_READONLY,
+                                        0, (DWORD)length, NULL);
+  ptr = ( char* ) MapViewOfFile(hMapObject, FILE_MAP_READ, 0, 0, 0 );
+#else
   ptr = (char *) mmap(0,length,PROT_READ,MAP_PRIVATE,fileOpen,0);
+#endif
   mapPtr = ptr;
 
   ptr      = readMapIntLine(ptr, tab);
@@ -833,7 +846,13 @@ static bool readResultFile(const int                       fileOpen,
 
   if ( nbElems )
     cout << nbElems << " tetrahedrons have been associated to " << nbShape << " shapes" << endl;
+#ifdef WNT
+  UnmapViewOfFile(mapPtr);
+  CloseHandle(hMapObject);
+  CloseHandle(fd);
+#else
   munmap(mapPtr, length);
+#endif
   close(fileOpen);
 
   delete [] tab;
@@ -863,6 +882,9 @@ static bool readResultFile(const int                       fileOpen,
 //=======================================================================
 
 static bool readResultFile(const int                      fileOpen,
+#ifdef WNT
+                           const char*                    fileName,
+#endif
                            SMESHDS_Mesh*                  theMeshDS,
                            TopoDS_Shape                   aSolid,
                            vector <const SMDS_MeshNode*>& theNodeByGhs3dId) {
@@ -897,7 +919,15 @@ static bool readResultFile(const int                      fileOpen,
   length   = status.st_size;
 
   // Mapping the result file into memory
+#ifdef WNT
+  HANDLE fd = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ,
+                         NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  HANDLE hMapObject = CreateFileMapping(fd, NULL, PAGE_READONLY,
+                                        0, (DWORD)length, NULL);
+  ptr = ( char* ) MapViewOfFile(hMapObject, FILE_MAP_READ, 0, 0, 0 );
+#else
   ptr = (char *) mmap(0,length,PROT_READ,MAP_PRIVATE,fileOpen,0);
+#endif
   mapPtr = ptr;
 
   ptr      = readMapIntLine(ptr, tab);
@@ -945,7 +975,13 @@ static bool readResultFile(const int                      fileOpen,
   }
   if ( nbElems )
     cout << nbElems << " tetrahedrons have been associated to " << nbTriangle << " shapes" << endl;
+#ifdef WNT
+  UnmapViewOfFile(mapPtr);
+  CloseHandle(hMapObject);
+  CloseHandle(fd);
+#else
   munmap(mapPtr, length);
+#endif
   close(fileOpen);
 
   delete [] tab;
@@ -1019,11 +1055,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   ofstream aPointsFile ( aPointsFileName.ToCString() , ios::out);
 
   Ok =
-#ifdef WIN32
-    aFacesFile->is_open() && aPointsFile->is_open();
-#else
     aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
-#endif
   if (!Ok) {
     INFOS( "Can't write into " << aFacesFileName);
     return error(SMESH_Comment("Can't write into ") << aFacesFileName);
@@ -1080,7 +1112,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   else {
     bool toMeshHoles =
       _hyp ? _hyp->GetToMeshHoles(true) : GHS3DPlugin_Hypothesis::DefaultMeshHoles();
-    Ok = readResultFile( fileOpen, theMesh, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap,
+    Ok = readResultFile( fileOpen,
+#ifdef WNT
+			 aResultFileName.ToCString(),
+#endif
+			 theMesh, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap,
                          toMeshHoles );
   }
 
@@ -1161,11 +1197,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   ofstream aFacesFile  ( aFacesFileName.ToCString()  , ios::out);
   ofstream aPointsFile  ( aPointsFileName.ToCString()  , ios::out);
   bool Ok =
-#ifdef WIN32
-    aFacesFile->is_open() && aPointsFile->is_open();
-#else
     aFacesFile.rdbuf()->is_open() && aPointsFile.rdbuf()->is_open();
-#endif
 
   if (!Ok)
     return error( SMESH_Comment("Can't write into ") << aPointsFileName);
@@ -1211,7 +1243,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     Ok = false;
   }
   else {
-    Ok = readResultFile( fileOpen, meshDS, theShape ,aNodeByGhs3dId );
+    Ok = readResultFile( fileOpen,
+#ifdef WNT
+			 aResultFileName.ToCString(),
+#endif
+			 meshDS, theShape ,aNodeByGhs3dId );
   }
   
   // ---------------------

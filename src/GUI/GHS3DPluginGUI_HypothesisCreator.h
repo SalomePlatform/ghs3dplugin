@@ -24,7 +24,16 @@
 #ifndef GHS3DPLUGINGUI_HypothesisCreator_HeaderFile
 #define GHS3DPLUGINGUI_HypothesisCreator_HeaderFile
 
-#include "GHS3DPlugin_Defs.hxx"
+#ifdef WIN32
+  #if defined GHS3DPluginGUI_EXPORTS
+    #define GHS3DPLUGINGUI_EXPORT __declspec( dllexport )
+  #else
+    #define GHS3DPLUGINGUI_EXPORT __declspec( dllimport )
+  #endif
+#else
+  #define GHS3DPLUGINGUI_EXPORT
+#endif
+
 #include <SMESHGUI_Hypotheses.h>
 
 class QWidget;
@@ -52,7 +61,7 @@ typedef struct
 /*!
   \brief Class for creation of GHS3D2D and GHS3D3D hypotheses
 */
-class GHS3DPLUGIN_EXPORT GHS3DPluginGUI_HypothesisCreator : public SMESHGUI_GenericHypothesisCreator
+class GHS3DPLUGINGUI_EXPORT GHS3DPluginGUI_HypothesisCreator : public SMESHGUI_GenericHypothesisCreator
 {
   Q_OBJECT
 

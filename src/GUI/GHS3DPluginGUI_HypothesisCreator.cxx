@@ -54,13 +54,27 @@ enum {
 
 namespace {
 
-#ifndef WIN32
+#ifdef WIN32
+#include <windows.h>
+#else
 #include <sys/sysinfo.h>
 #endif
 
   int maxAvailableMemory()
   {
-#ifndef WIN32
+#ifdef WIN32
+    // See http://msdn.microsoft.com/en-us/library/aa366589.aspx
+    MEMORYSTATUSEX statex;
+    statex.dwLength = sizeof (statex);
+    int err = GlobalMemoryStatusEx (&statex);
+    if (err != 0) {
+      int totMB = 
+        statex.ullTotalPhys / 1024 / 1024 +
+        statex.ullTotalPageFile / 1024 / 1024 +
+        statex.ullTotalVirtual / 1024 / 1024;
+      return (int) ( 0.7 * totMB );
+    }
+#else
     struct sysinfo si;
     int err = sysinfo( &si );
     if ( err == 0 ) {
@@ -70,7 +84,6 @@ namespace {
       return (int) ( 0.7 * totMB );
     }
 #endif
-    return 100000;
   }
 }
 
@@ -397,7 +410,7 @@ QString GHS3DPluginGUI_HypothesisCreator::helpPage() const
 //=============================================================================
 extern "C"
 {
-  GHS3DPLUGIN_EXPORT
+  GHS3DPLUGINGUI_EXPORT
   SMESHGUI_GenericHypothesisCreator* GetHypothesisCreator( const QString& aHypType )
   {
     if ( aHypType == "GHS3D_Parameters" )

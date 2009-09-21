@@ -26,6 +26,11 @@
 
 #include <TCollection_AsciiString.hxx>
 
+#ifdef WNT
+#include <process.h>
+#define getpid _getpid
+#endif
+
 //=======================================================================
 //function : GHS3DPlugin_Hypothesis
 //=======================================================================
@@ -280,6 +285,8 @@ bool GHS3DPlugin_Hypothesis::DefaultMeshHoles()
 
 #ifndef WIN32
 #include <sys/sysinfo.h>
+#else
+#include <windows.h>
 #endif
 
 short  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
@@ -291,8 +298,19 @@ short  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
     int ramMB = si.totalram * si.mem_unit / 1024 / 1024;
     return (short) ( 0.7 * ramMB );
   }
+#else
+  // See http://msdn.microsoft.com/en-us/library/aa366589.aspx
+  MEMORYSTATUSEX statex;
+  statex.dwLength = sizeof (statex);
+  int err = GlobalMemoryStatusEx (&statex);
+  if (err != 0) {
+    int totMB = 
+      statex.ullTotalPhys / 1024 / 1024 +
+      statex.ullTotalPageFile / 1024 / 1024 +
+      statex.ullTotalVirtual / 1024 / 1024;
+    return (int) ( 0.7 * totMB );
+  }
 #endif
-  return -1;
 }
 
 //=======================================================================
@@ -510,11 +528,7 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  /*dflts*/
 string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
                                             const bool                    hasShapeToMesh)
 {
-#ifndef WIN32
   TCollection_AsciiString cmd( "ghs3d" );
-#else
-  TCollection_AsciiString cmd( "ghs3d.exe" );
-#endif
   // check if any option is overridden by hyp->myTextOption
   bool m = hyp ? ( hyp->myTextOption.find("-m") == string::npos ) : true;
   bool M = hyp ? ( hyp->myTextOption.find("-M") == string::npos ) : true;
@@ -595,6 +609,10 @@ string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
     cmd += (char*) hyp->myTextOption.c_str();
   }
 
+#ifdef WNT
+  cmd += " < NUL";
+#endif
+
   return cmd.ToCString();
 }
 
@@ -616,11 +634,7 @@ string GHS3DPlugin_Hypothesis::GetFileName(const GHS3DPlugin_Hypothesis* hyp)
 
   TCollection_AsciiString aGenericName = (char*)aTmpDir.c_str();
   aGenericName += "GHS3D_";
-#ifdef WIN32
-  aGenericName += GetCurrentProcessId();
-#else
   aGenericName += getpid();
-#endif
   aGenericName += "_";
   aGenericName += Abs((Standard_Integer)(long) aGenericName.ToCString());
 
