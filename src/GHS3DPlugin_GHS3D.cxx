@@ -48,6 +48,7 @@
 #include <OSD_File.hxx>
 #include <Precision.hxx>
 #include <Quantity_Parameter.hxx>
+#include <Standard_ProgramError.hxx>
 #include <Standard_ErrorHandler.hxx>
 #include <Standard_Failure.hxx>
 #include <TopExp.hxx>
@@ -93,6 +94,16 @@ extern "C"
 }
 
 #define HOLE_ID -1
+
+static void removeFile( const TCollection_AsciiString& fileName )
+{
+  try {
+    OSD_File( fileName ).Remove();
+  }
+  catch ( Standard_ProgramError ) {
+    MESSAGE("Can't remove file: " << fileName.ToCString() << " ; file does not exist or permission denied");
+  }
+}
 
 //=============================================================================
 /*!
@@ -1068,15 +1079,15 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   aFacesFile.close();
   aPointsFile.close();
-
+  
   if ( ! Ok ) {
     if ( !_keepFiles ) {
-      OSD_File( aFacesFileName ).Remove();
-      OSD_File( aPointsFileName ).Remove();
+      removeFile( aFacesFileName );
+      removeFile( aPointsFileName );
     }
     return error(COMPERR_BAD_INPUT_MESH);
   }
-  OSD_File( aResultFileName ).Remove(); // needed for boundary recovery module usage
+  removeFile( aResultFileName ); // needed for boundary recovery module usage
 
   // -----------------
   // run ghs3d mesher
@@ -1127,7 +1138,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   if ( Ok )
   {
     if ( !_keepFiles )
-      OSD_File( aLogFileName ).Remove();
+      removeFile( aLogFileName );
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
@@ -1138,17 +1149,17 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   else
   {
     // the log file is empty
-    OSD_File( aLogFileName ).Remove();
+    removeFile( aLogFileName );
     INFOS( "GHS3D Error, command '" << cmd.ToCString() << "' failed" );
     error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
   }
 
   if ( !_keepFiles ) {
-    OSD_File( aFacesFileName ).Remove();
-    OSD_File( aPointsFileName ).Remove();
-    OSD_File( aResultFileName ).Remove();
-    OSD_File( aBadResFileName ).Remove();
-    OSD_File( aBbResFileName ).Remove();
+    removeFile( aFacesFileName );
+    removeFile( aPointsFileName );
+    removeFile( aResultFileName );
+    removeFile( aBadResFileName );
+    removeFile( aBbResFileName );
   }
   cout << "<" << aResultFileName.ToCString() << "> GHS3D output file ";
   if ( !Ok )
@@ -1212,12 +1223,12 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   
   if ( ! Ok ) {
     if ( !_keepFiles ) {
-      OSD_File( aFacesFileName ).Remove();
-      OSD_File( aPointsFileName ).Remove();
+      removeFile( aFacesFileName );
+      removeFile( aPointsFileName );
     }
     return error(COMPERR_BAD_INPUT_MESH);
   }
-  OSD_File( aResultFileName ).Remove(); // needed for boundary recovery module usage
+  removeFile( aResultFileName ); // needed for boundary recovery module usage
 
   // -----------------
   // run ghs3d mesher
@@ -1257,7 +1268,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   if ( Ok )
   {
     if ( !_keepFiles )
-      OSD_File( aLogFileName ).Remove();
+      removeFile( aLogFileName );
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
@@ -1267,18 +1278,18 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
   else {
     // the log file is empty
-    OSD_File( aLogFileName ).Remove();
+    removeFile( aLogFileName );
     INFOS( "GHS3D Error, command '" << cmd.ToCString() << "' failed" );
     error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
   }
 
   if ( !_keepFiles )
   {
-    OSD_File( aFacesFileName ).Remove();
-    OSD_File( aPointsFileName ).Remove();
-    OSD_File( aResultFileName ).Remove();
-    OSD_File( aBadResFileName ).Remove();
-    OSD_File( aBbResFileName ).Remove();
+    removeFile( aFacesFileName );
+    removeFile( aPointsFileName );
+    removeFile( aResultFileName );
+    removeFile( aBadResFileName );
+    removeFile( aBbResFileName );
   }
   
   return Ok;
