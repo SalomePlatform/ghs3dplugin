@@ -180,7 +180,7 @@ static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
       aPnt = p;
       break;
     }
-    aPnt += p;
+    aPnt += p / nbNode;
   }
 
   BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
@@ -610,8 +610,8 @@ static int findShapeID(SMESH_Mesh&          mesh,
       nNotOnSeamEdge = node3;
     else
       nNotOnSeamEdge = node2;
-  bool checkUV = true;
-  gp_XY uv = helper.GetNodeUV( geomFace, node1, nNotOnSeamEdge, &checkUV );
+  bool uvOK;
+  gp_XY uv = helper.GetNodeUV( geomFace, node1, nNotOnSeamEdge, &uvOK );
   // check that uv is correct
   double tol = 1e-6;
   TopoDS_Shape nodeShape = helper.GetSubShapeByNode( node1, meshDS );
@@ -624,7 +624,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
     default:;
     }
   BRepAdaptor_Surface surface( geomFace );
-  if ( checkUV && node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol )
+  if ( !uvOK || node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol )
       return invalidID;
 
   // normale to geomFace at UV
