@@ -613,18 +613,20 @@ static int findShapeID(SMESH_Mesh&          mesh,
   bool checkUV = true;
   gp_XY uv = helper.GetNodeUV( geomFace, node1, nNotOnSeamEdge, &checkUV );
   // check that uv is correct
+  double tol = 1e-6;
+  TopoDS_Shape nodeShape = helper.GetSubShapeByNode( node1, meshDS );
+  if ( !nodeShape.IsNull() )
+    switch ( nodeShape.ShapeType() )
+    {
+    case TopAbs_FACE:   tol = BRep_Tool::Tolerance( TopoDS::Face( nodeShape )); break;
+    case TopAbs_EDGE:   tol = BRep_Tool::Tolerance( TopoDS::Edge( nodeShape )); break;
+    case TopAbs_VERTEX: tol = BRep_Tool::Tolerance( TopoDS::Vertex( nodeShape )); break;
+    default:;
+    }
   BRepAdaptor_Surface surface( geomFace );
-  double tol = BRep_Tool::Tolerance( geomFace );
-  if ( checkUV && node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol ) {
-//     GeomAPI_ProjectPointOnSurf projector( node1Pnt, surface.Surface().Surface(), 2 * tol );
-//     if ( !projector.IsDone() || projector.NbPoints() < 1 || projector.LowerDistance() > 2 * tol)
+  if ( checkUV && node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol )
       return invalidID;
-//     Quantity_Parameter U,V;
-//     projector.LowerDistanceParameters(U,V);
-//     if ( node1Pnt.Distance( surface.Value( U, V )) > 2 * tol )
-//       return invalidID;
-//     uv.SetCoord( U,V );
-  }
+
   // normale to geomFace at UV
   gp_Vec du, dv;
   surface.D1( uv.X(), uv.Y(), node1Pnt, du, dv );
@@ -1125,9 +1127,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       _hyp ? _hyp->GetToMeshHoles(true) : GHS3DPlugin_Hypothesis::DefaultMeshHoles();
     Ok = readResultFile( fileOpen,
 #ifdef WNT
-			 aResultFileName.ToCString(),
+                         aResultFileName.ToCString(),
 #endif
-			 theMesh, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap,
+                         theMesh, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap,
                          toMeshHoles );
   }
 
@@ -1256,9 +1258,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   else {
     Ok = readResultFile( fileOpen,
 #ifdef WNT
-			 aResultFileName.ToCString(),
+                         aResultFileName.ToCString(),
 #endif
-			 meshDS, theShape ,aNodeByGhs3dId );
+                         meshDS, theShape ,aNodeByGhs3dId );
   }
   
   // ---------------------
