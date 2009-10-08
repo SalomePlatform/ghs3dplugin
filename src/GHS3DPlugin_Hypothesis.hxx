@@ -27,8 +27,12 @@
 #include "GHS3DPlugin_Defs.hxx"
 
 #include <SMESH_Hypothesis.hxx>
+#include <utilities.h>
 
-using namespace std;
+#include <stdexcept>
+#include <map>
+#include <vector>
+#include <cstdio>
 
 class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis: public SMESH_Hypothesis
 {
@@ -53,16 +57,16 @@ public:
   void SetInitialMemory(short MB);
   short GetInitialMemory() const;
   /*!
-   * Optimization level: 0-none, 1-light, 2-medium, 3-strong. Default is medium
+   * Optimization level: 0-none, 1-light, 2-medium, 3-standard+, 4-strong. Default is medium
    */
-  enum OptimizationLevel { None = 0, Light, Medium, Strong };
+  enum OptimizationLevel { None = 0, Light, Medium, StandardPlus, Strong };
   void SetOptimizationLevel(OptimizationLevel level);
   OptimizationLevel GetOptimizationLevel() const;
   /*!
    * Path to working directory
    */
-  void SetWorkingDirectory(const string& path);
-  string GetWorkingDirectory() const;
+  void SetWorkingDirectory(const std::string& path);
+  std::string GetWorkingDirectory() const;
   /*!
    * To keep working files or remove them. Log file remains in case of errors anyway.
    */
@@ -92,20 +96,45 @@ public:
   void SetToUseBoundaryRecoveryVersion(bool toUse);
   bool GetToUseBoundaryRecoveryVersion() const;
   /*!
+   * Applies ﬁnite-element correction by replacing overconstrained elements where
+   * it is possible. The process is cutting ﬁrst the overconstrained edges and
+   * second the overconstrained facets. This insure that no edges have two boundary
+   * vertices and that no facets have three boundary vertices.
+   */
+  void SetFEMCorrection(bool toUseFem);
+  bool GetFEMCorrection() const;
+  /*!
+   * To removes initial central point.
+   */
+  void SetToRemoveCentralPoint(bool toRemove);
+  bool GetToRemoveCentralPoint() const;
+  /*!
    * To set hiden/undocumented/advanced options
    */
-  void SetTextOption(const string& option);
-  string GetTextOption() const;
+  void SetTextOption(const std::string& option);
+  std::string GetTextOption() const;
+  /*!
+   * To set an enforced vertex
+   */
+  typedef std::map<std::vector<double>,double> TEnforcedVertexValues;
+  void SetEnforcedVertex(double x, double y, double z, double size);
+  double GetEnforcedVertex(double x, double y, double z) throw (std::invalid_argument);
+  void RemoveEnforcedVertex(double x, double y, double z) throw (std::invalid_argument);
+  const TEnforcedVertexValues _GetEnforcedVertices() const { return myEnforcedVertices; }
+  void ClearEnforcedVertices();
 
   static bool   DefaultMeshHoles();
   static short  DefaultMaximumMemory();
   static short  DefaultInitialMemory();
   static short  DefaultOptimizationLevel();
-  static string DefaultWorkingDirectory();
+  static std::string DefaultWorkingDirectory();
   static bool   DefaultKeepFiles();
   static short  DefaultVerboseLevel();
   static bool   DefaultToCreateNewNodes();
   static bool   DefaultToUseBoundaryRecoveryVersion();
+  static bool   DefaultToUseFEMCorrection();
+  static bool   DefaultToRemoveCentralPoint();
+  static TEnforcedVertexValues DefaultEnforcedVertices();
 
   /*!
    * \brief Return command to run ghs3d mesher excluding file prefix (-f)
@@ -116,12 +145,16 @@ public:
    * \brief Return a unique file name
    */
   static std::string GetFileName(const GHS3DPlugin_Hypothesis* hyp);
+  /*!
+   * \brief Return the enforced vertices
+   */
+  static TEnforcedVertexValues GetEnforcedVertices(const GHS3DPlugin_Hypothesis* hyp);
 
   // Persistence
-  virtual ostream & SaveTo(ostream & save);
-  virtual istream & LoadFrom(istream & load);
-  friend GHS3DPLUGIN_EXPORT ostream & operator <<(ostream & save, GHS3DPlugin_Hypothesis & hyp);
-  friend GHS3DPLUGIN_EXPORT istream & operator >>(istream & load, GHS3DPlugin_Hypothesis & hyp);
+  virtual std::ostream & SaveTo(std::ostream & save);
+  virtual std::istream & LoadFrom(std::istream & load);
+  friend GHS3DPLUGIN_EXPORT std::ostream & operator <<(std::ostream & save, GHS3DPlugin_Hypothesis & hyp);
+  friend GHS3DPLUGIN_EXPORT std::istream & operator >>(std::istream & load, GHS3DPlugin_Hypothesis & hyp);
 
   /*!
    * \brief Does nothing
@@ -140,11 +173,14 @@ private:
   short  myInitialMemory;
   short  myOptimizationLevel;
   bool   myKeepFiles;
-  string myWorkingDirectory;
+  std::string myWorkingDirectory;
   short  myVerboseLevel;
   bool   myToCreateNewNodes;
   bool   myToUseBoundaryRecoveryVersion;
-  string myTextOption;
+  bool   myToUseFemCorrection;
+  bool   myToRemoveCentralPoint;
+  std::string myTextOption;
+  TEnforcedVertexValues myEnforcedVertices;
   
 };
 

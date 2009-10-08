@@ -31,6 +31,14 @@
  */
 module GHS3DPlugin
 {
+  struct GHS3DEnforcedVertex {
+    double x;
+    double y;
+    double z;
+    double size;
+  };
+  
+  typedef sequence<GHS3DEnforcedVertex> GHS3DEnforcedVertexList;
   /*!
    * GHS3DPlugin_GHS3D: interface of "Tetrahedron (GHS3D)" algorithm
    */
@@ -100,10 +108,31 @@ module GHS3DPlugin
     void SetToUseBoundaryRecoveryVersion(in boolean toUse);
     boolean GetToUseBoundaryRecoveryVersion();
     /*!
+     * Applies ﬁnite-element correction by replacing overconstrained elements where
+     * it is possible. The process is cutting ﬁrst the overconstrained edges and
+     * second the overconstrained facets. This insure that no edges have two boundary
+     * vertices and that no facets have three boundary vertices.
+     */
+    void SetFEMCorrection(in boolean toUseFem);
+    boolean GetFEMCorrection();
+    /*!
+     * To removes initial central point.
+     */
+    void SetToRemoveCentralPoint(in boolean toRemove);
+    boolean GetToRemoveCentralPoint();
+    /*!
      * To set hiden/undocumented/advanced options
      */
     void SetTextOption(in string option);
     string GetTextOption();
+    /*!
+     * To set an enforced vertex
+     */
+    void SetEnforcedVertex(in double x, in double y, in double z, in double size);
+    double GetEnforcedVertex(in double x, in double y, in double z) raises (SALOME::SALOME_Exception);
+    void RemoveEnforcedVertex(in double x, in double y, in double z) raises (SALOME::SALOME_Exception);
+    GHS3DEnforcedVertexList GetEnforcedVertices();
+    void ClearEnforcedVertices();
   };
 };
 

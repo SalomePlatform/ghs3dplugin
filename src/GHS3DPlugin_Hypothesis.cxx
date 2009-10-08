@@ -36,20 +36,22 @@
 //=======================================================================
 
 GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen * gen)
-  : SMESH_Hypothesis(hypId, studyId, gen)
+  : SMESH_Hypothesis(hypId, studyId, gen),
+  myToMeshHoles(DefaultMeshHoles()),
+  myMaximumMemory(-1),
+  myInitialMemory(-1),
+  myOptimizationLevel(DefaultOptimizationLevel()),
+  myWorkingDirectory(DefaultWorkingDirectory()),
+  myKeepFiles(DefaultKeepFiles()),
+  myVerboseLevel(DefaultVerboseLevel()),
+  myToCreateNewNodes(DefaultToCreateNewNodes()),
+  myToUseBoundaryRecoveryVersion(DefaultToUseBoundaryRecoveryVersion()),
+  myToUseFemCorrection(DefaultToUseFEMCorrection()),
+  myToRemoveCentralPoint(DefaultToRemoveCentralPoint()),
+  myEnforcedVertices(DefaultEnforcedVertices())
 {
   _name = "GHS3D_Parameters";
   _param_algo_dim = 3;
-
-  myToMeshHoles                  = DefaultMeshHoles();        
-  myMaximumMemory                = -1;//DefaultMaximumMemory();    
-  myInitialMemory                = -1;//DefaultInitialMemory();    
-  myOptimizationLevel            = DefaultOptimizationLevel();
-  myWorkingDirectory             = DefaultWorkingDirectory(); 
-  myKeepFiles                    = DefaultKeepFiles();
-  myVerboseLevel                 = DefaultVerboseLevel();
-  myToCreateNewNodes             = DefaultToCreateNewNodes();
-  myToUseBoundaryRecoveryVersion = DefaultToUseBoundaryRecoveryVersion();
 }
 
 //=======================================================================
@@ -147,7 +149,7 @@ GHS3DPlugin_Hypothesis::OptimizationLevel GHS3DPlugin_Hypothesis::GetOptimizatio
 //function : SetWorkingDirectory
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis::SetWorkingDirectory(const string& path)
+void GHS3DPlugin_Hypothesis::SetWorkingDirectory(const std::string& path)
 {
   if ( myWorkingDirectory != path ) {
     myWorkingDirectory = path;
@@ -159,7 +161,7 @@ void GHS3DPlugin_Hypothesis::SetWorkingDirectory(const string& path)
 //function : GetWorkingDirectory
 //=======================================================================
 
-string GHS3DPlugin_Hypothesis::GetWorkingDirectory() const
+std::string GHS3DPlugin_Hypothesis::GetWorkingDirectory() const
 {
   return myWorkingDirectory;
 }
@@ -249,10 +251,52 @@ bool GHS3DPlugin_Hypothesis::GetToUseBoundaryRecoveryVersion() const
 }
 
 //=======================================================================
+//function : SetFEMCorrection
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetFEMCorrection(bool toUseFem)
+{
+  if ( myToUseFemCorrection != toUseFem ) {
+    myToUseFemCorrection = toUseFem;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetFEMCorrection
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::GetFEMCorrection() const
+{
+  return myToUseFemCorrection;
+}
+
+//=======================================================================
+//function : SetToRemoveCentralPoint
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetToRemoveCentralPoint(bool toRemove)
+{
+  if ( myToRemoveCentralPoint != toRemove ) {
+    myToRemoveCentralPoint = toRemove;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetToRemoveCentralPoint
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::GetToRemoveCentralPoint() const
+{
+  return myToRemoveCentralPoint;
+}
+
+//=======================================================================
 //function : SetTextOption
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis::SetTextOption(const string& option)
+void GHS3DPlugin_Hypothesis::SetTextOption(const std::string& option)
 {
   if ( myTextOption != option ) {
     myTextOption = option;
@@ -264,11 +308,73 @@ void GHS3DPlugin_Hypothesis::SetTextOption(const string& option)
 //function : GetTextOption
 //=======================================================================
 
-string GHS3DPlugin_Hypothesis::GetTextOption() const
+std::string GHS3DPlugin_Hypothesis::GetTextOption() const
 {
   return myTextOption;
 }
 
+//=======================================================================
+//function : SetEnforcedVertex
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetEnforcedVertex(double x, double y, double z, double size)
+{
+  std::vector<double> coord(3);
+  coord[0] = x;
+  coord[1] = y;
+  coord[2] = z;
+  myEnforcedVertices[coord] = size;
+  NotifySubMeshesHypothesisModification();
+}
+
+//=======================================================================
+//function : GetEnforcedVertex
+//=======================================================================
+
+double GHS3DPlugin_Hypothesis::GetEnforcedVertex(double x, double y, double z)
+  throw (std::invalid_argument)
+{
+  std::vector<double> coord(3);
+  coord[0] = x;
+  coord[1] = y;
+  coord[2] = z;
+  if (myEnforcedVertices.count(coord)>0)
+    return myEnforcedVertices[coord];
+  std::ostringstream msg ;
+  msg << "No enforced vertex at " << x << ", " << y << ", " << z;
+  throw std::invalid_argument(msg.str());
+}
+
+//=======================================================================
+//function : RemoveEnforcedVertex
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::RemoveEnforcedVertex(double x, double y, double z)
+  throw (std::invalid_argument)
+{
+    std::vector<double> coord(3);
+    coord[0] = x;
+    coord[1] = y;
+    coord[2] = z;
+    TEnforcedVertexValues::iterator it = myEnforcedVertices.find(coord);
+    if (it != myEnforcedVertices.end()) {
+        myEnforcedVertices.erase(it);
+        NotifySubMeshesHypothesisModification();
+        return;
+    }
+    std::ostringstream msg ;
+    msg << "No enforced vertex at " << x << ", " << y << ", " << z;
+    throw std::invalid_argument(msg.str());
+}
+
+//=======================================================================
+//function : ClearEnforcedVertices
+//=======================================================================
+void GHS3DPlugin_Hypothesis::ClearEnforcedVertices()
+{
+    myEnforcedVertices.clear();
+    NotifySubMeshesHypothesisModification();
+}
 
 //=======================================================================
 //function : DefaultMeshHoles
@@ -296,7 +402,7 @@ short  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
   int err = sysinfo( &si );
   if ( err == 0 ) {
     int ramMB = si.totalram * si.mem_unit / 1024 / 1024;
-    return (short) ( 0.7 * ramMB );
+    return (int) ( 0.7 * ramMB );
   }
 #else
   // See http://msdn.microsoft.com/en-us/library/aa366589.aspx
@@ -335,7 +441,7 @@ short  GHS3DPlugin_Hypothesis::DefaultOptimizationLevel()
 //function : DefaultWorkingDirectory
 //=======================================================================
 
-string GHS3DPlugin_Hypothesis::DefaultWorkingDirectory()
+std::string GHS3DPlugin_Hypothesis::DefaultWorkingDirectory()
 {
   TCollection_AsciiString aTmpDir;
 
@@ -390,10 +496,38 @@ bool GHS3DPlugin_Hypothesis::DefaultToUseBoundaryRecoveryVersion()
 }
 
 //=======================================================================
+//function : DefaultToUseFEMCorrection
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::DefaultToUseFEMCorrection()
+{
+  return false;
+}
+
+//=======================================================================
+//function : DefaultToRemoveCentralPoint
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::DefaultToRemoveCentralPoint()
+{
+  return false;
+}
+
+//=======================================================================
+//function : DefaultEnforcedVertices
+//=======================================================================
+
+GHS3DPlugin_Hypothesis::TEnforcedVertexValues GHS3DPlugin_Hypothesis::DefaultEnforcedVertices()
+{
+  return GHS3DPlugin_Hypothesis::TEnforcedVertexValues();
+}
+
+
+//=======================================================================
 //function : SaveTo
 //=======================================================================
 
-ostream & GHS3DPlugin_Hypothesis::SaveTo(ostream & save)
+std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
 {
   save << (int) myToMeshHoles                 << " ";
   save << myMaximumMemory                     << " ";
@@ -404,7 +538,25 @@ ostream & GHS3DPlugin_Hypothesis::SaveTo(ostream & save)
   save << myVerboseLevel                      << " ";
   save << (int)myToCreateNewNodes             << " ";
   save << (int)myToUseBoundaryRecoveryVersion << " ";
+  save << (int)myToUseFemCorrection           << " ";
+  save << (int)myToRemoveCentralPoint         << " ";
+  save << "__OPTIONS_BEGIN__ ";
   save << myTextOption                        << " ";
+  save << " __OPTIONS_END__ ";
+  
+
+  TEnforcedVertexValues::iterator it  = myEnforcedVertices.begin();
+  if (it != myEnforcedVertices.end()) {
+    save << "__ENFORCED_VERTICES_BEGIN__ ";
+    for ( ; it != myEnforcedVertices.end(); ++it ) {
+        save << it->first[0] << " "
+             << it->first[1] << " "
+             << it->first[2] << " "
+             << it->second << " ";
+    }
+    save << "__ENFORCED_VERTICES_END__ ";
+  }
+
   return save;
 }
 
@@ -412,87 +564,162 @@ ostream & GHS3DPlugin_Hypothesis::SaveTo(ostream & save)
 //function : LoadFrom
 //=======================================================================
 
-istream & GHS3DPlugin_Hypothesis::LoadFrom(istream & load)
+std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 {
-  bool isOK = true;
-  int i;
-
-  isOK = (load >> i);
-  if (isOK)
-    myToMeshHoles = i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-
-  isOK = (load >> i);
-  if (isOK)
-    myMaximumMemory = i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-
-  isOK = (load >> i);
-  if (isOK)
-    myInitialMemory = i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-
-  isOK = (load >> i);
-  if (isOK)
-    myOptimizationLevel = i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-
-  isOK = (load >> myWorkingDirectory);
-  if (isOK) {
-    if ( myWorkingDirectory == "0") { // myWorkingDirectory was empty
-      myKeepFiles = false;
-      myWorkingDirectory.clear();
-    }
-    else if ( myWorkingDirectory == "1" ) {
-      myKeepFiles = true;
-      myWorkingDirectory.clear();
-    }
-  }
-  else
-    load.clear(ios::badbit | load.rdstate());
-
-  if ( !myWorkingDirectory.empty() ) {
+    bool isOK = true;
+    int i;
+    
     isOK = (load >> i);
     if (isOK)
-      myKeepFiles = i;
+        myToMeshHoles = i;
     else
-      load.clear(ios::badbit | load.rdstate());
-  }
-
-  isOK = (load >> i);
-  if (isOK)
-    myVerboseLevel = (short) i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-
-  isOK = (load >> i);
-  if (isOK)
-    myToCreateNewNodes = (bool) i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-
-  isOK = (load >> i);
-  if (isOK)
-    myToUseBoundaryRecoveryVersion = (bool) i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-
-  isOK = (load >> myTextOption);
-  while (isOK) {
-    string txt;
-    if (load >> txt) {
-      myTextOption += " ";
-      myTextOption += txt;
+        load.clear(ios::badbit | load.rdstate());
+    
+    isOK = (load >> i);
+    if (isOK)
+        myMaximumMemory = i;
+    else
+        load.clear(ios::badbit | load.rdstate());
+    
+    isOK = (load >> i);
+    if (isOK)
+        myInitialMemory = i;
+    else
+        load.clear(ios::badbit | load.rdstate());
+    
+    isOK = (load >> i);
+    if (isOK)
+        myOptimizationLevel = i;
+    else
+        load.clear(ios::badbit | load.rdstate());
+    
+    isOK = (load >> myWorkingDirectory);
+    if (isOK) {
+        if ( myWorkingDirectory == "0") { // myWorkingDirectory was empty
+            myKeepFiles = false;
+            myWorkingDirectory.clear();
+        }
+        else if ( myWorkingDirectory == "1" ) {
+            myKeepFiles = true;
+            myWorkingDirectory.clear();
+        }
     }
     else
-      isOK = false;
-  }
-//   else
-//     load.clear(ios::badbit | load.rdstate());
+        load.clear(ios::badbit | load.rdstate());
+    
+    if ( !myWorkingDirectory.empty() ) {
+        isOK = (load >> i);
+        if (isOK)
+            myKeepFiles = i;
+        else
+            load.clear(ios::badbit | load.rdstate());
+    }
+    
+    isOK = (load >> i);
+    if (isOK)
+        myVerboseLevel = (short) i;
+    else
+        load.clear(ios::badbit | load.rdstate());
+    
+    isOK = (load >> i);
+    if (isOK)
+        myToCreateNewNodes = (bool) i;
+    else
+        load.clear(ios::badbit | load.rdstate());
+    
+    isOK = (load >> i);
+    if (isOK)
+        myToUseBoundaryRecoveryVersion = (bool) i;
+    else
+        load.clear(ios::badbit | load.rdstate());
+    
+    isOK = (load >> i);
+    if (isOK)
+        myToUseFemCorrection = (bool) i;
+    else
+        load.clear(ios::badbit | load.rdstate());
+    
+    isOK = (load >> i);
+    if (isOK)
+        myToRemoveCentralPoint = (bool) i;
+    else
+        load.clear(ios::badbit | load.rdstate());
+    
+//     isOK = (load >> myTextOption);
+//     while (isOK) {
+//         std::string txt;
+//         if (load >> txt) {
+//             myTextOption += " ";
+//             myTextOption += txt;
+//         }
+//         else
+//             isOK = false;
+//     }
+//     //   else
+//     //     load.clear(ios::badbit | load.rdstate());
+
+    
+    std::string separator;
+    bool hasOptions = false;
+    bool hasEnforcedVertices = false;
+    isOK = (load >> separator);
+
+    if (isOK)
+        if (separator == "__OPTIONS_BEGIN__")
+            hasOptions = true;
+        else if (separator == "__ENFORCED_VERTICES_BEGIN__")
+            hasEnforcedVertices = true;
+    
+    if (hasOptions) {
+        std::string txt;
+        isOK = (load >> myTextOption);
+        while (isOK) {
+            if (myTextOption == "__OPTIONS_END__") {
+                isOK = false;
+                break;
+            }
+            if (load >> txt) {
+                if (txt == "__OPTIONS_END__") {
+                    isOK = false;
+                    break;
+                }
+                myTextOption += " ";
+                myTextOption += txt;
+            }
+            else
+                isOK = false;
+        }
+    }
+
+    if (hasOptions) {
+        isOK = (load >> separator);
+        if (isOK)
+            if (separator == "__ENFORCED_VERTICES_BEGIN__")
+                hasEnforcedVertices = true;
+    }
+
+    if (hasEnforcedVertices) {
+        std::string txt;
+        double x,y,z,size;
+        while (isOK) {
+            isOK = (load >> txt);
+            if (isOK) {
+                if (txt == "__ENFORCED_VERTICES_END__") {
+                    isOK = false;
+                    break;
+                }
+                x = atof(txt.c_str());
+                isOK = (load >> y >> z >> size);
+            }
+            if (isOK) {
+                std::vector<double> coord;
+                coord.push_back(x);
+                coord.push_back(y);
+                coord.push_back(z);
+                myEnforcedVertices[ coord ] = size;
+            }
+        }
+    }
 
   return load;
 }
@@ -525,18 +752,20 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  /*dflts*/
  */
 //================================================================================
 
-string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
+std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
                                             const bool                    hasShapeToMesh)
 {
   TCollection_AsciiString cmd( "ghs3d" );
   // check if any option is overridden by hyp->myTextOption
-  bool m = hyp ? ( hyp->myTextOption.find("-m") == string::npos ) : true;
-  bool M = hyp ? ( hyp->myTextOption.find("-M") == string::npos ) : true;
-  bool c = hyp ? ( hyp->myTextOption.find("-c") == string::npos ) : true;
-  bool o = hyp ? ( hyp->myTextOption.find("-o") == string::npos ) : true;
-  bool p0= hyp ? ( hyp->myTextOption.find("-p0")== string::npos ) : true;
-  bool C = hyp ? ( hyp->myTextOption.find("-C") == string::npos ) : true;
-  bool v = hyp ? ( hyp->myTextOption.find("-v") == string::npos ) : true;
+  bool m   = hyp ? ( hyp->myTextOption.find("-m")  == std::string::npos ) : true;
+  bool M   = hyp ? ( hyp->myTextOption.find("-M")  == std::string::npos ) : true;
+  bool c   = hyp ? ( hyp->myTextOption.find("-c")  == std::string::npos ) : true;
+  bool o   = hyp ? ( hyp->myTextOption.find("-o")  == std::string::npos ) : true;
+  bool p0  = hyp ? ( hyp->myTextOption.find("-p0") == std::string::npos ) : true;
+  bool C   = hyp ? ( hyp->myTextOption.find("-C")  == std::string::npos ) : true;
+  bool v   = hyp ? ( hyp->myTextOption.find("-v")  == std::string::npos ) : true;
+  bool fem = hyp ? ( hyp->myTextOption.find("-FEM")== std::string::npos ) : true;
+  bool rem = hyp ? ( hyp->myTextOption.find("-no_initial_central_point")== std::string::npos ) : true;
 
   // if use boundary recovery version, few options are allowed
   bool useBndRecovery = !C;
@@ -580,8 +809,8 @@ string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
 
   // optimization level
   if ( o && hyp && !useBndRecovery ) {
-    if ( hyp->myOptimizationLevel >= 0 && hyp->myOptimizationLevel < 4 ) {
-      char* level[] = { "none" , "light" , "standard" , "strong" };
+    if ( hyp->myOptimizationLevel >= 0 && hyp->myOptimizationLevel < 5 ) {
+      char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
       cmd += " -o ";
       cmd += level[ hyp->myOptimizationLevel ];
     }
@@ -603,6 +832,16 @@ string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
     cmd += " -C";
   }
 
+  // to use FEM correction
+  if ( fem && hyp && hyp->myToUseFemCorrection) {
+    cmd += " -FEM";
+  }
+
+  // to remove initial central point.
+  if ( rem && hyp && hyp->myToRemoveCentralPoint) {
+    cmd += " -no_initial_central_point";
+  }
+
   // options as text
   if ( hyp && !hyp->myTextOption.empty() ) {
     cmd += " ";
@@ -622,9 +861,9 @@ string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
  */
 //================================================================================
 
-string GHS3DPlugin_Hypothesis::GetFileName(const GHS3DPlugin_Hypothesis* hyp)
+std::string GHS3DPlugin_Hypothesis::GetFileName(const GHS3DPlugin_Hypothesis* hyp)
 {
-  string aTmpDir = hyp ? hyp->GetWorkingDirectory() : DefaultWorkingDirectory();
+  std::string aTmpDir = hyp ? hyp->GetWorkingDirectory() : DefaultWorkingDirectory();
   const char lastChar = *aTmpDir.rbegin();
 #ifdef WIN32
     if(lastChar != '\\') aTmpDir+='\\';
@@ -640,3 +879,16 @@ string GHS3DPlugin_Hypothesis::GetFileName(const GHS3DPlugin_Hypothesis* hyp)
 
   return aGenericName.ToCString();
 }
+
+
+//================================================================================
+/*!
+* \brief Return the enforced vertices
+*/
+//================================================================================
+
+GHS3DPlugin_Hypothesis::TEnforcedVertexValues GHS3DPlugin_Hypothesis::GetEnforcedVertices(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetEnforcedVertices():DefaultEnforcedVertices();
+}
+

@@ -25,12 +25,12 @@
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
 # header files 
-salomeinclude_HEADERS =
+salomeinclude_HEADERS = 
 
 # Libraries targets
 lib_LTLIBRARIES = libGHS3DPluginGUI.la
 
-dist_libGHS3DPluginGUI_la_SOURCES = GHS3DPluginGUI_HypothesisCreator.cxx
+dist_libGHS3DPluginGUI_la_SOURCES = GHS3DPluginGUI_HypothesisCreator.cxx 
 
 MOC_FILES = GHS3DPluginGUI_HypothesisCreator_moc.cxx
 nodist_libGHS3DPluginGUI_la_SOURCES= $(MOC_FILES)

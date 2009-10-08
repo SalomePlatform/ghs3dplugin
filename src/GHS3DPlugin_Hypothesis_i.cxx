@@ -274,6 +274,48 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToUseBoundaryRecoveryVersion()
 }
 
 //=======================================================================
+//function : SetFEMCorrection
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetFEMCorrection(CORBA::Boolean toUseFem)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetFEMCorrection(toUseFem);
+  SMESH::TPythonDump() << _this() << ".SetFEMCorrection( " << toUseFem << " )";
+}
+
+//=======================================================================
+//function : GetFEMCorrection
+//=======================================================================
+
+CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetFEMCorrection()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetFEMCorrection();
+}
+
+//=======================================================================
+//function : SetToRemoveCentralPoint
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetToRemoveCentralPoint(CORBA::Boolean toRemove)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetToRemoveCentralPoint(toRemove);
+  SMESH::TPythonDump() << _this() << ".SetToRemoveCentralPoint( " << toRemove << " )";
+}
+
+//=======================================================================
+//function : GetToRemoveCentralPoint
+//=======================================================================
+
+CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToRemoveCentralPoint()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetToRemoveCentralPoint();
+}
+
+//=======================================================================
 //function : SetTextOption
 //=======================================================================
 
@@ -292,6 +334,105 @@ char* GHS3DPlugin_Hypothesis_i::GetTextOption()
 {
   ASSERT(myBaseImpl);
   return CORBA::string_dup( this->GetImpl()->GetTextOption().c_str() );
+}
+
+//=======================================================================
+//function : SetEnforcedVertex
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetEnforcedVertex(x,y,z,size);
+  SMESH::TPythonDump() << _this() << ".SetEnforcedVertex( " << x << ", " << y << ", " << z << ", " << size  << " )";
+}
+
+//=======================================================================
+//function : GetEnforcedVertex
+//=======================================================================
+
+CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z)
+  throw (SALOME::SALOME_Exception)
+{
+  ASSERT(myBaseImpl);
+  try {
+    return this->GetImpl()->GetEnforcedVertex(x,y,z);
+  }
+  catch (const std::invalid_argument& ex) {
+    SALOME::ExceptionStruct ExDescription;
+    ExDescription.text = ex.what();
+    ExDescription.type = SALOME::BAD_PARAM;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::GetEnforcedVertex(x,y,z)";
+    ExDescription.lineNumber = 0;
+    throw SALOME::SALOME_Exception(ExDescription);
+  }
+  catch (SALOME_Exception& ex) {
+    THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+  }
+  return 0;
+}
+
+//=======================================================================
+//function : GetEnforcedVertices
+//=======================================================================
+
+GHS3DPlugin::GHS3DEnforcedVertexList* GHS3DPlugin_Hypothesis_i::GetEnforcedVertices()
+{
+  ASSERT(myBaseImpl);
+  GHS3DPlugin::GHS3DEnforcedVertexList_var result = new GHS3DPlugin::GHS3DEnforcedVertexList();
+
+  const ::GHS3DPlugin_Hypothesis::TEnforcedVertexValues sizeMaps = this->GetImpl()->_GetEnforcedVertices();
+  int size = sizeMaps.size();
+  result->length( size );
+
+  ::GHS3DPlugin_Hypothesis::TEnforcedVertexValues::const_iterator it;
+  int i = 0;
+  for (it = sizeMaps.begin() ; it != sizeMaps.end(); it++ ) {
+    GHS3DPlugin::GHS3DEnforcedVertex_var myVertex = new GHS3DPlugin::GHS3DEnforcedVertex();
+    myVertex->x = it->first[0];
+    myVertex->y = it->first[1];
+    myVertex->z = it->first[2];
+    myVertex->size = it->second;
+    result[i]=myVertex;
+    i++;
+    }
+
+  return result._retn();
+}
+
+//=======================================================================
+//function : RemoveEnforcedVertex
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z)
+  throw (SALOME::SALOME_Exception)
+{
+  ASSERT(myBaseImpl);
+  try {
+    this->GetImpl()->RemoveEnforcedVertex(x,y,z);
+    SMESH::TPythonDump() << _this() << ".RemoveEnforcedVertex( " << x << ", " << y << ", " << z << " )";
+  }
+  catch (const std::invalid_argument& ex) {
+    SALOME::ExceptionStruct ExDescription;
+    ExDescription.text = ex.what();
+    ExDescription.type = SALOME::BAD_PARAM;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::RemoveEnforcedVertex(x,y,z)";
+    ExDescription.lineNumber = 0;
+    throw SALOME::SALOME_Exception(ExDescription);
+  }
+  catch (SALOME_Exception& ex) {
+    THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+  }
+}
+
+//=======================================================================
+//function : ClearEnforcedVertices
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::ClearEnforcedVertices()
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->ClearEnforcedVertices();
 }
 
 //=============================================================================

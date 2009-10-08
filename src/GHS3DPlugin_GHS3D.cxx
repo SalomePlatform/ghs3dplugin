@@ -27,6 +27,7 @@
 #include "GHS3DPlugin_GHS3D.hxx"
 #include "GHS3DPlugin_Hypothesis.hxx"
 
+
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
 #include "SMESH_Comment.hxx"
@@ -78,7 +79,7 @@ using namespace std;
 
 #ifdef _DEBUG_
 #define DUMP(txt) \
-//  cout << txt
+//  std::cout << txt
 #else
 #define DUMP(txt)
 #endif
@@ -208,7 +209,7 @@ static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
 
 static char* readMapIntLine(char* ptr, int tab[]) {
   long int intVal;
-  cout << endl;
+  std::cout << std::endl;
 
   for ( int i=0; i<17; i++ ) {
     intVal = strtol(ptr, &ptr, 10);
@@ -262,10 +263,10 @@ static bool writeFaces (ofstream &            theFile,
   int shapeID, nbNodes, aSmdsID;
   bool idFound;
 
-  cout << "    " << theMesh->NbFaces() << " shapes of 2D dimension" << endl;
-  cout << endl;
+  std::cout << "    " << theMesh->NbFaces() << " shapes of 2D dimension" << std::endl;
+  std::cout << std::endl;
 
-  theFile << space << theMesh->NbFaces() << space << dummyint << endl;
+  theFile << space << theMesh->NbFaces() << space << dummyint << std::endl;
 
   TopExp_Explorer expface( theMesh->ShapeToMesh(), TopAbs_FACE );
   for ( int i = 0; expface.More(); expface.Next(), i++ ) {
@@ -311,11 +312,12 @@ static bool writeFaces (ofstream &            theFile,
         for ( int j=0; j<=nbNodes; j++)
           theFile << space << dummyint;
 
-        theFile << endl;
+        theFile << std::endl;
       }
     }
   }
-
+  
+  
   delete [] tabID;
   delete [] tabShape;
 
@@ -362,10 +364,10 @@ static bool writeFaces (ofstream &            theFile,
   if ( nbFaces == 0 )
     return false;
   
-  cout << "The initial 2D mesh contains " << nbFaces << " faces and ";
+  std::cout << "The initial 2D mesh contains " << nbFaces << " faces and ";
 
   // NB_ELEMS DUMMY_INT
-  theFile << space << nbFaces << space << dummyint << endl;
+  theFile << space << nbFaces << space << dummyint << std::endl;
 
   // Loop from 1 to NB_ELEMS
 
@@ -393,7 +395,7 @@ static bool writeFaces (ofstream &            theFile,
     for ( int i=0; i<=nbNodes; i++)
       theFile << space << dummyint;
 
-    theFile << endl;
+    theFile << std::endl;
   }
 
   // put nodes to theNodeByGhs3dId vector
@@ -412,10 +414,11 @@ static bool writeFaces (ofstream &            theFile,
 //purpose  : 
 //=======================================================================
 
-static bool writePoints (ofstream &                       theFile,
-                         SMESHDS_Mesh *                   theMesh,
-                         map <int,int> &                  theSmdsToGhs3dIdMap,
-                         map <int,const SMDS_MeshNode*> & theGhs3dIdToNodeMap)
+static bool writePoints (ofstream &                                     theFile,
+                         SMESHDS_Mesh *                                 theMesh,
+                         map <int,int> &                                theSmdsToGhs3dIdMap,
+                         map <int,const SMDS_MeshNode*> &               theGhs3dIdToNodeMap,
+                         map<vector<double>,double> & theEnforcedVertices)
 {
   // record structure:
   //
@@ -426,6 +429,7 @@ static bool writePoints (ofstream &                       theFile,
   int nbNodes = theMesh->NbNodes();
   if ( nbNodes == 0 )
     return false;
+  int nbEnforcedVertices = theEnforcedVertices.size();
 
   const char* space    = "  ";
   const int   dummyint = 0;
@@ -435,10 +439,15 @@ static bool writePoints (ofstream &                       theFile,
   const SMDS_MeshNode* node;
 
   // NB_NODES
-  theFile << space << nbNodes << endl;
-  cout << endl;
-  cout << "The initial 2D mesh contains :" << endl;
-  cout << "    " << nbNodes << " vertices" << endl;
+  std::cout << std::endl;
+  std::cout << "The initial 2D mesh contains :" << std::endl;
+  std::cout << "    " << nbNodes << " nodes" << std::endl;
+  if (nbEnforcedVertices > 0) {
+    std::cout << "    " << nbEnforcedVertices << " enforced vertices" << std::endl;
+  }
+  std::cout << std::endl;
+  std::cout << "Start writing in 'points' file ..." << std::endl;
+  theFile << space << nbNodes << std::endl;
 
   // Loop from 1 to NB_NODES
 
@@ -451,13 +460,46 @@ static bool writePoints (ofstream &                       theFile,
 
     // X Y Z DUMMY_INT
     theFile
-      << space << node->X()
-      << space << node->Y()
-      << space << node->Z()
-      << space << dummyint;
+    << space << node->X()
+    << space << node->Y()
+    << space << node->Z()
+    << space << dummyint;
 
-    theFile << endl;
+    theFile << std::endl;
+
   }
+  
+  // Iterate over the enforced vertices
+  GHS3DPlugin_Hypothesis::TEnforcedVertexValues::const_iterator vertexIt;
+  const TopoDS_Shape shapeToMesh = theMesh->ShapeToMesh();
+  for(vertexIt = theEnforcedVertices.begin() ; vertexIt != theEnforcedVertices.end() ; ++vertexIt) {
+    double x = vertexIt->first[0];
+    double y = vertexIt->first[1];
+    double z = vertexIt->first[2];
+    // Test if point is inside shape to mesh
+    gp_Pnt myPoint(x,y,z);
+    BRepClass3d_SolidClassifier scl(shapeToMesh);
+    scl.Perform(myPoint, 1e-7);
+    TopAbs_State result = scl.State();
+    if ( result == TopAbs_IN ) {
+        MESSAGE("Adding enforced vertex (" << x << "," << y <<"," << z << ") = " << vertexIt->second);
+        // X Y Z PHY_SIZE DUMMY_INT
+        theFile
+        << space << x
+        << space << y
+        << space << z
+        << space << vertexIt->second
+        << space << dummyint;
+    
+        theFile << std::endl;
+    }
+    else
+        MESSAGE("Enforced vertex (" << x << "," << y <<"," << z << ") is not inside the geometry: it was not added ");
+  }
+  
+  
+  std::cout << std::endl;
+  std::cout << "End writing in 'points' file." << std::endl;
 
   return true;
 }
@@ -467,20 +509,23 @@ static bool writePoints (ofstream &                       theFile,
 //purpose  : 
 //=======================================================================
 
-static bool writePoints (ofstream &                            theFile,
-                         SMESHDS_Mesh *                        theMesh,
-                         const vector <const SMDS_MeshNode*> & theNodeByGhs3dId)
+static bool writePoints (ofstream &                                     theFile,
+                         SMESHDS_Mesh *                                 theMesh,
+                         const vector <const SMDS_MeshNode*> &          theNodeByGhs3dId,
+                         map<vector<double>,double> & theEnforcedVertices)
 {
   // record structure:
   //
   // NB_NODES
   // Loop from 1 to NB_NODES
   //   X Y Z DUMMY_INT
-
+  
   //int nbNodes = theMesh->NbNodes();
   int nbNodes = theNodeByGhs3dId.size();
   if ( nbNodes == 0 )
     return false;
+
+  int nbEnforcedVertices = theEnforcedVertices.size();
 
   const char* space    = "  ";
   const int   dummyint = 0;
@@ -488,8 +533,13 @@ static bool writePoints (ofstream &                            theFile,
   const SMDS_MeshNode* node;
 
   // NB_NODES
-  theFile << space << nbNodes << endl;
-  cout << nbNodes << " nodes" << endl;
+  std::cout << std::endl;
+  std::cout << "The initial 2D mesh contains :" << std::endl;
+  std::cout << "    " << nbNodes << " nodes" << std::endl;
+  std::cout << "    " << nbEnforcedVertices << " enforced vertices" << std::endl;
+  std::cout << std::endl;
+  std::cout << "Start writing in 'points' file ..." << std::endl;
+  theFile << space << nbNodes << std::endl;
 
   // Loop from 1 to NB_NODES
 
@@ -501,13 +551,43 @@ static bool writePoints (ofstream &                            theFile,
 
     // X Y Z DUMMY_INT
     theFile
-      << space << node->X()
-      << space << node->Y()
-      << space << node->Z()
-      << space << dummyint;
+    << space << node->X()
+    << space << node->Y()
+    << space << node->Z()
+    << space << dummyint;
 
-    theFile << endl;
+    theFile << std::endl;
+
   }
+  
+  // Iterate over the enforced vertices
+  GHS3DPlugin_Hypothesis::TEnforcedVertexValues::const_iterator vertexIt;
+  const TopoDS_Shape shapeToMesh = theMesh->ShapeToMesh();
+  for(vertexIt = theEnforcedVertices.begin() ; vertexIt != theEnforcedVertices.end() ; ++vertexIt) {
+    double x = vertexIt->first[0];
+    double y = vertexIt->first[1];
+    double z = vertexIt->first[2];
+    // Test if point is inside shape to mesh
+    gp_Pnt myPoint(x,y,z);
+    BRepClass3d_SolidClassifier scl(shapeToMesh);
+    scl.Perform(myPoint, 1e-7);
+    TopAbs_State result = scl.State();
+    if ( result == TopAbs_IN ) {
+        std::cout << "Adding enforced vertex (" << x << "," << y <<"," << z << ") = " << vertexIt->second << std::endl;
+
+        // X Y Z PHY_SIZE DUMMY_INT
+        theFile
+        << space << x
+        << space << y
+        << space << z
+        << space << vertexIt->second
+        << space << dummyint;
+    
+        theFile << std::endl;
+    }
+  }
+  std::cout << std::endl;
+  std::cout << "End writing in 'points' file." << std::endl;
 
   return true;
 }
@@ -661,8 +741,10 @@ static bool readResultFile(const int                       fileOpen,
                            double**                        tabBox,
                            const int                       nbShape,
                            map <int,const SMDS_MeshNode*>& theGhs3dIdToNodeMap,
-                           bool                            toMeshHoles)
+                           bool                            toMeshHoles,
+                           int                             nbEnforcedVertices)
 {
+  MESSAGE("GHS3DPlugin_GHS3D::readResultFile()");
   struct stat status;
   size_t      length;
 
@@ -731,12 +813,18 @@ static bool readResultFile(const int                       fileOpen,
   for (int i=0; i < 4*nbElems; i++)
     nodeId = strtol(ptr, &ptr, 10);
 
+  MESSAGE("nbInputNodes: "<<nbInputNodes);
+  MESSAGE("nbEnforcedVertices: "<<nbEnforcedVertices);
   // Reading the nodeCoor and update the nodeMap
   for (int iNode=1; iNode <= nbNodes; iNode++) {
     for (int iCoor=0; iCoor < 3; iCoor++)
       coord[ iCoor ] = strtod(ptr, &ptr);
     nodeAssigne[ iNode ] = 1;
-    if ( iNode > nbInputNodes ) {
+    if ( iNode > (nbInputNodes-nbEnforcedVertices) ) {
+      // Creating SMESH nodes
+      // - for enforced vertices
+      // - for vertices of forced edges
+      // - for ghs3d nodes
       nodeAssigne[ iNode ] = 0;
       aNewNode = theMeshDS->AddNode( coord[0],coord[1],coord[2] );
       theGhs3dIdToNodeMap.insert(theGhs3dIdToNodeMap.end(), make_pair( iNode, aNewNode ));
@@ -774,7 +862,7 @@ static bool readResultFile(const int                       fileOpen,
         }
         // END -- 0020330: Pb with ghs3d as a submesh
 #ifdef _DEBUG_
-        cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << endl;
+        std::cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << std::endl;
 #endif
       } catch ( Standard_Failure ) {
       } catch (...) {}
@@ -877,11 +965,11 @@ static bool readResultFile(const int                       fileOpen,
 
 #ifdef _DEBUG_
   if ( shapeIDs.size() != nbShape ) {
-    cout << "Only " << shapeIDs.size() << " solids of " << nbShape << " found" << endl;
+    std::cout << "Only " << shapeIDs.size() << " solids of " << nbShape << " found" << std::endl;
     for (int i=0; i<nbShape; i++) {
       shapeID = theMeshDS->ShapeToIndex( tabShape[i] );
       if ( shapeIDs.find( shapeID ) == shapeIDs.end() )
-        cout << "  Solid #" << shapeID << " not found" << endl;
+        std::cout << "  Solid #" << shapeID << " not found" << std::endl;
     }
   }
 #endif
@@ -900,7 +988,8 @@ static bool readResultFile(const int                      fileOpen,
 #endif
                            SMESHDS_Mesh*                  theMeshDS,
                            TopoDS_Shape                   aSolid,
-                           vector <const SMDS_MeshNode*>& theNodeByGhs3dId) {
+                           vector <const SMDS_MeshNode*>& theNodeByGhs3dId,
+                           int                            nbEnforcedVertices) {
 
   struct stat  status;
   size_t       length;
@@ -961,7 +1050,7 @@ static bool readResultFile(const int                      fileOpen,
   for (int iNode=0; iNode < nbNodes; iNode++) {
     for (int iCoor=0; iCoor < 3; iCoor++)
       coord[ iCoor ] = strtod(ptr, &ptr);
-    if ((iNode+1) > nbInputNodes) {
+    if ((iNode+1) > (nbInputNodes-nbEnforcedVertices)) {
       aNewNode = theMeshDS->AddNode( coord[0],coord[1],coord[2] );
       theMeshDS->SetNodeInVolume( aNewNode, shapeID );
       theNodeByGhs3dId[ iNode ] = aNewNode;
@@ -1075,8 +1164,16 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
   map <int,int> aSmdsToGhs3dIdMap;
   map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
-
-  Ok = writePoints( aPointsFile, meshDS, aSmdsToGhs3dIdMap, aGhs3dIdToNodeMap ) &&
+  map<vector<double>,double> enforcedVertices;
+  int nbEnforcedVertices = 0;
+  try {
+    enforcedVertices = GHS3DPlugin_Hypothesis::GetEnforcedVertices(_hyp);
+    nbEnforcedVertices = enforcedVertices.size();
+  }
+  catch(...) {
+  }
+  
+  Ok = writePoints( aPointsFile, meshDS, aSmdsToGhs3dIdMap, aGhs3dIdToNodeMap, enforcedVertices) &&
        writeFaces ( aFacesFile,  meshDS, aSmdsToGhs3dIdMap );
 
   aFacesFile.close();
@@ -1099,14 +1196,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   cmd += TCollection_AsciiString(" -f ") + aGenericName;  // file to read
   cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
 
-  cout << endl;
-  cout << "Ghs3d execution..." << endl;
-  cout << cmd << endl;
+  std::cout << std::endl;
+  std::cout << "Ghs3d execution..." << std::endl;
+  std::cout << cmd << std::endl;
 
   system( cmd.ToCString() ); // run
 
-  cout << endl;
-  cout << "End of Ghs3d execution !" << endl;
+  std::cout << std::endl;
+  std::cout << "End of Ghs3d execution !" << std::endl;
 
   // --------------
   // read a result
@@ -1117,9 +1214,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   int fileOpen;
   fileOpen = open( aResultFileName.ToCString(), O_RDONLY);
   if ( fileOpen < 0 ) {
-    cout << endl;
-    cout << "Can't open the " << aResultFileName.ToCString() << " GHS3D output file" << endl;
-    cout << "Log: " << aLogFileName << endl;
+    std::cout << std::endl;
+    std::cout << "Can't open the " << aResultFileName.ToCString() << " GHS3D output file" << std::endl;
+    std::cout << "Log: " << aLogFileName << std::endl;
     Ok = false;
   }
   else {
@@ -1130,7 +1227,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                          aResultFileName.ToCString(),
 #endif
                          theMesh, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap,
-                         toMeshHoles );
+                         toMeshHoles, nbEnforcedVertices );
   }
 
   // ---------------------
@@ -1163,11 +1260,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     removeFile( aBadResFileName );
     removeFile( aBbResFileName );
   }
-  cout << "<" << aResultFileName.ToCString() << "> GHS3D output file ";
+  std::cout << "<" << aResultFileName.ToCString() << "> GHS3D output file ";
   if ( !Ok )
-    cout << "not ";
-  cout << "treated !" << endl;
-  cout << endl;
+    std::cout << "not ";
+  std::cout << "treated !" << std::endl;
+  std::cout << std::endl;
 
   _nbShape = 0;    // re-initializing _nbShape for the next Compute() method call
   delete [] tabShape;
@@ -1214,11 +1311,20 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if (!Ok)
     return error( SMESH_Comment("Can't write into ") << aPointsFileName);
+  
+  GHS3DPlugin_Hypothesis::TEnforcedVertexValues enforcedVertices;
+  int nbEnforcedVertices = 0;
+  try {
+    enforcedVertices = GHS3DPlugin_Hypothesis::GetEnforcedVertices(_hyp);
+    nbEnforcedVertices = enforcedVertices.size();
+  }
+  catch(...) {
+  }
 
   vector <const SMDS_MeshNode*> aNodeByGhs3dId;
 
   Ok = (writeFaces ( aFacesFile, meshDS, aNodeByGhs3dId ) &&
-        writePoints( aPointsFile, meshDS, aNodeByGhs3dId));
+        writePoints( aPointsFile, meshDS, aNodeByGhs3dId,enforcedVertices));
   
   aFacesFile.close();
   aPointsFile.close();
@@ -1249,10 +1355,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   int fileOpen;
   fileOpen = open( aResultFileName.ToCString(), O_RDONLY);
   if ( fileOpen < 0 ) {
-    cout << endl;
-    cout << "Error when opening the " << aResultFileName.ToCString() << " file" << endl;
-    cout << "Log: " << aLogFileName << endl;
-    cout << endl;
+    std::cout << std::endl;
+    std::cout << "Error when opening the " << aResultFileName.ToCString() << " file" << std::endl;
+    std::cout << "Log: " << aLogFileName << std::endl;
+    std::cout << std::endl;
     Ok = false;
   }
   else {
@@ -1260,7 +1366,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #ifdef WNT
                          aResultFileName.ToCString(),
 #endif
-                         meshDS, theShape ,aNodeByGhs3dId );
+                         meshDS, theShape ,aNodeByGhs3dId, nbEnforcedVertices );
   }
   
   // ---------------------
@@ -1866,3 +1972,4 @@ bool GHS3DPlugin_GHS3D::Evaluate(SMESH_Mesh& aMesh,
 
   return true;
 }
+

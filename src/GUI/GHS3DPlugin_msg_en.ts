@@ -59,6 +59,10 @@
             <translation>To keep working files</translation>
         </message>
         <message>
+            <source>LEVEL_NONE</source>
+            <translation>None</translation>
+        </message>
+        <message>
             <source>LEVEL_LIGHT</source>
             <translation>Light</translation>
         </message>
@@ -67,8 +71,8 @@
             <translation>Medium (standard)</translation>
         </message>
         <message>
-            <source>LEVEL_NONE</source>
-            <translation>None</translation>
+            <source>LEVEL_STANDARDPLUS</source>
+            <translation>Standard+</translation>
         </message>
         <message>
             <source>LEVEL_STRONG</source>
@@ -83,8 +87,16 @@
             <translation>Megabytes</translation>
         </message>
         <message>
+            <source>NO_INITIAL_CENTRAL_POINT</source>
+            <translation>To remove initial central point</translation>
+        </message>
+        <message>
             <source>RECOVERY_VERSION</source>
             <translation>To use boundary recovery version</translation>
+        </message>
+        <message>
+            <source>FEM_CORRECTION</source>
+            <translation>To use FEM correction</translation>
         </message>
         <message>
             <source>SELECT_DIR</source>
@@ -105,6 +117,50 @@
         <message>
             <source>WORKING_DIR</source>
             <translation>Working directory</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENFORCED_VERTICES</source>
+            <translation>Enforced vertices</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_X_COLUMN</source>
+            <translation>X</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_Y_COLUMN</source>
+            <translation>Y</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_Z_COLUMN</source>
+            <translation>Z</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_SIZE_COLUMN</source>
+            <translation>Size</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_X_LABEL</source>
+            <translation>X:</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_Y_LABEL</source>
+            <translation>Y:</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_Z_LABEL</source>
+            <translation>Z:</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_SIZE_LABEL</source>
+            <translation>Size:</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_VERTEX</source>
+            <translation>Add enforced vertex</translation>
+        </message>
+        <message>
+            <source>GHS3D_ENF_VER_REMOVE</source>
+            <translation>Remove vertex</translation>
         </message>
     </context>
 </TS>

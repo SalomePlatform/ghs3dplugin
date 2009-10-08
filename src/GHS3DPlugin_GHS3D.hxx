@@ -51,7 +51,7 @@ public:
                        const TopoDS_Shape& aShape);
 
   virtual bool Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aShape,
-			MapShapeNbElems& aResMap);
+                        MapShapeNbElems& aResMap);
 
   virtual bool Compute(SMESH_Mesh&         theMesh,
                        SMESH_MesherHelper* aHelper);

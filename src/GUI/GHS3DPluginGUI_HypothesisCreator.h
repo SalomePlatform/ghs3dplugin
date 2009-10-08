@@ -35,27 +35,35 @@
 #endif
 
 #include <SMESHGUI_Hypotheses.h>
+// #include <SalomeApp_DoubleSpinBox.h>
+
+#include <QItemDelegate>
+#include <map>
+#include <vector>
+#include CORBA_SERVER_HEADER(GHS3DPlugin_Algorithm)
 
 class QWidget;
 class QComboBox;
 class QCheckBox;
 class QLineEdit;
 class QSpinBox;
+class QStandardItemModel;
+class QTableView;
+class QHeaderView;
+class QDoubleSpinBox;
+
+class LightApp_SelectionMgr;
+
+typedef std::vector<double> GHS3DEnforcedVertex;
+typedef std::vector<GHS3DEnforcedVertex> TEnforcedVertexValues;
 
 typedef struct
 {
-  bool    myToMeshHoles;
-  int     myMaximumMemory;
-  int     myInitialMemory;
-  int     myOptimizationLevel;
-  bool    myKeepFiles;
-  QString myWorkingDir;
-  QString myName;
+  bool    myToMeshHoles,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint;
+  int     myMaximumMemory,myInitialMemory,myOptimizationLevel;
+  QString myName,myWorkingDir,myTextOption;
   short   myVerboseLevel;
-  bool    myToCreateNewNodes;
-  bool    myBoundaryRecovery;
-  QString myTextOption;
-
+  TEnforcedVertexValues myEnforcedVertices;
 } GHS3DHypothesisData;
 
 /*!
@@ -69,7 +77,7 @@ public:
   GHS3DPluginGUI_HypothesisCreator( const QString& );
   virtual ~GHS3DPluginGUI_HypothesisCreator();
 
-  virtual bool     checkParams() const;
+  virtual bool     checkParams(QString& msg) const;
   virtual QString  helpPage() const;
 
 protected:
@@ -82,31 +90,71 @@ protected:
   virtual QString  type() const;
 
 protected slots:
-  void             onDirBtnClicked();
-  void             updateWidgets();
+  void                onDirBtnClicked();
+  void                updateWidgets();
+  void                onVertexBtnClicked();
+  void                onRemoveVertexBtnClicked();
+  bool                checkVertexIsDefined();
+
+signals:
+  void                vertexDefined(bool);
 
 private:
-  bool             readParamsFromHypo( GHS3DHypothesisData& ) const;
-  bool             readParamsFromWidgets( GHS3DHypothesisData& ) const;
-  bool             storeParamsToHypo( const GHS3DHypothesisData& ) const;
+  bool                readParamsFromHypo( GHS3DHypothesisData& ) const;
+  bool                readParamsFromWidgets( GHS3DHypothesisData& ) const;
+  bool                storeParamsToHypo( const GHS3DHypothesisData& ) const;
+  bool                smpVertexExists(double, double, double) const;
 
 private:
-  QWidget*         myStdGroup;
-  QLineEdit*       myName;
-  QCheckBox*       myToMeshHolesCheck;
-  QComboBox*       myOptimizationLevelCombo;
+  QWidget*            myStdGroup;
+  QLineEdit*          myName;
+  QCheckBox*          myToMeshHolesCheck;
+  QComboBox*          myOptimizationLevelCombo;
 
-  QWidget*         myAdvGroup;
-  QCheckBox*       myMaximumMemoryCheck;
-  QSpinBox*        myMaximumMemorySpin;
-  QCheckBox*       myInitialMemoryCheck;
-  QSpinBox*        myInitialMemorySpin;
-  QLineEdit*       myWorkingDir;
-  QCheckBox*       myKeepFiles;
-  QSpinBox*        myVerboseLevelSpin;
-  QCheckBox*       myToCreateNewNodesCheck;
-  QCheckBox*       myBoundaryRecoveryCheck;
-  QLineEdit*       myTextOption;
+  QWidget*            myAdvGroup;
+  QCheckBox*          myMaximumMemoryCheck;
+  QSpinBox*           myMaximumMemorySpin;
+  QCheckBox*          myInitialMemoryCheck;
+  QSpinBox*           myInitialMemorySpin;
+  QLineEdit*          myWorkingDir;
+  QCheckBox*          myKeepFiles;
+  QSpinBox*           myVerboseLevelSpin;
+  QCheckBox*          myToCreateNewNodesCheck;
+  QCheckBox*          myRemoveInitialCentralPointCheck;
+  QCheckBox*          myBoundaryRecoveryCheck;
+  QCheckBox*          myFEMCorrectionCheck;
+QLineEdit*            myTextOption;
+  
+  QWidget*            myEnfGroup;
+  QStandardItemModel* mySmpModel;
+  QTableView*         myEnforcedTableView;
+  QLineEdit*          myXCoord;
+  QLineEdit*          myYCoord;
+  QLineEdit*          myZCoord;
+  QLineEdit*          mySizeValue;
+  QPushButton*        addVertexButton;
+  QPushButton*        removeVertexButton;
+  
+  LightApp_SelectionMgr*  mySelectionMgr;          /* User shape selection */
+//   SVTK_Selector*          mySelector;
+};
+
+class DoubleLineEditDelegate : public QItemDelegate
+{
+    Q_OBJECT
+
+public:
+    DoubleLineEditDelegate(QObject *parent = 0);
+
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                        const QModelIndex &index) const;
+
+    void setEditorData(QWidget *editor, const QModelIndex &index) const;
+    void setModelData(QWidget *editor, QAbstractItemModel *model,
+                    const QModelIndex &index) const;
+
+    void updateEditorGeometry(QWidget *editor,
+        const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
 #endif

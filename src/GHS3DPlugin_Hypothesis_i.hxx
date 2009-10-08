@@ -103,10 +103,31 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   void SetToUseBoundaryRecoveryVersion(CORBA::Boolean toUse);
   CORBA::Boolean GetToUseBoundaryRecoveryVersion();
   /*!
+   * Applies ﬁnite-element correction by replacing overconstrained elements where
+   * it is possible. The process is cutting ﬁrst the overconstrained edges and
+   * second the overconstrained facets. This insure that no edges have two boundary
+   * vertices and that no facets have three boundary vertices.
+   */
+  void SetFEMCorrection(CORBA::Boolean toUseFem);
+  CORBA::Boolean GetFEMCorrection();
+  /*!
+   * To removes initial central point.
+   */
+  void SetToRemoveCentralPoint(CORBA::Boolean toRemove);
+  CORBA::Boolean GetToRemoveCentralPoint();
+  /*!
    * To set hiden/undocumented/advanced options
    */
   void SetTextOption(const char* option);
   char* GetTextOption();
+  /*!
+   * To set an enforced vertex
+   */
+  void SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size);
+  CORBA::Double GetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
+  void RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
+  GHS3DPlugin::GHS3DEnforcedVertexList* GetEnforcedVertices();
+  void ClearEnforcedVertices();
 
   // Get implementation
   ::GHS3DPlugin_Hypothesis* GetImpl();
