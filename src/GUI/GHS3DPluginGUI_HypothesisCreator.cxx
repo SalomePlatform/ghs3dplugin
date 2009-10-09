@@ -388,7 +388,7 @@ bool GHS3DPluginGUI_HypothesisCreator::checkVertexIsDefined()
   bool val = (!myXCoord->text().isEmpty())&&(!myYCoord->text().isEmpty())&&(!myZCoord->text().isEmpty())&&(!mySizeValue->text().isEmpty());
   bool isDefined = val;
   if (val)
-    isDefined = not smpVertexExists(myXCoord->text().toDouble(),myYCoord->text().toDouble(),myZCoord->text().toDouble());
+    isDefined = ! smpVertexExists(myXCoord->text().toDouble(),myYCoord->text().toDouble(),myZCoord->text().toDouble());
 
   emit vertexDefined(isDefined);
   return isDefined;
