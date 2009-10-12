@@ -52,6 +52,7 @@ libGHS3DPluginGUI_la_CPPFLAGS =  \
 libGHS3DPluginGUI_la_LDFLAGS  = \
 	../../idl/libSalomeIDLGHS3DPLUGIN.la \
 	$(QT_LIBS) \
+	$(KERNEL_LDFLAGS) -lSALOMELocalTrace \
 	$(SMESH_LDFLAGS) -lSMESH \
 	$(GUI_LDFLAGS) -lsuit -lqtx -lSalomeApp \
 	$(CAS_KERNEL)
