@@ -106,6 +106,22 @@ static void removeFile( const TCollection_AsciiString& fileName )
   }
 }
 
+class Localizer
+{
+public:
+  Localizer()
+  {
+    myCurLocale = setlocale(LC_NUMERIC, 0);
+    setlocale(LC_NUMERIC, "C");
+  }
+  ~Localizer()
+  {
+    setlocale(LC_NUMERIC, myCurLocale.c_str());
+  }
+private:
+  std::string myCurLocale;
+};
+
 //=============================================================================
 /*!
  *  
@@ -745,6 +761,7 @@ static bool readResultFile(const int                       fileOpen,
                            int                             nbEnforcedVertices)
 {
   MESSAGE("GHS3DPlugin_GHS3D::readResultFile()");
+  Localizer loc;
   struct stat status;
   size_t      length;
 
@@ -991,6 +1008,7 @@ static bool readResultFile(const int                      fileOpen,
                            vector <const SMDS_MeshNode*>& theNodeByGhs3dId,
                            int                            nbEnforcedVertices) {
 
+  Localizer loc;
   struct stat  status;
   size_t       length;
 
