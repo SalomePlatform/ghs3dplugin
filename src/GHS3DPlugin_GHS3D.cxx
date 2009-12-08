@@ -28,6 +28,8 @@
 #include "GHS3DPlugin_Hypothesis.hxx"
 
 
+#include <Basics_Utils.hxx>
+
 #include "SMESH_Gen.hxx"
 #include "SMESH_Mesh.hxx"
 #include "SMESH_Comment.hxx"
@@ -745,6 +747,7 @@ static bool readResultFile(const int                       fileOpen,
                            int                             nbEnforcedVertices)
 {
   MESSAGE("GHS3DPlugin_GHS3D::readResultFile()");
+  Kernel_Utils::Localizer loc;
   struct stat status;
   size_t      length;
 
@@ -991,6 +994,7 @@ static bool readResultFile(const int                      fileOpen,
                            vector <const SMDS_MeshNode*>& theNodeByGhs3dId,
                            int                            nbEnforcedVertices) {
 
+  Kernel_Utils::Localizer loc;
   struct stat  status;
   size_t       length;
 
