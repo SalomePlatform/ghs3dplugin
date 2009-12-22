@@ -540,9 +540,11 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
   save << (int)myToUseBoundaryRecoveryVersion << " ";
   save << (int)myToUseFemCorrection           << " ";
   save << (int)myToRemoveCentralPoint         << " ";
-  save << "__OPTIONS_BEGIN__ ";
-  save << myTextOption                        << " ";
-  save << " __OPTIONS_END__ ";
+  if (!myTextOption.empty()) {
+    save << "__OPTIONS_BEGIN__ ";
+    save << myTextOption                      << " ";
+    save << "__OPTIONS_END__ ";
+  }
   
 
   TEnforcedVertexValues::iterator it  = myEnforcedVertices.begin();
@@ -645,20 +647,6 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
     else
         load.clear(ios::badbit | load.rdstate());
     
-//     isOK = (load >> myTextOption);
-//     while (isOK) {
-//         std::string txt;
-//         if (load >> txt) {
-//             myTextOption += " ";
-//             myTextOption += txt;
-//         }
-//         else
-//             isOK = false;
-//     }
-//     //   else
-//     //     load.clear(ios::badbit | load.rdstate());
-
-    
     std::string separator;
     bool hasOptions = false;
     bool hasEnforcedVertices = false;
@@ -669,25 +657,23 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
             hasOptions = true;
         else if (separator == "__ENFORCED_VERTICES_BEGIN__")
             hasEnforcedVertices = true;
-    
+
     if (hasOptions) {
         std::string txt;
-        isOK = (load >> myTextOption);
         while (isOK) {
-            if (myTextOption == "__OPTIONS_END__") {
-                isOK = false;
-                break;
-            }
-            if (load >> txt) {
+            isOK = (load >> txt);
+            if (isOK) {
                 if (txt == "__OPTIONS_END__") {
+                    if (!myTextOption.empty()) {
+                        // Remove last space
+                        myTextOption.erase(myTextOption.end()-1);
+                    }
                     isOK = false;
                     break;
                 }
-                myTextOption += " ";
                 myTextOption += txt;
+                myTextOption += " ";
             }
-            else
-                isOK = false;
         }
     }
 
