@@ -469,8 +469,8 @@ bool GHS3DPluginGUI_HypothesisCreator::checkParams(QString& msg) const
 
   if ( !QFileInfo( myWorkingDir->text().trimmed() ).isWritable() ) {
     SUIT_MessageBox::warning( dlg(),
-			      tr( "SMESH_WRN_WARNING" ),
-			      tr( "GHS3D_PERMISSION_DENIED" ) );
+                              tr( "SMESH_WRN_WARNING" ),
+                              tr( "GHS3D_PERMISSION_DENIED" ) );
     return false;
   }
 
@@ -490,10 +490,10 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   myOptimizationLevelCombo         ->setCurrentIndex( data.myOptimizationLevel );
   myMaximumMemoryCheck             ->setChecked    ( data.myMaximumMemory > 0 );
   myMaximumMemorySpin              ->setValue      ( qMax( data.myMaximumMemory,
-						                                         myMaximumMemorySpin->minimum() ));
+                                                           myMaximumMemorySpin->minimum() ));
   myInitialMemoryCheck             ->setChecked    ( data.myInitialMemory > 0 );
   myInitialMemorySpin              ->setValue      ( qMax( data.myInitialMemory,
-						                                         myInitialMemorySpin->minimum() ));
+                                                           myInitialMemorySpin->minimum() ));
   myWorkingDir                     ->setText       ( data.myWorkingDir );
   myKeepFiles                      ->setChecked    ( data.myKeepFiles );
   myVerboseLevelSpin               ->setValue      ( data.myVerboseLevel );
