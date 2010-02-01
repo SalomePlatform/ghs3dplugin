@@ -417,6 +417,7 @@ short  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
     return (int) ( 0.7 * totMB );
   }
 #endif
+  return 1024;
 }
 
 //=======================================================================
