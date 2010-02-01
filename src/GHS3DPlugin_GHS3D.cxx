@@ -1205,13 +1205,31 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   Ok = writePoints( aPointsFile, helper, aSmdsToGhs3dIdMap, aGhs3dIdToNodeMap, enforcedVertices) &&
        writeFaces ( aFacesFile,  meshDS, aSmdsToGhs3dIdMap );
 
+  // Write aSmdsToGhs3dIdMap to temp file
+  TCollection_AsciiString aSmdsToGhs3dIdMapFileName;
+  aSmdsToGhs3dIdMapFileName = aGenericName + ".ids";  // ids relation
+  ofstream aIdsFile  ( aSmdsToGhs3dIdMapFileName.ToCString()  , ios::out);
+  Ok =
+    aIdsFile.rdbuf()->is_open();
+  if (!Ok) {
+    INFOS( "Can't write into " << aSmdsToGhs3dIdMapFileName);
+    return error(SMESH_Comment("Can't write into ") << aSmdsToGhs3dIdMapFileName);
+  }
+  aIdsFile << "Smds Ghs3d" << std::endl;
+  map <int,int>::const_iterator myit;
+  for (myit=aSmdsToGhs3dIdMap.begin() ; myit != aSmdsToGhs3dIdMap.end() ; ++myit) {
+    aIdsFile << myit->first << " " << myit->second << std::endl;
+  }
+
   aFacesFile.close();
   aPointsFile.close();
+  aIdsFile.close();
   
   if ( ! Ok ) {
     if ( !_keepFiles ) {
       removeFile( aFacesFileName );
       removeFile( aPointsFileName );
+      removeFile( aSmdsToGhs3dIdMapFileName );
     }
     return error(COMPERR_BAD_INPUT_MESH);
   }
@@ -1288,6 +1306,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     removeFile( aResultFileName );
     removeFile( aBadResFileName );
     removeFile( aBbResFileName );
+    removeFile( aSmdsToGhs3dIdMapFileName );
   }
   std::cout << "<" << aResultFileName.ToCString() << "> GHS3D output file ";
   if ( !Ok )
