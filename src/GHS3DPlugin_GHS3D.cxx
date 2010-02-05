@@ -447,8 +447,10 @@ static bool writePoints (ofstream &                       theFile,
     for (TopExp_Explorer e(theMesh->ShapeToMesh(), TopAbs_EDGE ); e.More(); e.Next())
     {
       SMESH_subMesh* sm = theHelper.GetMesh()->GetSubMesh( e.Current() );
-      if ( checkedSM.insert( sm->GetId() ).second && theHelper.IsDegenShape(sm->GetId() ))
-        nbNodes -= sm->GetSubMeshDS()->NbNodes();
+      if ( checkedSM.insert( sm->GetId() ).second && theHelper.IsDegenShape(sm->GetId() )) {
+        if ( sm->GetSubMeshDS() )
+          nbNodes -= sm->GetSubMeshDS()->NbNodes();
+      }
     }
   }
   const char* space    = "  ";
