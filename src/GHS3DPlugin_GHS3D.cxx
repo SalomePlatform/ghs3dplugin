@@ -1013,10 +1013,12 @@ static bool readResultFile(const int                      fileOpen,
 #ifdef WNT
                            const char*                    fileName,
 #endif
-                           SMESHDS_Mesh*                  theMeshDS,
+                           SMESH_Mesh&                    theMesh,
                            TopoDS_Shape                   aSolid,
                            vector <const SMDS_MeshNode*>& theNodeByGhs3dId,
-                           int                            nbEnforcedVertices) {
+                           int                            nbEnforcedVertices)
+{
+  SMESHDS_Mesh* theMeshDS = theMesh.GetMeshDS();
 
   Kernel_Utils::Localizer loc;
   struct stat  status;
@@ -1073,15 +1075,33 @@ static bool readResultFile(const int                      fileOpen,
   for (int i=0; i < 4*nbElems; i++)
     nodeId = strtol(ptr, &ptr, 10);
 
+  // Issue 0020682. Avoid creating nodes and tetras at place where
+  // volumic elements already exist
+  SMESH_ElementSearcher* elemSearcher = 0;
+  vector< const SMDS_MeshElement* > foundVolumes;
+  if ( theMesh.NbVolumes() > 0 )
+    elemSearcher = SMESH_MeshEditor( &theMesh ).GetElementSearcher();
+
   // Reading the nodeCoor and update the nodeMap
   shapeID = theMeshDS->ShapeToIndex( aSolid );
   for (int iNode=0; iNode < nbNodes; iNode++) {
     for (int iCoor=0; iCoor < 3; iCoor++)
       coord[ iCoor ] = strtod(ptr, &ptr);
     if ((iNode+1) > (nbInputNodes-nbEnforcedVertices)) {
-      aNewNode = theMeshDS->AddNode( coord[0],coord[1],coord[2] );
-      theMeshDS->SetNodeInVolume( aNewNode, shapeID );
-      theNodeByGhs3dId[ iNode ] = aNewNode;
+      // Issue 0020682. Avoid creating nodes and tetras at place where
+      // volumic elements already exist
+      if ( elemSearcher &&
+           elemSearcher->FindElementsByPoint( gp_Pnt(coord[0],coord[1],coord[2]),
+                                              SMDSAbs_Volume, foundVolumes ))
+      {
+        theNodeByGhs3dId[ iNode ] = 0;
+      }
+      else
+      {
+        aNewNode = theMeshDS->AddNode( coord[0],coord[1],coord[2] );
+        theMeshDS->SetNodeInVolume( aNewNode, shapeID );
+        theNodeByGhs3dId[ iNode ] = aNewNode;
+      }
     }
   }
 
@@ -1098,6 +1118,19 @@ static bool readResultFile(const int                      fileOpen,
     for (int iNode = 0; iNode < 4; iNode++) {
       ID = strtol(tetraPtr, &tetraPtr, 10);
       node[ iNode ] = theNodeByGhs3dId[ ID-1 ];
+    }
+    if ( elemSearcher )
+    {
+      // Issue 0020682. Avoid creating nodes and tetras at place where
+      // volumic elements already exist
+      if ( !node[1] || !node[0] || !node[2] || !node[3] )
+        continue;
+      if ( elemSearcher->FindElementsByPoint(( SMESH_MeshEditor::TNodeXYZ(node[0]) +
+                                               SMESH_MeshEditor::TNodeXYZ(node[1]) +
+                                               SMESH_MeshEditor::TNodeXYZ(node[2]) +
+                                               SMESH_MeshEditor::TNodeXYZ(node[3]) ) / 4.,
+                                             SMDSAbs_Volume, foundVolumes ))
+        continue;
     }
     aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
     shapeID = theMeshDS->ShapeToIndex( aSolid );
@@ -1416,7 +1449,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #ifdef WNT
                          aResultFileName.ToCString(),
 #endif
-                         meshDS, theShape ,aNodeByGhs3dId, nbEnforcedVertices );
+                         theMesh, theShape ,aNodeByGhs3dId, nbEnforcedVertices );
   }
   
   // ---------------------
