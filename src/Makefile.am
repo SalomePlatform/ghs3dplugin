@@ -62,5 +62,6 @@ libGHS3DEngine_la_CPPFLAGS =  \
 libGHS3DEngine_la_LDFLAGS  = \
 	../idl/libSalomeIDLGHS3DPLUGIN.la \
 	$(CAS_KERNEL) -lTKBRep -lTKG2d -lTKG3d -lTKTopAlgo -lTKGeomBase -lTKGeomAlgo \
+	$(MED_LDFLAGS) -lSalomeIDLMED \
 	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lSMESHDS -lSMDS \
 	$(KERNEL_LDFLAGS) -lSalomeGenericObj -lSALOMELocalTrace -lSALOMEBasics
