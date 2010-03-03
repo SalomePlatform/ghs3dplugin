@@ -115,6 +115,7 @@ namespace {
       return (int) ( 0.7 * totMB );
     }
 #endif
+    return 0;
   }
 }
 
