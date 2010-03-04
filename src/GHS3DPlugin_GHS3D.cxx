@@ -535,10 +535,10 @@ static bool writePoints (ofstream &                       theFile,
 //purpose  : 
 //=======================================================================
 
-static bool writePoints (ofstream &                                     theFile,
-                         SMESHDS_Mesh *                                 theMesh,
-                         const vector <const SMDS_MeshNode*> &          theNodeByGhs3dId,
-                         map<vector<double>,double> & theEnforcedVertices)
+static bool writePoints (ofstream &                            theFile,
+                         SMESH_Mesh *                          theMesh,
+                         const vector <const SMDS_MeshNode*> & theNodeByGhs3dId,
+                         map<vector<double>,double> &          theEnforcedVertices)
 {
   // record structure:
   //
@@ -546,7 +546,6 @@ static bool writePoints (ofstream &                                     theFile,
   // Loop from 1 to NB_NODES
   //   X Y Z DUMMY_INT
   
-  //int nbNodes = theMesh->NbNodes();
   int nbNodes = theNodeByGhs3dId.size();
   if ( nbNodes == 0 )
     return false;
@@ -588,16 +587,14 @@ static bool writePoints (ofstream &                                     theFile,
   
   // Iterate over the enforced vertices
   GHS3DPlugin_Hypothesis::TEnforcedVertexValues::const_iterator vertexIt;
-  const TopoDS_Shape shapeToMesh = theMesh->ShapeToMesh();
+  auto_ptr< SMESH_ElementSearcher > pntCls ( SMESH_MeshEditor( theMesh ).GetElementSearcher());
   for(vertexIt = theEnforcedVertices.begin() ; vertexIt != theEnforcedVertices.end() ; ++vertexIt) {
     double x = vertexIt->first[0];
     double y = vertexIt->first[1];
     double z = vertexIt->first[2];
     // Test if point is inside shape to mesh
     gp_Pnt myPoint(x,y,z);
-    BRepClass3d_SolidClassifier scl(shapeToMesh);
-    scl.Perform(myPoint, 1e-7);
-    TopAbs_State result = scl.State();
+    TopAbs_State result = pntCls->GetPointState( myPoint );
     if ( result == TopAbs_IN ) {
         std::cout << "Adding enforced vertex (" << x << "," << y <<"," << z << ") = " << vertexIt->second << std::endl;
 
@@ -1407,7 +1404,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   vector <const SMDS_MeshNode*> aNodeByGhs3dId;
 
   Ok = (writeFaces ( aFacesFile, meshDS, aNodeByGhs3dId ) &&
-        writePoints( aPointsFile, meshDS, aNodeByGhs3dId,enforcedVertices));
+        writePoints( aPointsFile, &theMesh, aNodeByGhs3dId,enforcedVertices));
   
   aFacesFile.close();
   aPointsFile.close();
