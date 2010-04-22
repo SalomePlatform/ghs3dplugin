@@ -1,4 +1,4 @@
-//  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+//  Copyright (C) 2004-2010  CEA/DEN, EDF R&D
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,7 @@
 //
 //  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
+
 //  SMESH SMESH_I : idl implementation based on 'SMESH' unit's calsses
 //  File   : GHS3DPlugin_GHS3D_i.cxx
 //  Author : Edward AGAPOV
