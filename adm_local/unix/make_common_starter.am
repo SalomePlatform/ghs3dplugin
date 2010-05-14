@@ -1,4 +1,4 @@
-#  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+#  Copyright (C) 2004-2010  CEA/DEN, EDF R&D
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@
 # The following is to avoid PACKAGE_... env variable
 # redefinition compilation warnings
 # ============================================================
+#
 AM_CXXFLAGS = @KERNEL_CXXFLAGS@ -include SALOMEconfig.h
 AM_CPPFLAGS = @KERNEL_CXXFLAGS@ -include SALOMEconfig.h
 

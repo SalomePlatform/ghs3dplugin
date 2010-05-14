@@ -1,4 +1,4 @@
-#  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+#  Copyright (C) 2004-2010  CEA/DEN, EDF R&D
 #
 #  This library is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,7 @@
 #
 #  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
+
 #  PLEASE DO NOT MODIFY configure.in FILE
 #  ALL CHANGES WILL BE DISCARDED BY THE NEXT
 #  build_configure COMMAND
@@ -26,7 +27,7 @@
 # Modified by : Marc Tajchman (CEA)
 # Created from configure.in.base
 #
-AC_INIT([Salome2 Project GHS3DPLUGIN module],[5.1.3], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
+AC_INIT([Salome2 Project GHS3DPLUGIN module],[5.1.4], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
 AC_CONFIG_AUX_DIR(adm_local/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET

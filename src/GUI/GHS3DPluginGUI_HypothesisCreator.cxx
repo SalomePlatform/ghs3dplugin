@@ -1,4 +1,4 @@
-//  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+//  Copyright (C) 2004-2010  CEA/DEN, EDF R&D
 //
 //  This library is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU Lesser General Public
@@ -16,6 +16,7 @@
 //
 //  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
+
 //  GHS3DPlugin GUI: GUI for plugged-in mesher GHS3DPlugin
 //  File   : GHS3DPluginGUI_HypothesisCreator.cxx
 //  Author : Michael Zorin
@@ -115,6 +116,7 @@ namespace {
       return (int) ( 0.7 * totMB );
     }
 #endif
+    return 0;
   }
 }
 
