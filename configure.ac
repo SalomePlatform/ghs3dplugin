@@ -27,7 +27,7 @@
 # Modified by : Marc Tajchman (CEA)
 # Created from configure.in.base
 #
-AC_INIT([Salome2 Project GHS3DPLUGIN module],[5.1.4], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
+AC_INIT([Salome2 Project GHS3DPLUGIN module],[6.1.0], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
 AC_CONFIG_AUX_DIR(adm_local/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
