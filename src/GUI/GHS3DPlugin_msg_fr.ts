@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="en_US">
+<TS version="2.0" language="fr_FR">
 <context>
     <name>@default</name>
     <message>
         <source>GHS3D_ADV_ARGS</source>
-        <translation>Advanced</translation>
+        <translation>Avancé</translation>
     </message>
     <message>
         <source>GHS3D_HYPOTHESIS</source>
@@ -13,43 +13,43 @@
     </message>
     <message>
         <source>GHS3D_OPTIMIZATIOL_LEVEL</source>
-        <translation>Optimization level</translation>
+        <translation>Niveau d&apos;Optimisation</translation>
     </message>
     <message>
         <source>GHS3D_PERMISSION_DENIED</source>
-        <translation>Working directory is not writable</translation>
+        <translation>Il n&apos;est pas possible d&apos;écrire dans le répertoire</translation>
     </message>
     <message>
         <source>GHS3D_STD_ARGS</source>
-        <translation>Parameters</translation>
+        <translation>Paramètres</translation>
     </message>
     <message>
         <source>GHS3D_TITLE</source>
-        <translation>Hypothesis Construction</translation>
+        <translation>Construction de l&apos;Hypothèse </translation>
     </message>
     <message>
         <source>GHS3D_TO_MESH_HOLES</source>
-        <translation>To mesh holes</translation>
+        <translation>Mailler les trous</translation>
     </message>
     <message>
         <source>INIT_MEMORY_SIZE</source>
-        <translation>Initial memory size</translation>
+        <translation>Taille initiale de la mémoire</translation>
     </message>
     <message>
         <source>KEEP_WORKING_FILES</source>
-        <translation>To keep working files</translation>
+        <translation>Préserver les fichiers exploités</translation>
     </message>
     <message>
         <source>LEVEL_NONE</source>
-        <translation>None</translation>
+        <translation>Zéro</translation>
     </message>
     <message>
         <source>LEVEL_LIGHT</source>
-        <translation>Light</translation>
+        <translation>Léger</translation>
     </message>
     <message>
         <source>LEVEL_MEDIUM</source>
-        <translation>Medium (standard)</translation>
+        <translation>Moyen (standard)</translation>
     </message>
     <message>
         <source>LEVEL_STANDARDPLUS</source>
@@ -57,11 +57,11 @@
     </message>
     <message>
         <source>LEVEL_STRONG</source>
-        <translation>Strong</translation>
+        <translation>Fort</translation>
     </message>
     <message>
         <source>MAX_MEMORY_SIZE</source>
-        <translation>Maximum memory size</translation>
+        <translation>Taille maximale de la mémoire</translation>
     </message>
     <message>
         <source>MEGABYTE</source>
@@ -69,15 +69,15 @@
     </message>
     <message>
         <source>NO_INITIAL_CENTRAL_POINT</source>
-        <translation>To remove initial central point</translation>
+        <translation>Supprimer le point central initial</translation>
     </message>
     <message>
         <source>RECOVERY_VERSION</source>
-        <translation>To use boundary recovery version</translation>
+        <translation>Utiliser la version de restauration des frontières</translation>
     </message>
     <message>
         <source>FEM_CORRECTION</source>
-        <translation>To use FEM correction</translation>
+        <translation>Utiliser correction FEM</translation>
     </message>
     <message>
         <source>SELECT_DIR</source>
@@ -85,23 +85,23 @@
     </message>
     <message>
         <source>TEXT_OPTION</source>
-        <translation>Option as text</translation>
+        <translation>Option comme texte</translation>
     </message>
     <message>
         <source>TO_ADD_NODES</source>
-        <translation>To create new nodes</translation>
+        <translation>Créer de nouveaux noeuds</translation>
     </message>
     <message>
         <source>VERBOSE_LEVEL</source>
-        <translation>Verbose level</translation>
+        <translation>Niveau Verbose</translation>
     </message>
     <message>
         <source>WORKING_DIR</source>
-        <translation>Working directory</translation>
+        <translation>Répertoire de Travail</translation>
     </message>
     <message>
         <source>GHS3D_ENFORCED_VERTICES</source>
-        <translation>Enforced vertices</translation>
+        <translation>Vertices enforcées</translation>
     </message>
     <message>
         <source>GHS3D_ENF_VER_X_COLUMN</source>
@@ -117,7 +117,7 @@
     </message>
     <message>
         <source>GHS3D_ENF_VER_SIZE_COLUMN</source>
-        <translation>Size</translation>
+        <translation>Taille</translation>
     </message>
     <message>
         <source>GHS3D_ENF_VER_X_LABEL</source>
@@ -133,15 +133,15 @@
     </message>
     <message>
         <source>GHS3D_ENF_VER_SIZE_LABEL</source>
-        <translation>Size:</translation>
+        <translation>Taille:</translation>
     </message>
     <message>
         <source>GHS3D_ENF_VER_VERTEX</source>
-        <translation>Add enforced vertex</translation>
+        <translation>Ajouter un point enforcée</translation>
     </message>
     <message>
         <source>GHS3D_ENF_VER_REMOVE</source>
-        <translation>Remove vertex</translation>
+        <translation>Supprimer un point</translation>
     </message>
 </context>
 </TS>
