@@ -266,10 +266,8 @@ static bool writeFaces (ofstream &            theFile,
   int shapeID, nbNodes, aSmdsID;
   bool idFound;
 
-  std::cout << "    " << theMesh->NbFaces() << " shapes of 2D dimension" << std::endl;
-  std::cout << std::endl;
-
-  theFile << space << theMesh->NbFaces() << space << dummyint << std::endl;
+  // count faces bound to geometry
+  int nbFaces = 0;
 
   TopExp_Explorer expface( theMesh->ShapeToMesh(), TopAbs_FACE );
   for ( int i = 0; expface.More(); expface.Next(), i++ ) {
@@ -286,8 +284,16 @@ static bool writeFaces (ofstream &            theFile,
     if ( ! idFound ) {
       tabID[i]    = shapeID;
       tabShape[i] = aShape;
+      theSubMesh  = theMesh->MeshElements( aShape );
+      if ( theSubMesh )
+        nbFaces += theSubMesh->NbElements();
     }
   }
+  std::cout << "    " << nbFaces << " shapes of 2D dimension" << std::endl;
+  std::cout << std::endl;
+
+  theFile << space << nbFaces << space << dummyint << std::endl;
+
   for ( int i =0; i < nbShape; i++ ) {
     if ( tabID[i] != 0 ) {
       aShape      = tabShape[i];
