@@ -642,7 +642,9 @@ static int findShapeID(SMESH_Mesh&          mesh,
   const SMDS_MeshElement * face = meshDS->FindFace(node1,node2,node3);
   if ( !face )
     return invalidID;
-
+#ifdef _DEBUG_
+  std::cout << "bnd face " << face->GetID() << " - ";
+#endif
   // geom face the face assigned to
   SMESH_MeshEditor editor(&mesh);
   int geomFaceID = editor.FindShape( face );
@@ -712,39 +714,50 @@ static int findShapeID(SMESH_Mesh&          mesh,
   if ( meshNormal.SquareMagnitude() < DBL_MIN )
     return invalidID;
 
-  // find UV of node1 on geomFace
+  // get normale to geomFace at any node
+  bool geomNormalOK = false;
+  gp_Vec geomNormal;
+  const SMDS_MeshNode* nodes[3] = { node1, node2, node3 };
   SMESH_MesherHelper helper( mesh ); helper.SetSubShape( geomFace );
-  const SMDS_MeshNode* nNotOnSeamEdge = 0;
-  if ( helper.IsSeamShape( node1->GetPosition()->GetShapeId() ))
-    if ( helper.IsSeamShape( node2->GetPosition()->GetShapeId() ))
-      nNotOnSeamEdge = node3;
-    else
-      nNotOnSeamEdge = node2;
-  bool uvOK;
-  gp_XY uv = helper.GetNodeUV( geomFace, node1, nNotOnSeamEdge, &uvOK );
-  // check that uv is correct
-  double tol = 1e-6;
-  TopoDS_Shape nodeShape = helper.GetSubShapeByNode( node1, meshDS );
-  if ( !nodeShape.IsNull() )
-    switch ( nodeShape.ShapeType() )
-    {
-    case TopAbs_FACE:   tol = BRep_Tool::Tolerance( TopoDS::Face( nodeShape )); break;
-    case TopAbs_EDGE:   tol = BRep_Tool::Tolerance( TopoDS::Edge( nodeShape )); break;
-    case TopAbs_VERTEX: tol = BRep_Tool::Tolerance( TopoDS::Vertex( nodeShape )); break;
-    default:;
+  for ( int i = 0; !geomNormalOK && i < 3; ++i )
+  {
+    // find UV of i-th node on geomFace
+    const SMDS_MeshNode* nNotOnSeamEdge = 0;
+    if ( helper.IsSeamShape( nodes[i]->GetPosition()->GetShapeId() ))
+      if ( helper.IsSeamShape( nodes[(i+1)%3]->GetPosition()->GetShapeId() ))
+        nNotOnSeamEdge = nodes[(i+2)%3];
+      else
+        nNotOnSeamEdge = nodes[(i+1)%3];
+    bool uvOK;
+    gp_XY uv = helper.GetNodeUV( geomFace, nodes[i], nNotOnSeamEdge, &uvOK );
+    // check that uv is correct
+    if (uvOK) {
+      double tol = 1e-6;
+      TopoDS_Shape nodeShape = helper.GetSubShapeByNode( nodes[i], meshDS );
+      if ( !nodeShape.IsNull() )
+        switch ( nodeShape.ShapeType() )
+        {
+        case TopAbs_FACE:   tol = BRep_Tool::Tolerance( TopoDS::Face( nodeShape )); break;
+        case TopAbs_EDGE:   tol = BRep_Tool::Tolerance( TopoDS::Edge( nodeShape )); break;
+        case TopAbs_VERTEX: tol = BRep_Tool::Tolerance( TopoDS::Vertex( nodeShape )); break;
+        default:;
+        }
+      gp_Pnt nodePnt ( nodes[i]->X(), nodes[i]->Y(), nodes[i]->Z() );
+      BRepAdaptor_Surface surface( geomFace );
+      uvOK = ( nodePnt.Distance( surface.Value( uv.X(), uv.Y() )) < 2 * tol );
+      if ( uvOK ) {
+        // normale to geomFace at UV
+        gp_Vec du, dv;
+        surface.D1( uv.X(), uv.Y(), nodePnt, du, dv );
+        geomNormal = du ^ dv;
+        if ( geomFace.Orientation() == TopAbs_REVERSED )
+          geomNormal.Reverse();
+        geomNormalOK = ( geomNormal.SquareMagnitude() > DBL_MIN * 1e3 );
+      }
     }
-  BRepAdaptor_Surface surface( geomFace );
-  if ( !uvOK || node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol )
-      return invalidID;
-
-  // normale to geomFace at UV
-  gp_Vec du, dv;
-  surface.D1( uv.X(), uv.Y(), node1Pnt, du, dv );
-  gp_Vec geomNormal = du ^ dv;
-  if ( geomNormal.SquareMagnitude() < DBL_MIN )
-    return findShapeID( mesh, node2, node3, node1, toMeshHoles );
-  if ( geomFace.Orientation() == TopAbs_REVERSED )
-    geomNormal.Reverse();
+  }
+  if ( !geomNormalOK)
+    return invalidID;
 
   // compare normals
   bool isReverse = ( meshNormal * geomNormal ) < 0;
@@ -756,7 +769,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
   else
     return meshDS->ShapeToIndex( solids(2) );
 }
-                       
+
 //=======================================================================
 //function : readResultFile
 //purpose  : 
@@ -895,8 +908,18 @@ static bool readResultFile(const int                       fileOpen,
 #ifdef _DEBUG_
         std::cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << std::endl;
 #endif
-      } catch ( Standard_Failure ) {
-      } catch (...) {}
+      }
+      catch ( Standard_Failure & ex)
+      {
+#ifdef _DEBUG_
+        std::cout << i+1 << " subdomain: Exception caugt: " << ex.GetMessageString() << std::endl;
+#endif
+      }
+      catch (...) {
+#ifdef _DEBUG_
+        std::cout << i+1 << " subdomain: unknown exception caught " << std::endl;
+#endif
+      }
     }
   }
 
@@ -914,7 +937,7 @@ static bool readResultFile(const int                       fileOpen,
       node[ iNode ] = itOnNode->second;
       nodeID[ iNode ] = ID;
     }
-    // We always run GHS3D with "to mesh holes'==TRUE but we must not create
+    // We always run GHS3D with "to mesh holes"==TRUE but we must not create
     // tetras within holes depending on hypo option,
     // so we first check if aTet is inside a hole and then create it 
     //aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
