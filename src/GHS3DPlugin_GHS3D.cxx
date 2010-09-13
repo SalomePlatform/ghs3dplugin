@@ -1018,6 +1018,7 @@ static bool readResultFile(const int                       fileOpen,
   delete [] nodeAssigne;
 
 #ifdef _DEBUG_
+  shapeIDs.erase(-1);
   if ( shapeIDs.size() != nbShape ) {
     std::cout << "Only " << shapeIDs.size() << " solids of " << nbShape << " found" << std::endl;
     for (int i=0; i<nbShape; i++) {
