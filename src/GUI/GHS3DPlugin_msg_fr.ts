@@ -13,7 +13,7 @@
     </message>
     <message>
         <source>GHS3D_OPTIMIZATIOL_LEVEL</source>
-        <translation>Niveau d&apos;Optimisation</translation>
+        <translation>Niveau d&apos;optimisation</translation>
     </message>
     <message>
         <source>GHS3D_PERMISSION_DENIED</source>
@@ -25,7 +25,7 @@
     </message>
     <message>
         <source>GHS3D_TITLE</source>
-        <translation>Construction de l&apos;Hypothèse </translation>
+        <translation>Construction de l&apos;hypothèse </translation>
     </message>
     <message>
         <source>GHS3D_TO_MESH_HOLES</source>
@@ -37,7 +37,7 @@
     </message>
     <message>
         <source>KEEP_WORKING_FILES</source>
-        <translation>Préserver les fichiers exploités</translation>
+        <translation>Conserver les fichiers temporaires</translation>
     </message>
     <message>
         <source>LEVEL_NONE</source>
@@ -89,19 +89,19 @@
     </message>
     <message>
         <source>TO_ADD_NODES</source>
-        <translation>Créer de nouveaux noeuds</translation>
+        <translation>Créer de nouveaux nœuds</translation>
     </message>
     <message>
         <source>VERBOSE_LEVEL</source>
-        <translation>Niveau Verbose</translation>
+        <translation>Niveau de verbosité</translation>
     </message>
     <message>
         <source>WORKING_DIR</source>
-        <translation>Répertoire de Travail</translation>
+        <translation>Répertoire de travail</translation>
     </message>
     <message>
         <source>GHS3D_ENFORCED_VERTICES</source>
-        <translation>Vertices enforcées</translation>
+        <translation>Points de passage</translation>
     </message>
     <message>
         <source>GHS3D_ENF_VER_X_COLUMN</source>
@@ -137,7 +137,7 @@
     </message>
     <message>
         <source>GHS3D_ENF_VER_VERTEX</source>
-        <translation>Ajouter un point enforcée</translation>
+        <translation>Ajouter un point de passage</translation>
     </message>
     <message>
         <source>GHS3D_ENF_VER_REMOVE</source>
