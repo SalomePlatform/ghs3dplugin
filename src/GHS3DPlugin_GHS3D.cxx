@@ -22,7 +22,6 @@
 // Created   : 
 // Author    : Edward AGAPOV, modified by Lioka RAZAFINDRAZAKA (CEA) 09/02/2007
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #include "GHS3DPlugin_GHS3D.hxx"
@@ -41,6 +40,8 @@
 #include "SMDS_MeshNode.hxx"
 #include "SMDS_FaceOfNodes.hxx"
 #include "SMDS_VolumeOfNodes.hxx"
+
+#include <StdMeshers_QuadToTriaAdaptor.hxx>
 
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepBndLib.hxx>
@@ -98,6 +99,8 @@ extern "C"
 }
 
 #define HOLE_ID -1
+
+typedef const list<const SMDS_MeshFace*> TTriaList;
 
 static void removeFile( const TCollection_AsciiString& fileName )
 {
@@ -242,9 +245,11 @@ static int countShape( Mesh* mesh, Shape shape ) {
 //purpose  : 
 //=======================================================================
 
-static bool writeFaces (ofstream &            theFile,
-                        SMESHDS_Mesh *        theMesh,
-                        const map <int,int> & theSmdsToGhs3dIdMap)
+static bool writeFaces (ofstream &                            theFile,
+                        SMESHDS_Mesh*                         theMesh,
+                        const TopoDS_Shape&                   theShape,
+                        vector<StdMeshers_QuadToTriaAdaptor>& theQuad2Trias,
+                        const map <int,int> &                 theSmdsToGhs3dIdMap)
 {
   // record structure:
   //
@@ -252,10 +257,6 @@ static bool writeFaces (ofstream &            theFile,
   // Loop from 1 to NB_ELEMS
   // NB_NODES NODE_NB_1 NODE_NB_2 ... (NB_NODES + 1) times: DUMMY_INT
 
-  int nbShape = countShape( theMesh, TopAbs_FACE );
-
-  int *tabID;             tabID    = new int[nbShape];
-  TopoDS_Shape *tabShape; tabShape = new TopoDS_Shape[nbShape];
   TopoDS_Shape aShape;
   SMESHDS_SubMesh* theSubMesh;
   const SMDS_MeshElement* aFace;
@@ -263,40 +264,97 @@ static bool writeFaces (ofstream &            theFile,
   const int   dummyint = 0;
   map<int,int>::const_iterator itOnMap;
   SMDS_ElemIteratorPtr itOnSubMesh, itOnSubFace;
-  int shapeID, nbNodes, aSmdsID;
-  bool idFound;
+  int nbNodes, aSmdsID;
 
-  std::cout << "    " << theMesh->NbFaces() << " shapes of 2D dimension" << std::endl;
-  std::cout << std::endl;
+  // count triangles bound to geometry
+  int nbTriangles = 0;
 
-  theFile << space << theMesh->NbFaces() << space << dummyint << std::endl;
+  TopTools_IndexedMapOfShape facesMap;
+  TopExp::MapShapes( theShape, TopAbs_FACE, facesMap );
 
-  TopExp_Explorer expface( theMesh->ShapeToMesh(), TopAbs_FACE );
-  for ( int i = 0; expface.More(); expface.Next(), i++ ) {
-    tabID[i] = 0;
-    aShape   = expface.Current();
-    shapeID  = theMesh->ShapeToIndex( aShape );
-    idFound  = false;
-    for ( int j=0; j<=i; j++) {
-      if ( shapeID == tabID[j] ) {
-        idFound = true;
-        break;
-      }
-    }
-    if ( ! idFound ) {
-      tabID[i]    = shapeID;
-      tabShape[i] = aShape;
+  // 2 adaptors for each face in facesMap, as a face can belong to 2 solids
+  typedef vector< StdMeshers_QuadToTriaAdaptor* > TwoAdaptors;
+  vector< TwoAdaptors > qttaByFace;
+  if ( theQuad2Trias.empty() )
+  {
+    // case w/o quadrangles
+    for ( int i = 1; i <= facesMap.Extent(); ++i )
+      if (( theSubMesh  = theMesh->MeshElements( facesMap(i))))
+        nbTriangles += theSubMesh->NbElements();
+  }
+  else
+  {
+    // case with quadrangles
+    qttaByFace.resize( facesMap.Extent() );
+    for ( unsigned i = 0; i < theQuad2Trias.size(); ++i )
+    {
+      TopoDS_Shape solid = theQuad2Trias[i].GetShape();
+      TopExp_Explorer expface( solid, TopAbs_FACE );
+      for ( ; expface.More(); expface.Next() )
+        if (( theSubMesh = theMesh->MeshElements( expface.Current()) ))
+        {
+          const int faceIndex = facesMap.Add( expface.Current() );
+          TwoAdaptors& aTwoAdaptors = qttaByFace[ faceIndex-1 ];
+          const bool newFaceEncounters = aTwoAdaptors.empty();
+          aTwoAdaptors.push_back( & theQuad2Trias[i] );
+
+          // on a shared face encountered for the second time
+          // we count only triangles of pyramids
+          const int countTrias = int( newFaceEncounters );
+          itOnSubMesh = theSubMesh->GetElements();
+          while ( itOnSubMesh->more() )
+          {
+            aFace = itOnSubMesh->next();
+            if ( aFace->NbCornerNodes() != 4 )
+              nbTriangles += countTrias;
+            else if ( TTriaList* trias = theQuad2Trias[i].GetTriangles( aFace ))
+              nbTriangles += trias->size();
+            else
+              nbTriangles += countTrias;
+          }
+        }
     }
   }
-  for ( int i =0; i < nbShape; i++ ) {
-    if ( tabID[i] != 0 ) {
-      aShape      = tabShape[i];
-      shapeID     = tabID[i];
-      theSubMesh  = theMesh->MeshElements( aShape );
-      if ( !theSubMesh ) continue;
-      itOnSubMesh = theSubMesh->GetElements();
-      while ( itOnSubMesh->more() ) {
-        aFace   = itOnSubMesh->next();
+
+  std::cout << "    " << facesMap.Extent() << " shapes of 2D dimension" << std::endl;
+  std::cout << std::endl;
+
+  theFile << space << nbTriangles << space << dummyint << std::endl;
+
+  vector< const SMDS_MeshElement* > trias;
+  trias.resize( 8 ); // 4 triangles from 2 pyramids basing on one quadranle
+
+  for ( int i = 1; i <= facesMap.Extent(); i++ )
+  {
+    aShape = facesMap(i);
+    theSubMesh = theMesh->MeshElements( aShape );
+    if ( !theSubMesh ) continue;
+    TwoAdaptors& aTwoAdaptors = qttaByFace[ i-1 ];
+    itOnSubMesh = theSubMesh->GetElements();
+    while ( itOnSubMesh->more() )
+    {
+      aFace = itOnSubMesh->next();
+      if ( aFace->NbCornerNodes() == 4 )
+      {
+        nbTriangles = 0;
+        for ( unsigned j = 0; j < aTwoAdaptors.size(); ++j )
+          if ( TTriaList* t = aTwoAdaptors[j]->GetTriangles( aFace ))
+            for ( TTriaList::const_iterator tIt = t->begin(); tIt != t->end(); ++tIt)
+              trias[nbTriangles++] = *tIt;
+        if ( nbTriangles == 0 )
+        {
+          nbTriangles = 1;
+          trias[0] = aFace;
+        }
+      }
+      else
+      {
+        nbTriangles = 1;
+        trias[0] = aFace;
+      }
+      for ( int j = 0; j < nbTriangles; ++j )
+      {
+        aFace = trias[j];
         nbNodes = aFace->NbNodes();
 
         theFile << space << nbNodes;
@@ -324,10 +382,6 @@ static bool writeFaces (ofstream &            theFile,
     }
   }
   
-  
-  delete [] tabID;
-  delete [] tabShape;
-
   return true;
 }
 
@@ -336,8 +390,9 @@ static bool writeFaces (ofstream &            theFile,
 //purpose  : Write Faces in case if generate 3D mesh w/o geometry
 //=======================================================================
 
-static bool writeFaces (ofstream &            theFile,
-                        SMESHDS_Mesh *        theMesh,
+static bool writeFaces (ofstream &                      theFile,
+                        SMESHDS_Mesh *                  theMesh,
+                        StdMeshers_QuadToTriaAdaptor&   theQuad2Trias,
                         vector <const SMDS_MeshNode*> & theNodeByGhs3dId)
 {
   // record structure:
@@ -346,63 +401,83 @@ static bool writeFaces (ofstream &            theFile,
   // Loop from 1 to NB_ELEMS
   //   NB_NODES NODE_NB_1 NODE_NB_2 ... (NB_NODES + 1) times: DUMMY_INT
 
-
-  int nbFaces = 0;
-  list< const SMDS_MeshElement* > faces;
-  list< const SMDS_MeshElement* >::iterator f;
+  int nbNodes, nbTriangles = 0;
   map< const SMDS_MeshNode*,int >::iterator it;
   SMDS_ElemIteratorPtr nodeIt;
   const SMDS_MeshElement* elem;
-  int nbNodes;
 
   const char* space    = "  ";
   const int   dummyint = 0;
 
-  //get all faces from mesh
-  SMDS_FaceIteratorPtr eIt = theMesh->facesIterator();
-  while ( eIt->more() ) {
-    const SMDS_MeshElement* elem = eIt->next();
-    if ( !elem )
-      return false;
-    faces.push_back( elem );
-    nbFaces++;
-  }
+  // count faces
 
-  if ( nbFaces == 0 )
+  nbTriangles = theQuad2Trias.TotalNbOfTriangles();
+  if ( nbTriangles == 0 )
+    // theQuad2Trias not computed as there are no quadrangles in mesh
+    nbTriangles = theMesh->NbFaces();
+
+  if ( nbTriangles == 0 )
     return false;
-  
-  std::cout << "The initial 2D mesh contains " << nbFaces << " faces and ";
+
+  std::cout << "The initial 2D mesh contains " << nbTriangles << " faces and ";
 
   // NB_ELEMS DUMMY_INT
-  theFile << space << nbFaces << space << dummyint << std::endl;
+  theFile << space << nbTriangles << space << dummyint << std::endl;
+
+
+  map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
+
+  vector< const SMDS_MeshElement* > trias;
+  trias.resize( 8 ); // 8 == 4 triangles from 2 pyramids basing on one quadranle
 
   // Loop from 1 to NB_ELEMS
 
-  map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
-  f = faces.begin();
-  for ( ; f != faces.end(); ++f )
+  SMDS_FaceIteratorPtr eIt = theMesh->facesIterator();
+  while ( eIt->more() )
   {
-    // NB_NODES PER FACE
-    elem = *f;
-    nbNodes = elem->NbNodes();
-    theFile << space << nbNodes;
-
-    // NODE_NB_1 NODE_NB_2 ...
-    nodeIt = elem->nodesIterator();
-    while ( nodeIt->more() )
+    elem = eIt->next();
+    // get triangles
+    if ( elem->NbCornerNodes() == 4 )
     {
-      // find GHS3D ID
-      const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-      int newId = aNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
-      it = aNodeToGhs3dIdMap.insert( make_pair( node, newId )).first;
-      theFile << space << it->second;
+      nbTriangles = 0;
+      if ( TTriaList* t = theQuad2Trias.GetTriangles( elem ))
+        for ( TTriaList::const_iterator tIt = t->begin(); tIt != t->end(); ++tIt)
+          trias[nbTriangles++] = *tIt;
+      if ( nbTriangles == 0 )
+      {
+        nbTriangles = 1;
+        trias[0] = elem;
+      }
     }
+    else
+    {
+      nbTriangles = 1;
+      trias[0] = elem;
+    }
+    // write triangles
+    for ( int j = 0; j < nbTriangles; ++j )
+    {
+      // NB_NODES PER FACE
+      elem = trias[j];
+      nbNodes = elem->NbNodes();
+      theFile << space << nbNodes;
 
-    // (NB_NODES + 1) times: DUMMY_INT
-    for ( int i=0; i<=nbNodes; i++)
-      theFile << space << dummyint;
+      // NODE_NB_1 NODE_NB_2 ...
+      nodeIt = elem->nodesIterator();
+      while ( nodeIt->more() )
+      {
+        // find GHS3D ID
+        const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+        int newId = aNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
+        it = aNodeToGhs3dIdMap.insert( make_pair( node, newId )).first;
+        theFile << space << it->second;
+      }
 
-    theFile << std::endl;
+      // (NB_NODES + 1) times: DUMMY_INT
+      for ( int i=0; i<=nbNodes; i++)
+        theFile << space << dummyint;
+      theFile << std::endl;
+    }
   }
 
   // put nodes to theNodeByGhs3dId vector
@@ -636,7 +711,9 @@ static int findShapeID(SMESH_Mesh&          mesh,
   const SMDS_MeshElement * face = meshDS->FindFace(node1,node2,node3);
   if ( !face )
     return invalidID;
-
+#ifdef _DEBUG_
+  std::cout << "bnd face " << face->GetID() << " - ";
+#endif
   // geom face the face assigned to
   SMESH_MeshEditor editor(&mesh);
   int geomFaceID = editor.FindShape( face );
@@ -706,39 +783,50 @@ static int findShapeID(SMESH_Mesh&          mesh,
   if ( meshNormal.SquareMagnitude() < DBL_MIN )
     return invalidID;
 
-  // find UV of node1 on geomFace
+  // get normale to geomFace at any node
+  bool geomNormalOK = false;
+  gp_Vec geomNormal;
+  const SMDS_MeshNode* nodes[3] = { node1, node2, node3 };
   SMESH_MesherHelper helper( mesh ); helper.SetSubShape( geomFace );
-  const SMDS_MeshNode* nNotOnSeamEdge = 0;
-  if ( helper.IsSeamShape( node1->GetPosition()->GetShapeId() ))
-    if ( helper.IsSeamShape( node2->GetPosition()->GetShapeId() ))
-      nNotOnSeamEdge = node3;
-    else
-      nNotOnSeamEdge = node2;
-  bool uvOK;
-  gp_XY uv = helper.GetNodeUV( geomFace, node1, nNotOnSeamEdge, &uvOK );
-  // check that uv is correct
-  double tol = 1e-6;
-  TopoDS_Shape nodeShape = helper.GetSubShapeByNode( node1, meshDS );
-  if ( !nodeShape.IsNull() )
-    switch ( nodeShape.ShapeType() )
-    {
-    case TopAbs_FACE:   tol = BRep_Tool::Tolerance( TopoDS::Face( nodeShape )); break;
-    case TopAbs_EDGE:   tol = BRep_Tool::Tolerance( TopoDS::Edge( nodeShape )); break;
-    case TopAbs_VERTEX: tol = BRep_Tool::Tolerance( TopoDS::Vertex( nodeShape )); break;
-    default:;
+  for ( int i = 0; !geomNormalOK && i < 3; ++i )
+  {
+    // find UV of i-th node on geomFace
+    const SMDS_MeshNode* nNotOnSeamEdge = 0;
+    if ( helper.IsSeamShape( nodes[i]->GetPosition()->GetShapeId() ))
+      if ( helper.IsSeamShape( nodes[(i+1)%3]->GetPosition()->GetShapeId() ))
+        nNotOnSeamEdge = nodes[(i+2)%3];
+      else
+        nNotOnSeamEdge = nodes[(i+1)%3];
+    bool uvOK;
+    gp_XY uv = helper.GetNodeUV( geomFace, nodes[i], nNotOnSeamEdge, &uvOK );
+    // check that uv is correct
+    if (uvOK) {
+      double tol = 1e-6;
+      TopoDS_Shape nodeShape = helper.GetSubShapeByNode( nodes[i], meshDS );
+      if ( !nodeShape.IsNull() )
+        switch ( nodeShape.ShapeType() )
+        {
+        case TopAbs_FACE:   tol = BRep_Tool::Tolerance( TopoDS::Face( nodeShape )); break;
+        case TopAbs_EDGE:   tol = BRep_Tool::Tolerance( TopoDS::Edge( nodeShape )); break;
+        case TopAbs_VERTEX: tol = BRep_Tool::Tolerance( TopoDS::Vertex( nodeShape )); break;
+        default:;
+        }
+      gp_Pnt nodePnt ( nodes[i]->X(), nodes[i]->Y(), nodes[i]->Z() );
+      BRepAdaptor_Surface surface( geomFace );
+      uvOK = ( nodePnt.Distance( surface.Value( uv.X(), uv.Y() )) < 2 * tol );
+      if ( uvOK ) {
+        // normale to geomFace at UV
+        gp_Vec du, dv;
+        surface.D1( uv.X(), uv.Y(), nodePnt, du, dv );
+        geomNormal = du ^ dv;
+        if ( geomFace.Orientation() == TopAbs_REVERSED )
+          geomNormal.Reverse();
+        geomNormalOK = ( geomNormal.SquareMagnitude() > DBL_MIN * 1e3 );
+      }
     }
-  BRepAdaptor_Surface surface( geomFace );
-  if ( !uvOK || node1Pnt.Distance( surface.Value( uv.X(), uv.Y() )) > 2 * tol )
-      return invalidID;
-
-  // normale to geomFace at UV
-  gp_Vec du, dv;
-  surface.D1( uv.X(), uv.Y(), node1Pnt, du, dv );
-  gp_Vec geomNormal = du ^ dv;
-  if ( geomNormal.SquareMagnitude() < DBL_MIN )
-    return findShapeID( mesh, node2, node3, node1, toMeshHoles );
-  if ( geomFace.Orientation() == TopAbs_REVERSED )
-    geomNormal.Reverse();
+  }
+  if ( !geomNormalOK)
+    return invalidID;
 
   // compare normals
   bool isReverse = ( meshNormal * geomNormal ) < 0;
@@ -750,7 +838,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
   else
     return meshDS->ShapeToIndex( solids(2) );
 }
-                       
+
 //=======================================================================
 //function : readResultFile
 //purpose  : 
@@ -889,8 +977,18 @@ static bool readResultFile(const int                       fileOpen,
 #ifdef _DEBUG_
         std::cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << std::endl;
 #endif
-      } catch ( Standard_Failure ) {
-      } catch (...) {}
+      }
+      catch ( Standard_Failure & ex)
+      {
+#ifdef _DEBUG_
+        std::cout << i+1 << " subdomain: Exception caugt: " << ex.GetMessageString() << std::endl;
+#endif
+      }
+      catch (...) {
+#ifdef _DEBUG_
+        std::cout << i+1 << " subdomain: unknown exception caught " << std::endl;
+#endif
+      }
     }
   }
 
@@ -908,7 +1006,7 @@ static bool readResultFile(const int                       fileOpen,
       node[ iNode ] = itOnNode->second;
       nodeID[ iNode ] = ID;
     }
-    // We always run GHS3D with "to mesh holes'==TRUE but we must not create
+    // We always run GHS3D with "to mesh holes"==TRUE but we must not create
     // tetras within holes depending on hypo option,
     // so we first check if aTet is inside a hole and then create it 
     //aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
@@ -989,6 +1087,7 @@ static bool readResultFile(const int                       fileOpen,
   delete [] nodeAssigne;
 
 #ifdef _DEBUG_
+  shapeIDs.erase(-1);
   if ( shapeIDs.size() != nbShape ) {
     std::cout << "Only " << shapeIDs.size() << " solids of " << nbShape << " found" << std::endl;
     for (int i=0; i<nbShape; i++) {
@@ -1182,7 +1281,6 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     tabBox[i] = new double[6];
   Standard_Real Xmin, Ymin, Zmin, Xmax, Ymax, Zmax;
 
-  // TopExp_Explorer expBox (meshDS->ShapeToMesh(), TopAbs_SOLID); -- 0020330:...ghs3d as a submesh
   for (expBox.ReInit(); expBox.More(); expBox.Next()) {
     tabShape[iShape] = expBox.Current();
     Bnd_Box BoundingBox;
@@ -1235,8 +1333,17 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   SMESH_MesherHelper helper( theMesh );
   helper.SetSubShape( theShape );
 
-  Ok = writePoints( aPointsFile, helper, aSmdsToGhs3dIdMap, aGhs3dIdToNodeMap, enforcedVertices) &&
-       writeFaces ( aFacesFile,  meshDS, aSmdsToGhs3dIdMap );
+  // make prisms on quadrangles
+  vector<StdMeshers_QuadToTriaAdaptor> aQuad2Trias;
+  if ( theMesh.NbQuadrangles() > 0 )
+  {
+    aQuad2Trias.resize( _nbShape );
+    for (_iShape = 0, expBox.ReInit(); expBox.More(); expBox.Next())
+      aQuad2Trias[ _iShape++ ].Compute( theMesh, expBox.Current() );
+  }
+
+  Ok = (writePoints( aPointsFile, helper, aSmdsToGhs3dIdMap, aGhs3dIdToNodeMap, enforcedVertices) &&
+        writeFaces ( aFacesFile,  meshDS, theShape, aQuad2Trias, aSmdsToGhs3dIdMap ));
 
   // Write aSmdsToGhs3dIdMap to temp file
   TCollection_AsciiString aSmdsToGhs3dIdMapFileName;
@@ -1404,7 +1511,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   vector <const SMDS_MeshNode*> aNodeByGhs3dId;
 
-  Ok = (writeFaces ( aFacesFile, meshDS, aNodeByGhs3dId ) &&
+  StdMeshers_QuadToTriaAdaptor aQuad2Trias;
+  if ( theMesh.NbQuadrangles() > 0 )
+    aQuad2Trias.Compute( theMesh );
+
+  Ok = (writeFaces ( aFacesFile, meshDS, aQuad2Trias, aNodeByGhs3dId ) &&
         writePoints( aPointsFile, &theMesh, aNodeByGhs3dId,enforcedVertices));
   
   aFacesFile.close();
