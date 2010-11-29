@@ -55,6 +55,7 @@ libGHS3DEngine_la_CPPFLAGS =  \
 	$(GEOM_CXXFLAGS)      \
 	$(MED_CXXFLAGS)       \
 	$(SMESH_CXXFLAGS)     \
+	$(VTK_INCLUDES)	\
 	$(BOOST_CPPFLAGS)     \
 	$(CORBA_CXXFLAGS)     \
 	$(CORBA_INCLUDES)     \

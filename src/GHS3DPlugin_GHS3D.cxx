@@ -553,7 +553,7 @@ static bool writePoints (ofstream &                       theFile,
   {
     node = it->next();
     if ( node->GetPosition()->GetTypeOfPosition() == SMDS_TOP_EDGE &&
-         theHelper.IsDegenShape( node->GetPosition()->GetShapeId() )) // Issue 020674
+         theHelper.IsDegenShape( node->getshapeId() )) // Issue 020674
       continue;
 
     theSmdsToGhs3dIdMap.insert( make_pair( node->GetID(), aGhs3dID ));
@@ -792,8 +792,8 @@ static int findShapeID(SMESH_Mesh&          mesh,
   {
     // find UV of i-th node on geomFace
     const SMDS_MeshNode* nNotOnSeamEdge = 0;
-    if ( helper.IsSeamShape( nodes[i]->GetPosition()->GetShapeId() ))
-      if ( helper.IsSeamShape( nodes[(i+1)%3]->GetPosition()->GetShapeId() ))
+    if ( helper.IsSeamShape( nodes[i]->getshapeId() ))
+      if ( helper.IsSeamShape( nodes[(i+1)%3]->getshapeId() ))
         nNotOnSeamEdge = nodes[(i+2)%3];
       else
         nNotOnSeamEdge = nodes[(i+1)%3];
@@ -1032,9 +1032,9 @@ static bool readResultFile(const int                       fileOpen,
       for ( int i=0; i<4 && shapeID==0; i++ ) {
         if ( nodeAssigne[ nodeID[i] ] == 1 &&
              node[i]->GetPosition()->GetTypeOfPosition() == SMDS_TOP_3DSPACE &&
-             node[i]->GetPosition()->GetShapeId() > 1 )
+             node[i]->getshapeId() > 1 )
         {
-          shapeID = node[i]->GetPosition()->GetShapeId();
+          shapeID = node[i]->getshapeId();
         }
       }
       if ( shapeID==0 ) {
@@ -2069,7 +2069,7 @@ const SMDS_MeshElement* _Ghs2smdsConvertor::getElement(const vector<int>& ghsNod
   if ( nbNodes == 2 ) {
     const SMDS_MeshElement* edge= SMDS_Mesh::FindEdge( nodes[0], nodes[1] );
     if ( !edge )
-      edge = new SMDS_MeshEdge( nodes[0], nodes[1] );
+      edge = new SMDS_LinearEdge( nodes[0], nodes[1] );
     return edge;
   }
   if ( nbNodes == 3 ) {
