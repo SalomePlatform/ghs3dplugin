@@ -21,7 +21,6 @@
 // File      : GHS3DPlugin_GHS3D.hxx
 // Author    : Edward AGAPOV, modified by Lioka RAZAFINDRAZAKA (CEA) 09/02/2007
 // Project   : SALOME
-// $Header$
 //=============================================================================
 //
 #ifndef _GHS3DPlugin_GHS3D_HXX_
@@ -32,9 +31,10 @@
 #include <map>
 #include <vector>
 
-class SMESH_Mesh;
 class GHS3DPlugin_Hypothesis;
 class SMDS_MeshNode;
+class SMESH_Mesh;
+class StdMeshers_ViscousLayers;
 class TCollection_AsciiString;
 class _Ghs2smdsConvertor;
 
@@ -66,6 +66,7 @@ private:
   int  _nbShape;
   bool _keepFiles;
   const GHS3DPlugin_Hypothesis* _hyp;
+  const StdMeshers_ViscousLayers* _viscousLayersHyp;
 };
 
 /*!
