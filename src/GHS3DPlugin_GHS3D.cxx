@@ -1176,10 +1176,10 @@ static bool readResultFile(const int                      fileOpen,
       // volumic elements already exist
       if ( !node[1] || !node[0] || !node[2] || !node[3] )
         continue;
-      if ( elemSearcher->FindElementsByPoint(( SMESH_MeshEditor::TNodeXYZ(node[0]) +
-                                               SMESH_MeshEditor::TNodeXYZ(node[1]) +
-                                               SMESH_MeshEditor::TNodeXYZ(node[2]) +
-                                               SMESH_MeshEditor::TNodeXYZ(node[3]) ) / 4.,
+      if ( elemSearcher->FindElementsByPoint(( SMESH_TNodeXYZ(node[0]) +
+                                               SMESH_TNodeXYZ(node[1]) +
+                                               SMESH_TNodeXYZ(node[2]) +
+                                               SMESH_TNodeXYZ(node[3]) ) / 4.,
                                              SMDSAbs_Volume, foundVolumes ))
         continue;
     }
