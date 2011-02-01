@@ -1987,6 +1987,12 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
     char msg[] = "connection to server failed";
     if ( search( &buf[0], bufEnd, msg, msg + strlen(msg)) != bufEnd )
       errDescription << "Licence problems.";
+    else
+    {
+      char msg2[] = "SEGMENTATION FAULT";
+      if ( search( &buf[0], bufEnd, msg2, msg2 + strlen(msg2)) != bufEnd )
+        errDescription << "ghs3d: SEGMENTATION FAULT. ";
+    }
   }
 
   if ( errDescription.empty() )
