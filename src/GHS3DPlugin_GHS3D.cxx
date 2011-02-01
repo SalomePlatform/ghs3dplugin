@@ -1486,18 +1486,18 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
 
   vector <const SMDS_MeshNode*> aNodeByGhs3dId;
-
-  SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
-  if ( theMesh.NbQuadrangles() > 0 )
   {
-    StdMeshers_QuadToTriaAdaptor* aQuad2Trias = new StdMeshers_QuadToTriaAdaptor;
-    aQuad2Trias->Compute( theMesh );
-    proxyMesh.reset( aQuad2Trias );
-  }
+    SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
+    if ( theMesh.NbQuadrangles() > 0 )
+    {
+      StdMeshers_QuadToTriaAdaptor* aQuad2Trias = new StdMeshers_QuadToTriaAdaptor;
+      aQuad2Trias->Compute( theMesh );
+      proxyMesh.reset( aQuad2Trias );
+    }
 
-  Ok = (writeFaces ( aFacesFile, *proxyMesh, aNodeByGhs3dId ) &&
-        writePoints( aPointsFile, &theMesh, aNodeByGhs3dId,enforcedVertices));
-  
+    Ok = (writeFaces ( aFacesFile, *proxyMesh, aNodeByGhs3dId ) &&
+          writePoints( aPointsFile, &theMesh, aNodeByGhs3dId,enforcedVertices));
+  }  
   aFacesFile.close();
   aPointsFile.close();
   
