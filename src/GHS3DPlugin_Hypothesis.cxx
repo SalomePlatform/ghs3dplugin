@@ -798,7 +798,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   // optimization level
   if ( o && hyp && !useBndRecovery ) {
     if ( hyp->myOptimizationLevel >= 0 && hyp->myOptimizationLevel < 5 ) {
-      char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
+      const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
       cmd += " -o ";
       cmd += level[ hyp->myOptimizationLevel ];
     }

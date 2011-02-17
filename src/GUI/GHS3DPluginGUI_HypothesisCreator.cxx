@@ -550,7 +550,7 @@ QString GHS3DPluginGUI_HypothesisCreator::storeParams() const
         valStr = "-c " + QString::number( !data.myToMeshHoles );
     
     if ( data.myOptimizationLevel >= 0 && data.myOptimizationLevel < 5 && !data.myBoundaryRecovery) {
-        char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
+        const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
         valStr += " -o ";
         valStr += level[ data.myOptimizationLevel ];
     }
