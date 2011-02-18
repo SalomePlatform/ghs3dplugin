@@ -46,6 +46,8 @@ template <class T> class GHS3DPlugin_Creator_i:public HypothesisCreator_i<T>
 
 extern "C"
 {
+  GenericHypothesisCreator_i* GetHypothesisCreator (const char* aHypName);
+  
   GHS3DPLUGIN_EXPORT
   GenericHypothesisCreator_i* GetHypothesisCreator (const char* aHypName)
   {

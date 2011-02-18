@@ -25,45 +25,10 @@
 #
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
+SUBDIRS = GHS3DPlugin 
+
 if GHS3DPLUGIN_ENABLE_GUI
-  SUBDIRS = GUI
+  SUBDIRS += GUI
 endif
 
-DIST_SUBDIRS = GUI
-
-# header files 
-salomeinclude_HEADERS = \
-       GHS3DPlugin_Defs.hxx \
-       GHS3DPlugin_GHS3D.hxx \
-       GHS3DPlugin_GHS3D_i.hxx \
-       GHS3DPlugin_Hypothesis.hxx \
-       GHS3DPlugin_Hypothesis_i.hxx
-
-# Libraries targets
-lib_LTLIBRARIES = libGHS3DEngine.la
-
-dist_libGHS3DEngine_la_SOURCES = \
-	GHS3DPlugin_GHS3D.cxx \
-	GHS3DPlugin_GHS3D_i.cxx \
-	GHS3DPlugin_i.cxx \
-	GHS3DPlugin_Hypothesis.cxx \
-	GHS3DPlugin_Hypothesis_i.cxx
-
-libGHS3DEngine_la_CPPFLAGS =  \
-	$(KERNEL_CXXFLAGS)    \
-	$(CAS_CPPFLAGS)       \
-	$(GEOM_CXXFLAGS)      \
-	$(MED_CXXFLAGS)       \
-	$(SMESH_CXXFLAGS)     \
-	$(VTK_INCLUDES)	\
-	$(BOOST_CPPFLAGS)     \
-	$(CORBA_CXXFLAGS)     \
-	$(CORBA_INCLUDES)     \
-	-I$(top_builddir)/idl
-
-libGHS3DEngine_la_LDFLAGS  = \
-	../idl/libSalomeIDLGHS3DPLUGIN.la \
-	$(CAS_KERNEL) -lTKBRep -lTKG2d -lTKG3d -lTKTopAlgo -lTKGeomBase -lTKGeomAlgo \
-	$(MED_LDFLAGS) -lSalomeIDLMED \
-	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lSMESHDS -lSMDS -lStdMeshers \
-	$(KERNEL_LDFLAGS) -lSalomeGenericObj -lSALOMELocalTrace -lSALOMEBasics
+DIST_SUBDIRS = GHS3DPlugin GUI

@@ -654,11 +654,12 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
     bool hasEnforcedVertices = false;
     isOK = (load >> separator);
 
-    if (isOK)
+    if (isOK) {
         if (separator == "__OPTIONS_BEGIN__")
             hasOptions = true;
         else if (separator == "__ENFORCED_VERTICES_BEGIN__")
             hasEnforcedVertices = true;
+    }
 
     if (hasOptions) {
         std::string txt;

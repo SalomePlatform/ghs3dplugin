@@ -746,11 +746,12 @@ static int findShapeID(SMESH_Mesh&          mesh,
   {
     // find UV of i-th node on geomFace
     const SMDS_MeshNode* nNotOnSeamEdge = 0;
-    if ( helper.IsSeamShape( nodes[i]->getshapeId() ))
+    if ( helper.IsSeamShape( nodes[i]->getshapeId() )) {
       if ( helper.IsSeamShape( nodes[(i+1)%3]->getshapeId() ))
         nNotOnSeamEdge = nodes[(i+2)%3];
       else
         nNotOnSeamEdge = nodes[(i+1)%3];
+    }
     bool uvOK;
     gp_XY uv = helper.GetNodeUV( geomFace, nodes[i], nNotOnSeamEdge, &uvOK );
     // check that uv is correct

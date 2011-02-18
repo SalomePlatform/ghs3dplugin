@@ -419,6 +419,7 @@ AC_OUTPUT([ \
   GHS3DPLUGIN_version.h \
   src/Makefile \
   src/GUI/Makefile \
+  src/GHS3DPlugin/Makefile \
   resources/Makefile \
   idl/Makefile \
   Makefile \
