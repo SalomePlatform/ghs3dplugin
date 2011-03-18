@@ -131,6 +131,9 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   _compatibleHypothesis.push_back("GHS3D_Parameters");
   _compatibleHypothesis.push_back( StdMeshers_ViscousLayers::GetHypType() );
   _requireShape = false; // can work without shape
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  _compute_canceled = false;
+#endif
 }
 
 //=============================================================================
@@ -803,6 +806,9 @@ static bool readResultFile(const int                       fileOpen,
 #ifdef WNT
                            const char*                     fileName,
 #endif
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+                           GHS3DPlugin_GHS3D*              theAlgo,
+#endif
                            SMESH_Mesh&                     theMesh,
                            TopoDS_Shape                    tabShape[],
                            double**                        tabBox,
@@ -885,6 +891,10 @@ static bool readResultFile(const int                       fileOpen,
   MESSAGE("nbEnforcedVertices: "<<nbEnforcedVertices);
   // Reading the nodeCoor and update the nodeMap
   for (int iNode=1; iNode <= nbNodes; iNode++) {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+    if(theAlgo->computeCanceled())
+      return false;
+#endif
     for (int iCoor=0; iCoor < 3; iCoor++)
       coord[ iCoor ] = strtod(ptr, &ptr);
     nodeAssigne[ iNode ] = 1;
@@ -904,6 +914,10 @@ static bool readResultFile(const int                       fileOpen,
 
   tabID = new int[nbTriangle];
   for (int i=0; i < nbTriangle; i++) {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+    if(theAlgo->computeCanceled())
+      return false;
+#endif
     tabID[i] = 0;
     // find the solid corresponding to GHS3D sub-domain following
     // the technique proposed in GHS3D manual in chapter
@@ -955,6 +969,10 @@ static bool readResultFile(const int                       fileOpen,
   // Associating the tetrahedrons to the shapes
   shapeID = compoundID;
   for (int iElem = 0; iElem < nbElems; iElem++) {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+    if(theAlgo->computeCanceled())
+      return false;
+#endif
     for (int iNode = 0; iNode < 4; iNode++) {
       ID = strtol(tetraPtr, &tetraPtr, 10);
       itOnNode = theGhs3dIdToNodeMap.find(ID);
@@ -1065,6 +1083,9 @@ static bool readResultFile(const int                      fileOpen,
 #ifdef WNT
                            const char*                    fileName,
 #endif
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+                           GHS3DPlugin_GHS3D*             theAlgo,
+#endif
                            SMESH_Mesh&                    theMesh,
                            TopoDS_Shape                   aSolid,
                            vector <const SMDS_MeshNode*>& theNodeByGhs3dId,
@@ -1137,6 +1158,10 @@ static bool readResultFile(const int                      fileOpen,
   // Reading the nodeCoord and update the nodeMap
   shapeID = theMeshDS->ShapeToIndex( aSolid );
   for (int iNode=0; iNode < nbNodes; iNode++) {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+    if(theAlgo->computeCanceled())
+      return false;
+#endif
     for (int iCoor=0; iCoor < 3; iCoor++)
       coord[ iCoor ] = strtod(ptr, &ptr);
     if ((iNode+1) > (nbInputNodes-nbEnforcedVertices)) {
@@ -1167,6 +1192,10 @@ static bool readResultFile(const int                      fileOpen,
 
   // Associating the tetrahedrons to the shapes
   for (int iElem = 0; iElem < nbElems; iElem++) {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+    if(theAlgo->computeCanceled())
+      return false;
+#endif
     for (int iNode = 0; iNode < 4; iNode++) {
       ID = strtol(tetraPtr, &tetraPtr, 10);
       node[ iNode ] = theNodeByGhs3dId[ ID-1 ];
@@ -1364,6 +1393,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::cout << "Ghs3d execution..." << std::endl;
   std::cout << cmd << std::endl;
 
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  _compute_canceled = false;
+#endif
+
   system( cmd.ToCString() ); // run
 
   std::cout << std::endl;
@@ -1389,6 +1422,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     Ok = readResultFile( fileOpen,
 #ifdef WNT
                          aResultFileName.ToCString(),
+#endif
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+                         this,
 #endif
                          theMesh, tabShape, tabBox, _nbShape, aGhs3dIdToNodeMap,
                          toMeshHoles, nbEnforcedVertices );
@@ -1418,6 +1454,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
 
   if ( !_keepFiles ) {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+    if (! Ok)
+      if(_compute_canceled)
+        removeFile( aLogFileName );
+#endif
     removeFile( aFacesFileName );
     removeFile( aPointsFileName );
     removeFile( aResultFileName );
@@ -1520,6 +1561,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   cmd += TCollection_AsciiString(" -f ") + aGenericName;  // file to read
   cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
   
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  _compute_canceled = false;
+#endif
+
   system( cmd.ToCString() ); // run
 
   // --------------
@@ -1538,6 +1583,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     Ok = readResultFile( fileOpen,
 #ifdef WNT
                          aResultFileName.ToCString(),
+#endif
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+                         this,
 #endif
                          theMesh, theShape ,aNodeByGhs3dId, nbEnforcedVertices );
   }
@@ -1566,6 +1614,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if ( !_keepFiles )
   {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+    if (! Ok)
+      if(_compute_canceled)
+        removeFile( aLogFileName );
+#endif
     removeFile( aFacesFileName );
     removeFile( aPointsFileName );
     removeFile( aResultFileName );
@@ -1575,6 +1628,22 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   
   return Ok;
 }
+
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+void GHS3DPlugin_GHS3D::CancelCompute()
+{
+  _compute_canceled = true;
+#ifdef WNT
+#else
+  TCollection_AsciiString aGenericName
+    = (char*) GHS3DPlugin_Hypothesis::GetFileName(_hyp).c_str();
+  TCollection_AsciiString cmd =
+    TCollection_AsciiString("ps ux | grep ") + aGenericName;
+  cmd += TCollection_AsciiString(" | grep -v grep | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1");
+  system( cmd.ToCString() );
+#endif
+}
+#endif
 
 //================================================================================
 /*!
@@ -1761,6 +1830,10 @@ static char* getIds( char* ptr, int nbIds, vector<int>& ids )
 bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& logFile,
                                               const _Ghs2smdsConvertor &     toSmdsConvertor )
 {
+#ifdef WITH_SMESH_CANCEL_COMPUTE
+  if(_compute_canceled)
+    return error(SMESH_Comment("interruption initiated by user"));
+#endif
   // open file
 #ifdef WNT
   int file = ::_open (logFile.ToCString(), _O_RDONLY|_O_BINARY);
