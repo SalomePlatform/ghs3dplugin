@@ -385,6 +385,10 @@ if test "X$GMAKE" = "Xyes"; then
 else
    AC_SUBST(SETX) SETX="set -x"
 fi
+
+dnl Build with SMESH cancel compute feature
+AC_DEFINE(WITH_SMESH_CANCEL_COMPUTE)
+
 echo
 echo ---------------------------------------------
 echo generating Makefiles and configure files
