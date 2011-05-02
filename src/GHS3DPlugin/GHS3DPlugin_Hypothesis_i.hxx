@@ -31,6 +31,7 @@
 #include CORBA_SERVER_HEADER(GHS3DPlugin_Algorithm)
 
 #include "SMESH_Hypothesis_i.hxx"
+#include "SMESH_Mesh_i.hxx"
 #include "GHS3DPlugin_Hypothesis.hxx"
 
 class SMESH_Gen;
@@ -129,6 +130,13 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   void RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
   GHS3DPlugin::GHS3DEnforcedVertexList* GetEnforcedVertices();
   void ClearEnforcedVertices();
+  /*!
+   * To set an enforced mesh
+   */
+  void SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType) throw (SALOME::SALOME_Exception);
+  void SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size) throw (SALOME::SALOME_Exception);
+  void _SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size) throw (SALOME::SALOME_Exception);
+  void ClearEnforcedMeshes();
 
   // Get implementation
   ::GHS3DPlugin_Hypothesis* GetImpl();

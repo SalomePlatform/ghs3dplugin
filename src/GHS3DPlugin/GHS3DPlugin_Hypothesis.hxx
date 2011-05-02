@@ -27,8 +27,11 @@
 
 #include "GHS3DPlugin_Defs.hxx"
 
-#include <SMESH_Hypothesis.hxx>
-#include <utilities.h>
+#include "SMESH_Hypothesis.hxx"
+#include "SMESH_Mesh_i.hxx"
+#include "SMESH_Gen_i.hxx"
+#include "SMESH_TypeDefs.hxx"
+#include "utilities.h"
 
 #include <stdexcept>
 #include <map>
@@ -117,12 +120,63 @@ public:
   /*!
    * To set an enforced vertex
    */
+//   struct TEnforcedNode {
+//     std::vector<double> coords;
+//     double size;
+//     std::string geomEntry;
+//     std::string groupName;
+//   };
+//   
+//   struct CompareEnfNodes {
+//     bool operator () (const TEnforcedNode* e1, const TEnforcedNode* e2) const {
+//       if (e1 && e2) {
+//         if (e1->coords.size() && e2->coords.size())
+//           return (e1->coords < e2->coords);
+//         else
+//           return (e1->geomEntry < e2->geomEntry);
+//       }
+//       return false;
+//     }
+//   };
+//   typedef std::set< TEnforcedNode*, CompareEnfNodes > TEnforcedNodeList;
+//   // Map Coords / Enforced node
+//   typedef std::map< std::vector<double>, TEnforcedNode* > TCoordsEnfNodeMap;
+//   // Map geom entry / Enforced ndoe
+//   typedef std::map< std::string, TEnforcedNode* > TGeomEntryEnfNodeMap;
+//   
+//   
+//   struct TEnforcedEdge {
+//     long ID;
+//     long node1;
+//     long node2;
+//     std::string groupName;
+//   };
+  
+  
   typedef std::map<std::vector<double>,double> TEnforcedVertexValues;
   void SetEnforcedVertex(double x, double y, double z, double size);
   double GetEnforcedVertex(double x, double y, double z) throw (std::invalid_argument);
   void RemoveEnforcedVertex(double x, double y, double z) throw (std::invalid_argument);
   const TEnforcedVertexValues _GetEnforcedVertices() const { return myEnforcedVertices; }
   void ClearEnforcedVertices();
+
+  /*!
+   * To set enforced elements
+   */
+  void SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, double size);
+  void SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, double size);
+  void ClearEnforcedMeshes();
+  const TIDSortedNodeSet _GetEnforcedNodes() const { return _enfNodes; }
+  const TIDSortedElemSet _GetEnforcedEdges() const { return _enfEdges; }
+  const TIDSortedElemSet _GetEnforcedTriangles() const { return _enfTriangles; }
+  const TIDSortedElemSet _GetEnforcedQuadrangles() const { return _enfQuadrangles; }
+  typedef std::map<int,std::vector<int> > TElemID2NodeIDMap;
+  const TElemID2NodeIDMap _GetEdgeID2NodeIDMap() const {return _edgeID2nodeIDMap; }
+  const TElemID2NodeIDMap _GetTri2NodeMap() const {return _triID2nodeIDMap; }
+  const TElemID2NodeIDMap _GetQuad2NodeMap() const {return _quadID2nodeIDMap; }
+  typedef std::map<int,double> TID2SizeMap;
+  const TID2SizeMap _GetNodeIDToSizeMap() const {return _nodeIDToSizeMap; }
+  const TID2SizeMap _GetElementIDToSizeMap() const {return _elementIDToSizeMap; }
 
   static bool   DefaultMeshHoles();
   static short  DefaultMaximumMemory();
@@ -136,6 +190,8 @@ public:
   static bool   DefaultToUseFEMCorrection();
   static bool   DefaultToRemoveCentralPoint();
   static TEnforcedVertexValues DefaultEnforcedVertices();
+  static TIDSortedNodeSet DefaultIDSortedNodeSet();
+  static TIDSortedElemSet DefaultIDSortedElemSet();
 
   /*!
    * \brief Return command to run ghs3d mesher excluding file prefix (-f)
@@ -150,7 +206,16 @@ public:
    * \brief Return the enforced vertices
    */
   static TEnforcedVertexValues GetEnforcedVertices(const GHS3DPlugin_Hypothesis* hyp);
-
+  static TIDSortedNodeSet GetEnforcedNodes(const GHS3DPlugin_Hypothesis* hyp);
+  static TIDSortedElemSet GetEnforcedEdges(const GHS3DPlugin_Hypothesis* hyp);
+  static TIDSortedElemSet GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp);
+  static TIDSortedElemSet GetEnforcedQuadrangles(const GHS3DPlugin_Hypothesis* hyp);
+  static TElemID2NodeIDMap GetEdgeID2NodeIDMap(const GHS3DPlugin_Hypothesis* hyp);
+  static TElemID2NodeIDMap GetTri2NodeMap(const GHS3DPlugin_Hypothesis* hyp);
+  static TElemID2NodeIDMap GetQuad2NodeMap(const GHS3DPlugin_Hypothesis* hyp);
+  static TID2SizeMap GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp);
+  static TID2SizeMap GetElementIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp);
+  
   // Persistence
   virtual std::ostream & SaveTo(std::ostream & save);
   virtual std::istream & LoadFrom(std::istream & load);
@@ -182,7 +247,15 @@ private:
   bool   myToRemoveCentralPoint;
   std::string myTextOption;
   TEnforcedVertexValues myEnforcedVertices;
-  
+  TIDSortedNodeSet _enfNodes;
+  TIDSortedElemSet _enfEdges;
+  TIDSortedElemSet _enfTriangles;
+  TIDSortedElemSet _enfQuadrangles;
+  TElemID2NodeIDMap _edgeID2nodeIDMap;
+  TElemID2NodeIDMap _triID2nodeIDMap;
+  TElemID2NodeIDMap _quadID2nodeIDMap;
+  TID2SizeMap _nodeIDToSizeMap;
+  TID2SizeMap _elementIDToSizeMap;
 };
 
 

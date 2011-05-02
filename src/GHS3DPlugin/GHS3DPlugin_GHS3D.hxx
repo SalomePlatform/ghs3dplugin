@@ -27,9 +27,20 @@
 #define _GHS3DPlugin_GHS3D_HXX_
 
 #include "SMESH_3D_Algo.hxx"
+#include "SMESH_Gen.hxx"
 
 #include <map>
 #include <vector>
+
+extern "C"
+{
+  #include "libmesh5.h"
+}
+
+#ifndef GMFVERSION
+#define GMFVERSION GmfDouble
+#endif
+#define GMFDIMENSION 3
 
 class GHS3DPlugin_Hypothesis;
 class SMDS_MeshNode;
@@ -61,6 +72,8 @@ public:
 
   virtual bool Compute(SMESH_Mesh&         theMesh,
                        SMESH_MesherHelper* aHelper);
+
+  bool importGMFMesh(const char* aGMFFileName, SMESH_Mesh& aMesh);
 
 private:
 

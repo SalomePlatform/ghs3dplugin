@@ -24,6 +24,8 @@
 //=============================================================================
 //
 #include "GHS3DPlugin_Hypothesis.hxx"
+#include <SMESH_ProxyMesh.hxx>
+#include <StdMeshers_QuadToTriaAdaptor.hxx>
 
 #include <TCollection_AsciiString.hxx>
 
@@ -49,10 +51,19 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   myToUseBoundaryRecoveryVersion(DefaultToUseBoundaryRecoveryVersion()),
   myToUseFemCorrection(DefaultToUseFEMCorrection()),
   myToRemoveCentralPoint(DefaultToRemoveCentralPoint()),
-  myEnforcedVertices(DefaultEnforcedVertices())
+  myEnforcedVertices(DefaultEnforcedVertices()),
+  _enfNodes(DefaultIDSortedNodeSet()),
+  _enfEdges(DefaultIDSortedElemSet()),
+  _enfTriangles(DefaultIDSortedElemSet()),
+  _enfQuadrangles(DefaultIDSortedElemSet())
 {
   _name = "GHS3D_Parameters";
   _param_algo_dim = 3;
+  _edgeID2nodeIDMap.clear();
+  _triID2nodeIDMap.clear();
+  _quadID2nodeIDMap.clear();
+  _nodeIDToSizeMap.clear();
+  _elementIDToSizeMap.clear();
 }
 
 //=======================================================================
@@ -328,6 +339,181 @@ void GHS3DPlugin_Hypothesis::SetEnforcedVertex(double x, double y, double z, dou
   NotifySubMeshesHypothesisModification();
 }
 
+
+//=======================================================================
+//function : SetEnforcedMesh
+//=======================================================================
+void GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, double size)
+{
+  TIDSortedElemSet theElemSet;
+  SMDS_ElemIteratorPtr eIt;
+/*
+  if ((elementType == SMESH::FACE) && (theMesh.NbQuadrangles() > 0)) {
+    SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
+
+    StdMeshers_QuadToTriaAdaptor* aQuad2Trias = new StdMeshers_QuadToTriaAdaptor;
+    aQuad2Trias->Compute( theMesh );
+    proxyMesh.reset(aQuad2Trias );
+
+//    std::cout << "proxyMesh->NbFaces(): " << proxyMesh->NbFaces() << std::endl;
+//    eIt = proxyMesh->GetFaces();
+//    if (eIt)
+//      while ( eIt->more() )
+//        theElemSet.insert( eIt->next() );
+//    else {
+//    std::cout << "********************** eIt == 0 *****************" << std::endl;
+    eIt = theMesh.GetMeshDS()->elementsIterator(SMDSAbs_ElementType(elementType));
+    while ( eIt->more() ) {
+      const SMDS_MeshElement* elem = eIt->next();
+        theElemSet.insert( elem );
+    }
+  }
+
+  else
+  {
+  */
+    eIt = theMesh.GetMeshDS()->elementsIterator(SMDSAbs_ElementType(elementType));
+    while ( eIt->more() )
+      theElemSet.insert( eIt->next() );
+/*
+  }
+*/
+  MESSAGE("Add "<<theElemSet.size()<<" types["<<elementType<<"] from source mesh");
+
+  SetEnforcedElements( theElemSet, elementType, size);
+
+}
+
+//=======================================================================
+//function : SetEnforcedElements
+//=======================================================================
+void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, double size)
+{
+  MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedElements");
+  TIDSortedElemSet::const_iterator it = theElemSet.begin();
+  const SMDS_MeshElement* elem;
+  for (;it != theElemSet.end();++it)
+  {
+    elem = (*it);
+//     MESSAGE("Element ID: " << (*it)->GetID());
+    const SMDS_MeshNode* node = dynamic_cast<const SMDS_MeshNode*>(elem);
+    switch (elementType) {
+      case SMESH::NODE:
+        if (node) {
+//           MESSAGE("This is a node");
+          _enfNodes.insert(node);
+          _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+        }
+        else {
+//           MESSAGE("This is an element");
+          _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
+          SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
+          for (;nodeIt->more();)
+            _nodeIDToSizeMap.insert(make_pair(nodeIt->next()->GetID(), size));
+        }
+        NotifySubMeshesHypothesisModification();
+        break;
+      case SMESH::EDGE:
+        if (node) {
+//           MESSAGE("This is a node");
+        }
+        else {
+//           MESSAGE("This is an element");
+          if (elem->GetType() == SMDSAbs_Edge) {
+            _enfEdges.insert(elem);
+//             _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
+            _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
+            SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
+            for (;nodeIt->more();) {
+              node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+              _edgeID2nodeIDMap[elem->GetID()].push_back(node->GetID());
+              _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+            }
+          }
+          else if (elem->GetType() > SMDSAbs_Edge) {
+            SMDS_ElemIteratorPtr it = elem->edgesIterator();
+            for (;it->more();) {
+              const SMDS_MeshElement* anEdge = it->next();
+              _enfEdges.insert(anEdge);
+//               _enfNodes.insert(anEdge->begin_nodes(),anEdge->end_nodes());
+              _elementIDToSizeMap.insert(make_pair(anEdge->GetID(), size));
+              SMDS_ElemIteratorPtr nodeIt = anEdge->nodesIterator();
+              for (;nodeIt->more();) {
+                node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+                _edgeID2nodeIDMap[anEdge->GetID()].push_back(node->GetID());
+                _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+              }
+            }
+          }
+        }
+        NotifySubMeshesHypothesisModification();
+        break;
+      case SMESH::FACE:
+        if (node) {
+//           MESSAGE("This is a node");
+        }
+        else {
+//           MESSAGE("This is an element");
+          if (elem->GetType() == SMDSAbs_Face)
+          {
+            if (elem->NbNodes() == 3) {
+              _enfTriangles.insert(elem);
+//               _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
+              _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
+              SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
+              for (;nodeIt->more();) {
+                node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+                _triID2nodeIDMap[elem->GetID()].push_back(node->GetID());
+                _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+              }
+            }
+            else if (elem->NbNodes() == 4) {
+              _enfQuadrangles.insert(elem);
+//               _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
+              _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
+              SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
+              for (;nodeIt->more();) {
+                node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+                _quadID2nodeIDMap[elem->GetID()].push_back(node->GetID());
+                _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+              }
+            }
+          }
+          else if (elem->GetType() > SMDSAbs_Face) {
+            SMDS_ElemIteratorPtr it = elem->facesIterator();
+            for (;it->more();) {
+              const SMDS_MeshElement* aFace = it->next();
+              if (aFace->NbNodes() == 3) {
+                _enfTriangles.insert(aFace);
+//                 _enfNodes.insert(aFace->begin_nodes(),aFace->end_nodes());
+                _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
+                SMDS_ElemIteratorPtr nodeIt = aFace->nodesIterator();
+                for (;nodeIt->more();) {
+                  node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+                  _triID2nodeIDMap[aFace->GetID()].push_back(node->GetID());
+                  _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+                }
+              }
+              else if (aFace->NbNodes() == 4) {
+                _enfQuadrangles.insert(aFace);
+//                 _enfNodes.insert(aFace->begin_nodes(),aFace->end_nodes());
+                _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
+                SMDS_ElemIteratorPtr nodeIt = aFace->nodesIterator();
+                for (;nodeIt->more();) {
+                  node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+                  _quadID2nodeIDMap[aFace->GetID()].push_back(node->GetID());
+                  _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+                }
+              }
+            }
+          }
+        }
+        NotifySubMeshesHypothesisModification();
+        break;
+    };
+  }
+}
+
 //=======================================================================
 //function : GetEnforcedVertex
 //=======================================================================
@@ -376,6 +562,24 @@ void GHS3DPlugin_Hypothesis::ClearEnforcedVertices()
     myEnforcedVertices.clear();
     NotifySubMeshesHypothesisModification();
 }
+
+//=======================================================================
+//function : ClearEnforcedMeshes
+//=======================================================================
+void GHS3DPlugin_Hypothesis::ClearEnforcedMeshes()
+{
+   _enfNodes.clear();
+   _enfEdges.clear();
+   _enfTriangles.clear();
+   _enfQuadrangles.clear();
+//    _edgeID2nodeIDMap.clear();
+//    _triID2nodeIDMap.clear();
+//    _quadID2nodeIDMap.clear();
+//    _nodeIDToSizeMap.clear();
+//    _elementIDToSizeMap.clear();
+   NotifySubMeshesHypothesisModification();
+}
+
 
 //=======================================================================
 //function : DefaultMeshHoles
@@ -524,6 +728,15 @@ GHS3DPlugin_Hypothesis::TEnforcedVertexValues GHS3DPlugin_Hypothesis::DefaultEnf
   return GHS3DPlugin_Hypothesis::TEnforcedVertexValues();
 }
 
+TIDSortedNodeSet GHS3DPlugin_Hypothesis::DefaultIDSortedNodeSet()
+{
+  return TIDSortedNodeSet();
+}
+
+TIDSortedElemSet GHS3DPlugin_Hypothesis::DefaultIDSortedElemSet()
+{
+  return TIDSortedElemSet();
+}
 
 //=======================================================================
 //function : SaveTo
@@ -744,7 +957,7 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  /*dflts*/
 std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
                                             const bool                    hasShapeToMesh)
 {
-  TCollection_AsciiString cmd( "ghs3d" );
+  TCollection_AsciiString cmd( "ghs3d" ); // ghs3dV4.1_32bits (to permit the .mesh output)
   // check if any option is overridden by hyp->myTextOption
   bool m   = hyp ? ( hyp->myTextOption.find("-m")  == std::string::npos ) : true;
   bool M   = hyp ? ( hyp->myTextOption.find("-M")  == std::string::npos ) : true;
@@ -881,3 +1094,47 @@ GHS3DPlugin_Hypothesis::TEnforcedVertexValues GHS3DPlugin_Hypothesis::GetEnforce
     return hyp ? hyp->_GetEnforcedVertices():DefaultEnforcedVertices();
 }
 
+TIDSortedNodeSet GHS3DPlugin_Hypothesis::GetEnforcedNodes(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetEnforcedNodes():DefaultIDSortedNodeSet();
+}
+
+TIDSortedElemSet GHS3DPlugin_Hypothesis::GetEnforcedEdges(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetEnforcedEdges():DefaultIDSortedElemSet();
+}
+
+TIDSortedElemSet GHS3DPlugin_Hypothesis::GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetEnforcedTriangles():DefaultIDSortedElemSet();
+}
+
+TIDSortedElemSet GHS3DPlugin_Hypothesis::GetEnforcedQuadrangles(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetEnforcedQuadrangles():DefaultIDSortedElemSet();
+}
+
+GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetEdgeID2NodeIDMap(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetEdgeID2NodeIDMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
+}
+
+GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetTri2NodeMap(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetTri2NodeMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
+}
+
+GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetQuad2NodeMap(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetQuad2NodeMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
+}
+
+GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetNodeIDToSizeMap(): GHS3DPlugin_Hypothesis::TID2SizeMap();
+}
+
+GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetElementIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)
+{
+    return hyp ? hyp->_GetElementIDToSizeMap(): GHS3DPlugin_Hypothesis::TID2SizeMap();
+}

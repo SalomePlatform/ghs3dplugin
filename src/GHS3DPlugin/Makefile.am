@@ -27,6 +27,7 @@ include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
 # header files 
 salomeinclude_HEADERS = \
+       libmesh5.h \
        GHS3DPlugin_Defs.hxx \
        GHS3DPlugin_GHS3D.hxx \
        GHS3DPlugin_GHS3D_i.hxx \
@@ -37,6 +38,7 @@ salomeinclude_HEADERS = \
 lib_LTLIBRARIES = libGHS3DEngine.la
 
 dist_libGHS3DEngine_la_SOURCES = \
+  libmesh5.c \
   GHS3DPlugin_GHS3D.cxx \
   GHS3DPlugin_GHS3D_i.cxx \
   GHS3DPlugin_i.cxx \

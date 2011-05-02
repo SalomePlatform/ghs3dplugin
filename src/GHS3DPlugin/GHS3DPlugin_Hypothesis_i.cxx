@@ -23,13 +23,22 @@
 //
 #include "GHS3DPlugin_Hypothesis_i.hxx"
 
-#include <SMESH_Gen.hxx>
-#include <SMESH_PythonDump.hxx>
+#include "SMESH_Gen.hxx"
+#include "SMESH_PythonDump.hxx"
+//#include "SMESH_Mesh.hxx"
+//#include "SMESH_ProxyMesh.hxx"
+//#include <StdMeshers_QuadToTriaAdaptor.hxx>
 
-#include <Utils_CorbaException.hxx>
-#include <utilities.h>
-#include <SMESH_Mesh_i.hxx>
+#include "Utils_CorbaException.hxx"
+#include "utilities.h"
+#include "SMESH_Mesh_i.hxx"
+#include "SMESH_Group_i.hxx"
+#include "SMESH_Gen_i.hxx"
+#include "SMESH_TypeDefs.hxx"
 
+#ifndef GHS3D_VERSION
+#define GHS3D_VERSION 41
+#endif
 //=======================================================================
 //function : GHS3DPlugin_Hypothesis_i
 //=======================================================================
@@ -418,7 +427,7 @@ void GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertex(CORBA::Double x, CORBA::Doub
     ExDescription.text = ex.what();
     ExDescription.type = SALOME::BAD_PARAM;
     ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::RemoveEnforcedVertex(x,y,z)";
-    ExDescription.lineNumber = 0;
+    ExDescription.lineNumber = 408;
     throw SALOME::SALOME_Exception(ExDescription);
   }
   catch (SALOME_Exception& ex) {
@@ -434,8 +443,195 @@ void GHS3DPlugin_Hypothesis_i::ClearEnforcedVertices()
 {
   ASSERT(myBaseImpl);
   this->GetImpl()->ClearEnforcedVertices();
+  SMESH::TPythonDump () << _this() << ".ClearEnforcedVertices() ";
 }
 
+//=======================================================================
+//function : ClearEnforcedMeshes
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::ClearEnforcedMeshes()
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->ClearEnforcedMeshes();
+  SMESH::TPythonDump () << _this() << ".ClearEnforcedMeshes() ";
+}
+
+/*!
+ * \brief Adds enforced elements of type elementType using another mesh/sub-mesh/mesh group theSource.
+ */
+void GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType)
+  throw (SALOME::SALOME_Exception)
+{
+#if GHS3D_VERSION >= 42
+  _SetEnforcedMesh(theSource, theType, -1.0);
+  SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
+  SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
+  if (theGroup_i)
+  {
+    SMESH::TPythonDump () << _this() << ".SetEnforcedMesh( " 
+                          << theSource << ", " << theType << " )";
+  }
+  else if (theMesh_i)
+  {
+    SMESH::TPythonDump () << _this() << ".SetEnforcedMesh( " 
+                          << theSource << ".GetMesh(), " << theType << " )";
+  }
+#else
+  SALOME::ExceptionStruct ExDescription;
+  ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
+  ExDescription.type = SALOME::BAD_PARAM;
+  ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::SetEnforcedMesh(theSource, theType)";
+  ExDescription.lineNumber = 463;
+  throw SALOME::SALOME_Exception(ExDescription);
+#endif
+}
+
+/*!
+ * \brief Adds enforced elements of type elementType using another mesh/sub-mesh/mesh group theSource and a size.
+ */
+void GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize)
+  throw (SALOME::SALOME_Exception)
+{
+  if (theSize <= 0) {
+    SALOME::ExceptionStruct ExDescription;
+    ExDescription.text = "Size cannot be negative";
+    ExDescription.type = SALOME::BAD_PARAM;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::SetEnforcedMeshSize(theSource, theType)";
+    ExDescription.lineNumber = 475;
+    throw SALOME::SALOME_Exception(ExDescription);
+  }
+  
+  _SetEnforcedMesh(theSource, theType, theSize);
+  SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
+  SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
+  if (theGroup_i)
+  {
+    SMESH::TPythonDump () << _this() << ".SetEnforcedMeshSize( " 
+                          << theSource << ", " << theType << ", " << theSize << " )";
+  }
+  else if (theMesh_i)
+  {
+    SMESH::TPythonDump () << _this() << ".SetEnforcedMeshSize( " 
+                          << theSource << ".GetMesh(), " << theType << ", " << theSize << " )";
+  }
+}
+
+void GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize)
+  throw (SALOME::SALOME_Exception)
+{
+  ASSERT(myBaseImpl);
+  
+  if (CORBA::is_nil( theSource ))
+  {
+    SALOME::ExceptionStruct ExDescription;
+    ExDescription.text = "The source mesh CORBA object is NULL";
+    ExDescription.type = SALOME::BAD_PARAM;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize)";
+    ExDescription.lineNumber = 502;
+    throw SALOME::SALOME_Exception(ExDescription);
+  }
+  
+  if ((theType != SMESH::NODE) && (theType != SMESH::EDGE) && (theType != SMESH::FACE))
+  {
+    SALOME::ExceptionStruct ExDescription;
+    ExDescription.text = "Bad elementType";
+    ExDescription.type = SALOME::BAD_PARAM;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize)";
+    ExDescription.lineNumber = 502;
+    throw SALOME::SALOME_Exception(ExDescription);
+  }
+  
+  SMESH::array_of_ElementType_var types = theSource->GetTypes();
+//   MESSAGE("Required type is "<<theType);
+//   MESSAGE("Available types:");
+//   for (int i=0;i<types->length();i++){MESSAGE(types[i]);}
+  if ( types->length() >= 1 && types[types->length()-1] <  theType)
+  {
+    SALOME::ExceptionStruct ExDescription;
+    ExDescription.text = "The source mesh has bad type";
+    ExDescription.type = SALOME::BAD_PARAM;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize)";
+    ExDescription.lineNumber = 502;
+    throw SALOME::SALOME_Exception(ExDescription);
+  }
+  
+  SMESHDS_Mesh* theMeshDS;
+  SMESH_Mesh_i* anImplPtr = SMESH::DownCast<SMESH_Mesh_i*>(theSource->GetMesh());
+  if (anImplPtr)
+    theMeshDS = anImplPtr->GetImpl().GetMeshDS();
+  else
+    return;
+  
+  SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
+  SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
+  TIDSortedElemSet theElemSet;
+
+  if (theMesh_i)
+  {
+    try {
+      this->GetImpl()->SetEnforcedMesh(anImplPtr->GetImpl(), theType, theSize);
+    }
+    catch (const std::invalid_argument& ex) {
+      SALOME::ExceptionStruct ExDescription;
+      ExDescription.text = ex.what();
+      ExDescription.type = SALOME::BAD_PARAM;
+      ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize)";
+      ExDescription.lineNumber = 502;
+      throw SALOME::SALOME_Exception(ExDescription);
+    }
+    catch (SALOME_Exception& ex) {
+      THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+    }
+//
+//      SMESH::long_array_var anIDs = theMesh_i->GetElementsByType(theType);
+//      if ( anIDs->length() == 0 ){MESSAGE("The source mesh is empty");}
+//      for (int i=0; i<anIDs->length(); i++) {
+//        CORBA::Long ind = anIDs[i];
+//        const SMDS_MeshElement * elem = theMeshDS->FindElement(ind);
+//        if (elem)
+//          theElemSet.insert( elem );
+//      }
+////    }
+//    MESSAGE("Add "<<theElemSet.size()<<" types["<<theType<<"] from source mesh");
+  }
+  else if (theGroup_i && types->length() == 1 && types[0] == theType)
+  {
+    SMESH::long_array_var anIDs = theGroup_i->GetListOfID();
+    if ( anIDs->length() == 0 ){MESSAGE("The source group is empty");}
+    for (int i=0; i<anIDs->length(); i++) {
+      CORBA::Long ind = anIDs[i];
+      if (theType == SMESH::NODE)
+      {
+        const SMDS_MeshNode * node = theMeshDS->FindNode(ind);
+        if (node)
+          theElemSet.insert( node );
+      }
+      else
+      {
+        const SMDS_MeshElement * elem = theMeshDS->FindElement(ind);
+        if (elem)
+          theElemSet.insert( elem );
+      }
+    }
+    MESSAGE("Add "<<theElemSet.size()<<" types["<<theType<<"] from source group "<< theGroup_i->GetName());
+
+    try {
+      this->GetImpl()->SetEnforcedElements(theElemSet, theType, theSize);
+    }
+    catch (const std::invalid_argument& ex) {
+      SALOME::ExceptionStruct ExDescription;
+      ExDescription.text = ex.what();
+      ExDescription.type = SALOME::BAD_PARAM;
+      ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize)";
+      ExDescription.lineNumber = 502;
+      throw SALOME::SALOME_Exception(ExDescription);
+    }
+    catch (SALOME_Exception& ex) {
+      THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+    }
+  }
+}
 //=============================================================================
 /*!
  *  Get implementation
