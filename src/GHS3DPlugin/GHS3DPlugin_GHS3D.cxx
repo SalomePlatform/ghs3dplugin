@@ -1586,7 +1586,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
       elem = (*elemIt);
       nodeIt = elem->nodesIterator();
       int index=0;
-      while ( nodeIt->more() ) {
+      for ( int j = 0; j < 3; ++j ) {
         // find GHS3D ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         map< const SMDS_MeshNode*,int >::iterator it = aNodeToGhs3dIdMap.find(node);
@@ -1603,7 +1603,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
         elem = (*elemIt);
         nodeIt = elem->nodesIterator();
         int index=0;
-        while ( nodeIt->more() ) {
+        for ( int j = 0; j < 3; ++j ) {
           // find GHS3D ID
           const SMDS_MeshNode* node = castToNode( nodeIt->next() );
           map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
@@ -1630,7 +1630,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
       elem = (*elemIt);
       nodeIt = elem->nodesIterator();
       int index=0;
-      while ( nodeIt->more() ) {
+      for ( int j = 0; j < 4; ++j ) {
         // find GHS3D ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
@@ -1863,12 +1863,12 @@ static bool writeGMFFile(const char*   theMeshFileName,
       while (it->more())
       {
         const SMDS_MeshElement *elem = it->next();
-        if (elem->NbNodes() == 3)
+        if (elem->NbCornerNodes() == 3)
         {
           trianglesMap.Add(facesMap(i));
           nbTriangles ++;
         }
-        else if (elem->NbNodes() == 4)
+        else if (elem->NbCornerNodes() == 4)
         {
           quadranglesMap.Add(facesMap(i));
           nbQuadrangles ++;
@@ -1889,7 +1889,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
         aFace = itOnSubMesh->next();
         itOnSubFace = aFace->nodesIterator();
         att.clear();
-        while ( itOnSubFace->more() ) {
+        for ( int j = 0; j < 3; ++j ) {
           // find GHS3D ID
           aSmdsID = itOnSubFace->next()->GetID();
           itOnMap = theSmdsToGhs3dIdMap.find( aSmdsID );
@@ -1908,7 +1908,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
       bool isOK = true;
       itOnSubFace = aFace->nodesIterator();
       att.clear();
-      while ( itOnSubFace->more() ) {
+      for ( int j = 0; j < 3; ++j ) {
         int aNodeID = itOnSubFace->next()->GetID();
         itOnMap = theNodeId2NodeIndexMap.find(aNodeID);
         if (itOnMap != theNodeId2NodeIndexMap.end())
@@ -1923,13 +1923,13 @@ static bool writeGMFFile(const char*   theMeshFileName,
         tt.push_back(att);
     }
   }
-  
+
   if (tt.size()) {
     GmfSetKwd(idx, GmfTriangles, tt.size());
     for (int i=0;i<tt.size();i++)
       GmfSetLin(idx, GmfTriangles, tt[i][0], tt[i][1], tt[i][2], dummyint);
   }
-    
+
   /* QUADRANGLES ========================== */
   if (nbQuadrangles) {
     for ( int i = 1; i <= quadranglesMap.Extent(); i++ )
@@ -1938,7 +1938,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
       theSubMesh = theProxyMesh.GetSubMesh(aShape);
       if ( !theSubMesh ) continue;
       itOnSubMesh = theSubMesh->GetElements();
-      while ( itOnSubMesh->more() )
+      for ( int j = 0; j < 4; ++j )
       {
         aFace = itOnSubMesh->next();
         itOnSubFace = aFace->nodesIterator();
@@ -1962,7 +1962,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
       bool isOK = true;
       itOnSubFace = aFace->nodesIterator();
       aqt.clear();
-      while ( itOnSubFace->more() ) {
+      for ( int j = 0; j < 4; ++j ) {
         int aNodeID = itOnSubFace->next()->GetID();
         itOnMap = theNodeId2NodeIndexMap.find(aNodeID);
         if (itOnMap != theNodeId2NodeIndexMap.end())
@@ -1994,7 +1994,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
       bool isOK = true;
       itOnSubFace = aFace->nodesIterator();
       aet.clear();
-      while ( itOnSubFace->more() ) {
+      for ( int j = 0; j < 2; ++j ) {
         int aNodeID = itOnSubFace->next()->GetID();
         itOnMap = theNodeId2NodeIndexMap.find(aNodeID);
         if (itOnMap != theNodeId2NodeIndexMap.end())
