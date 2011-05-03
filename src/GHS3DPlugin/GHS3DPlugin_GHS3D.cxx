@@ -1196,6 +1196,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
   std::vector<double> enfVertexSizes;
   const SMDS_MeshElement* elem;
   TIDSortedElemSet anElemSet, anEnforcedEdgeSet, anEnforcedTriangleSet, anEnforcedQuadrangleSet;
+  TIDSortedElemSet aQuadElemSet, aQuadEnforcedEdgeSet, aQuadEnforcedTriangleSet, aQuadEnforcedQuadrangleSet;
   SMDS_ElemIteratorPtr nodeIt;
   map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap, anEnforcedNodeToGhs3dIdMap;
   TIDSortedElemSet::iterator elemIt;
@@ -1210,7 +1211,6 @@ static bool writeGMFFile(const char*   theMeshFileName,
   
   // count faces
   int nbFaces = theProxyMesh.NbFaces();
-  int nbNodes;
 
   if ( nbFaces == 0 )
     return false;
@@ -1225,11 +1225,12 @@ static bool writeGMFFile(const char*   theMeshFileName,
   while ( eIt->more() )
   {
     elem = eIt->next();
-    anElemSet.insert(elem);
-    // NODE_NB_1 NODE_NB_2 ...
+    if (elem->IsQuadratic())
+      aQuadElemSet.insert(elem);
+    else
+      anElemSet.insert(elem);
     nodeIt = elem->nodesIterator();
-    nbNodes = elem->NbCornerNodes();
-    while ( nodeIt->more() && nbNodes-- )
+    while ( nodeIt->more() )
     {
       // find GHS3D ID
       const SMDS_MeshNode* node = castToNode( nodeIt->next() );
@@ -1245,8 +1246,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
     elem = (*elemIt);
     isOK = true;
     nodeIt = elem->nodesIterator();
-    nbNodes = elem->NbCornerNodes();
-    while ( nodeIt->more() && nbNodes-- ) {
+    while ( nodeIt->more()) {
       // find GHS3D ID
       const SMDS_MeshNode* node = castToNode( nodeIt->next() );
       // Test if point is inside shape to mesh
@@ -1259,14 +1259,16 @@ static bool writeGMFFile(const char*   theMeshFileName,
     }
     if (isOK) {
       nodeIt = elem->nodesIterator();
-      nbNodes = elem->NbCornerNodes();
-      while ( nodeIt->more() && nbNodes-- ) {
+      while ( nodeIt->more()) {
         // find GHS3D ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
         anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
       }
-      anEnforcedEdgeSet.insert(elem);
+      if (elem->IsQuadratic())
+        aQuadEnforcedEdgeSet.insert(elem);
+      else
+        anEnforcedEdgeSet.insert(elem);
     }
   }
   
@@ -1277,8 +1279,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
     elem = (*elemIt);
     isOK = true;
     nodeIt = elem->nodesIterator();
-    nbNodes = elem->NbCornerNodes();
-    while ( nodeIt->more() && nbNodes-- ) {
+    while ( nodeIt->more() ) {
       // find GHS3D ID
       const SMDS_MeshNode* node = castToNode( nodeIt->next() );
       // Test if point is inside shape to mesh
@@ -1291,14 +1292,16 @@ static bool writeGMFFile(const char*   theMeshFileName,
     }
     if (isOK) {
       nodeIt = elem->nodesIterator();
-      nbNodes = elem->NbCornerNodes();
-      while ( nodeIt->more() && nbNodes-- ) {
+      while ( nodeIt->more() ) {
         // find GHS3D ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
         anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
       }
-      anEnforcedTriangleSet.insert(elem);
+      if (elem->IsQuadratic())
+        aQuadEnforcedTriangleSet.insert(elem);
+      else
+        anEnforcedTriangleSet.insert(elem);
     }
   }
   
@@ -1309,8 +1312,7 @@ static bool writeGMFFile(const char*   theMeshFileName,
     elem = (*elemIt);
     isOK = true;
     nodeIt = elem->nodesIterator();
-    nbNodes = elem->NbCornerNodes();
-    while ( nodeIt->more() && nbNodes-- ) {
+    while ( nodeIt->more() ) {
       // find GHS3D ID
       const SMDS_MeshNode* node = castToNode( nodeIt->next() );
       // Test if point is inside shape to mesh
@@ -1323,14 +1325,16 @@ static bool writeGMFFile(const char*   theMeshFileName,
     }
     if (isOK) {
       nodeIt = elem->nodesIterator();
-      nbNodes = elem->NbCornerNodes();
-      while ( nodeIt->more() && nbNodes-- ) {
+      while ( nodeIt->more() ) {
         // find GHS3D ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
         anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
       }
-      anEnforcedQuadrangleSet.insert(elem);
+      if (elem->IsQuadratic())
+        aQuadEnforcedQuadrangleSet.insert(elem);
+      else
+        anEnforcedQuadrangleSet.insert(elem);
     }
   }
   
@@ -1544,8 +1548,9 @@ static bool writeGMFFile(const char*   theMeshFileName,
 //
 ////  }
 
-  int nedge[2], ntri[3], nquad[4];
+  int nedge[2], ntri[3], nquad[4], nedgeP2[3], ntriP2[6], nquadQ2[9];
   
+  // GmfEdges
   int usedEnforcedEdges = 0;
   if (anEnforcedEdgeSet.size()) {
 //    idxRequired = GmfOpenMesh(theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
@@ -1572,14 +1577,44 @@ static bool writeGMFFile(const char*   theMeshFileName,
     }
 //    GmfCloseMesh(idxRequired);
   }
+  
+  // GmfEdgesP2
+  int usedEnforcedEdgesP2 = 0;
+  if (aQuadEnforcedEdgeSet.size()) {
+//    idxRequired = GmfOpenMesh(theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
+//    if (!idxRequired)
+//      return false;
+    GmfSetKwd(idx, GmfEdgesP2, aQuadEnforcedEdgeSet.size());
+//    GmfSetKwd(idxRequired, GmfEdges, anEnforcedEdgeSet.size());
+    for(elemIt = aQuadEnforcedEdgeSet.begin() ; elemIt != aQuadEnforcedEdgeSet.end() ; ++elemIt) {
+      elem = (*elemIt);
+      nodeIt = elem->nodesIterator();
+      int index=0;
+      while ( nodeIt->more() ) {
+        // find GHS3D ID
+        const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+        map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
+        if (it == anEnforcedNodeToGhs3dIdMap.end())
+          throw "Node not found";
+        nedgeP2[index] = it->second;
+        index++;
+      }
+      GmfSetLin(idx, GmfEdgesP2, nedgeP2[0], nedgeP2[1], nedgeP2[2], dummyint);
+//      GmfSetLin(idxRequired, GmfEdges, nedge[0], nedge[1], dummyint);
+      usedEnforcedEdgesP2++;
+    }
+//    GmfCloseMesh(idxRequired);
+  }
 
-  if (usedEnforcedEdges) {
-    GmfSetKwd(idx, GmfRequiredEdges, usedEnforcedEdges);
-    for (int enfID=1;enfID<=usedEnforcedEdges;enfID++) {
+  if (usedEnforcedEdges+usedEnforcedEdgesP2) {
+    GmfSetKwd(idx, GmfRequiredEdges, usedEnforcedEdges+usedEnforcedEdgesP2);
+    for (int enfID=1;enfID<=usedEnforcedEdges+usedEnforcedEdgesP2;enfID++) {
       GmfSetLin(idx, GmfRequiredEdges, enfID);
     }
   }
 
+  // GmfTriangles
+  int usedEnforcedTriangles = 0;
   if (anElemSet.size()+anEnforcedTriangleSet.size()) {
     GmfSetKwd(idx, GmfTriangles, anElemSet.size()+anEnforcedTriangleSet.size());
     for(elemIt = anElemSet.begin() ; elemIt != anElemSet.end() ; ++elemIt) {
@@ -1598,7 +1633,6 @@ static bool writeGMFFile(const char*   theMeshFileName,
       GmfSetLin(idx, GmfTriangles, ntri[0], ntri[1], ntri[2], dummyint);
     }
     if (anEnforcedTriangleSet.size()) {
-      int usedEnforcedTriangles = 0;
       for(elemIt = anEnforcedTriangleSet.begin() ; elemIt != anEnforcedTriangleSet.end() ; ++elemIt) {
         elem = (*elemIt);
         nodeIt = elem->nodesIterator();
@@ -1615,16 +1649,57 @@ static bool writeGMFFile(const char*   theMeshFileName,
         GmfSetLin(idx, GmfTriangles, ntri[0], ntri[1], ntri[2], dummyint);
         usedEnforcedTriangles++;
       }
-      if (usedEnforcedTriangles) {
-        GmfSetKwd(idx, GmfRequiredTriangles, usedEnforcedTriangles);
-        for (int enfID=1;enfID<=usedEnforcedTriangles;enfID++)
-          GmfSetLin(idx, GmfRequiredTriangles, anElemSet.size()+enfID);
+    }
+  }
+  
+  // GmfTrianglesP2
+  int usedEnforcedTrianglesP2 = 0;
+  if (aQuadElemSet.size()+aQuadEnforcedTriangleSet.size()) {
+    GmfSetKwd(idx, GmfTrianglesP2, aQuadElemSet.size()+aQuadEnforcedTriangleSet.size());
+    for(elemIt = aQuadElemSet.begin() ; elemIt != aQuadElemSet.end() ; ++elemIt) {
+      elem = (*elemIt);
+      nodeIt = elem->nodesIterator();
+      int index=0;
+      while ( nodeIt->more() ) {
+        // find GHS3D ID
+        const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+        map< const SMDS_MeshNode*,int >::iterator it = aNodeToGhs3dIdMap.find(node);
+        if (it == aNodeToGhs3dIdMap.end())
+          throw "Node not found";
+        ntriP2[index] = it->second;
+        index++;
+      }
+      GmfSetLin(idx, GmfTrianglesP2, ntriP2[0], ntriP2[1], ntriP2[2], ntriP2[3], ntriP2[4], ntriP2[5], dummyint);
+    }
+    if (aQuadEnforcedTriangleSet.size()) {
+      for(elemIt = aQuadEnforcedTriangleSet.begin() ; elemIt != aQuadEnforcedTriangleSet.end() ; ++elemIt) {
+        elem = (*elemIt);
+        nodeIt = elem->nodesIterator();
+        int index=0;
+        while ( nodeIt->more() ) {
+          // find GHS3D ID
+          const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+          map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
+          if (it == anEnforcedNodeToGhs3dIdMap.end())
+            throw "Node not found";
+          ntriP2[index] = it->second;
+          index++;
+        }
+        GmfSetLin(idx, GmfTrianglesP2, ntriP2[0], ntriP2[1], ntriP2[2], ntriP2[3], ntriP2[4], ntriP2[5], dummyint);
+        usedEnforcedTrianglesP2++;
       }
     }
   }
+  
+  if (usedEnforcedTriangles+usedEnforcedTrianglesP2) {
+    GmfSetKwd(idx, GmfRequiredTriangles, usedEnforcedTriangles+usedEnforcedTrianglesP2);
+    for (int enfID=1;enfID<=usedEnforcedTriangles+usedEnforcedTrianglesP2;enfID++)
+      GmfSetLin(idx, GmfRequiredTriangles, anElemSet.size()+aQuadElemSet.size()+enfID);
+  }
 
+  // GmfQuadrangles
+  int usedEnforcedQuadrilaterals = 0;
   if (anEnforcedQuadrangleSet.size()) {
-    int usedEnforcedQuadrilaterals = 0;
     GmfSetKwd(idx, GmfQuadrilaterals, anEnforcedQuadrangleSet.size());
     for(elemIt = anEnforcedQuadrangleSet.begin() ; elemIt != anEnforcedQuadrangleSet.end() ; ++elemIt) {
       elem = (*elemIt);
@@ -1642,11 +1717,37 @@ static bool writeGMFFile(const char*   theMeshFileName,
       GmfSetLin(idx, GmfQuadrilaterals, nquad[0], nquad[1], nquad[2], nquad[3], dummyint);
       usedEnforcedQuadrilaterals++;
     }
-    if (usedEnforcedQuadrilaterals) {
-      GmfSetKwd(idx, GmfRequiredQuadrilaterals, usedEnforcedQuadrilaterals);
-      for (int enfID=1;enfID<=usedEnforcedQuadrilaterals;enfID++)
-        GmfSetLin(idx, GmfRequiredQuadrilaterals, enfID);
+  }
+  
+  // GmfQuadranglesQ2
+  int usedEnforcedQuadrilateralsQ2 = 0;
+  if (aQuadEnforcedQuadrangleSet.size()) {
+    GmfSetKwd(idx, GmfQuadrilateralsQ2, aQuadEnforcedQuadrangleSet.size());
+    for(elemIt = aQuadEnforcedQuadrangleSet.begin() ; elemIt != aQuadEnforcedQuadrangleSet.end() ; ++elemIt) {
+      elem = (*elemIt);
+      nodeIt = elem->nodesIterator();
+      int index=0;
+      while ( nodeIt->more() ) {
+        // find GHS3D ID
+        const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+        map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
+        if (it == anEnforcedNodeToGhs3dIdMap.end())
+          throw "Node not found";
+        nquadQ2[index] = it->second;
+        index++;
+      }
+      //
+      // !!! The last value in nquadQ2 is missing because in Salome the quadratic quadrilaterals have only 8 points !!!
+      //
+      GmfSetLin(idx, GmfQuadrilateralsQ2, nquadQ2[0], nquadQ2[1], nquadQ2[2], nquadQ2[3], nquadQ2[4], nquadQ2[5], nquadQ2[6], nquadQ2[7], nquadQ2[8], dummyint);
+      usedEnforcedQuadrilateralsQ2++;
     }
+  }
+  
+  if (usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2) {
+    GmfSetKwd(idx, GmfRequiredQuadrilaterals, usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2);
+    for (int enfID=1;enfID<=usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2;enfID++)
+      GmfSetLin(idx, GmfRequiredQuadrilaterals, enfID);
   }
 
   GmfCloseMesh(idx);
