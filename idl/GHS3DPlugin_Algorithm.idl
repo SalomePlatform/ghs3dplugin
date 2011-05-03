@@ -26,6 +26,7 @@
 
 #include "SALOME_Exception.idl"
 #include "SMESH_Hypothesis.idl"
+#include "SMESH_Mesh.idl"
 
 /*!
  * GHS3DPlugin: interfaces to GHS3D related hypotheses and algorithms
@@ -45,6 +46,7 @@ module GHS3DPlugin
    */
   interface GHS3DPlugin_GHS3D : SMESH::SMESH_3D_Algo
   {
+    boolean importGMFMesh(in string aGMFFileName);
   };
 
   /*!
@@ -134,6 +136,10 @@ module GHS3DPlugin
     void RemoveEnforcedVertex(in double x, in double y, in double z) raises (SALOME::SALOME_Exception);
     GHS3DEnforcedVertexList GetEnforcedVertices();
     void ClearEnforcedVertices();
+    
+    void SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType) raises (SALOME::SALOME_Exception);
+    void SetEnforcedMeshSize(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in double size) raises (SALOME::SALOME_Exception);
+    void ClearEnforcedMeshes();
   };
 };
 
