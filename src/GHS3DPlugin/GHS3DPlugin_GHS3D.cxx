@@ -994,13 +994,15 @@ static bool readGMFFile(const char* theFile,
   tabRef[GmfTetrahedra]     = 4;
   tabRef[GmfHexahedra]      = 8;
 
-  theHelper->GetMesh()->Clear();
-
   int ver, dim;
   MESSAGE("Read " << theFile << " file");
   int InpMsh = GmfOpenMesh(theFile, GmfRead, &ver, &dim);
   if (!InpMsh)
     return false;
+
+  // TODO: - Get the medium nodes from quadratic elements
+  //       - Get the 3d elements
+  theHelper->GetMesh()->Clear();
 
   int nbVertices = GmfStatKwd(InpMsh, GmfVertices);
   GMFNode = new SMDS_MeshNode*[ nbVertices + 1 ];
@@ -1195,8 +1197,9 @@ static bool writeGMFFile(const char*   theMeshFileName,
   GHS3DPlugin_Hypothesis::TEnforcedVertexValues::const_iterator vertexIt;
   std::vector<double> enfVertexSizes;
   const SMDS_MeshElement* elem;
-  TIDSortedElemSet anElemSet, anEnforcedEdgeSet, anEnforcedTriangleSet, anEnforcedQuadrangleSet;
-  TIDSortedElemSet aQuadElemSet, aQuadEnforcedEdgeSet, aQuadEnforcedTriangleSet, aQuadEnforcedQuadrangleSet;
+  TIDSortedElemSet anElemSet, anEnforcedEdgeSet, anEnforcedTriangleSet/*, anEnforcedQuadrangleSet*/;
+  // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
+//   TIDSortedElemSet aQuadElemSet, aQuadEnforcedEdgeSet, aQuadEnforcedTriangleSet, aQuadEnforcedQuadrangleSet;
   SMDS_ElemIteratorPtr nodeIt;
   map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap, anEnforcedNodeToGhs3dIdMap;
   TIDSortedElemSet::iterator elemIt;
@@ -1225,10 +1228,11 @@ static bool writeGMFFile(const char*   theMeshFileName,
   while ( eIt->more() )
   {
     elem = eIt->next();
-    if (elem->IsQuadratic())
-      aQuadElemSet.insert(elem);
-    else
-      anElemSet.insert(elem);
+    // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
+//     if (elem->IsQuadratic())
+//       aQuadElemSet.insert(elem);
+//     else
+    anElemSet.insert(elem);
     nodeIt = elem->nodesIterator();
     while ( nodeIt->more() )
     {
@@ -1265,10 +1269,11 @@ static bool writeGMFFile(const char*   theMeshFileName,
         int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
         anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
       }
-      if (elem->IsQuadratic())
-        aQuadEnforcedEdgeSet.insert(elem);
-      else
-        anEnforcedEdgeSet.insert(elem);
+      // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
+//       if (elem->IsQuadratic())
+//         aQuadEnforcedEdgeSet.insert(elem);
+//       else
+      anEnforcedEdgeSet.insert(elem);
     }
   }
   
@@ -1298,45 +1303,47 @@ static bool writeGMFFile(const char*   theMeshFileName,
         int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
         anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
       }
-      if (elem->IsQuadratic())
-        aQuadEnforcedTriangleSet.insert(elem);
-      else
-        anEnforcedTriangleSet.insert(elem);
+      // GHS3D does not accept TrianglesP2 in input mesh file (Ghs3d 4.2)
+//       if (elem->IsQuadratic())
+//         aQuadEnforcedTriangleSet.insert(elem);
+//       else
+      anEnforcedTriangleSet.insert(elem);
     }
   }
   
   /* ENFORCED QUADRANGLES ========================== */
-  
-    // Iterate over the enforced quadrangles
-  for(elemIt = theEnforcedQuadrangles.begin() ; elemIt != theEnforcedQuadrangles.end() ; ++elemIt) {
-    elem = (*elemIt);
-    isOK = true;
-    nodeIt = elem->nodesIterator();
-    while ( nodeIt->more() ) {
-      // find GHS3D ID
-      const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-      // Test if point is inside shape to mesh
-      gp_Pnt myPoint(node->X(),node->Y(),node->Z());
-      TopAbs_State result = pntCls->GetPointState( myPoint );
-      if ( result != TopAbs_IN ) {
-        isOK = false;
-        break;
-      }
-    }
-    if (isOK) {
-      nodeIt = elem->nodesIterator();
-      while ( nodeIt->more() ) {
-        // find GHS3D ID
-        const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-        int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
-        anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
-      }
-      if (elem->IsQuadratic())
-        aQuadEnforcedQuadrangleSet.insert(elem);
-      else
-        anEnforcedQuadrangleSet.insert(elem);
-    }
-  }
+  // TODO: add pyramids ?
+//     // Iterate over the enforced quadrangles
+//   for(elemIt = theEnforcedQuadrangles.begin() ; elemIt != theEnforcedQuadrangles.end() ; ++elemIt) {
+//     elem = (*elemIt);
+//     isOK = true;
+//     nodeIt = elem->nodesIterator();
+//     while ( nodeIt->more() ) {
+//       // find GHS3D ID
+//       const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+//       // Test if point is inside shape to mesh
+//       gp_Pnt myPoint(node->X(),node->Y(),node->Z());
+//       TopAbs_State result = pntCls->GetPointState( myPoint );
+//       if ( result != TopAbs_IN ) {
+//         isOK = false;
+//         break;
+//       }
+//     }
+//     if (isOK) {
+//       nodeIt = elem->nodesIterator();
+//       while ( nodeIt->more() ) {
+//         // find GHS3D ID
+//         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+//         int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
+//         anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
+//       }
+//       // GHS3D does not accept QuadrilateralsQ2 in input mesh file (Ghs3d 4.2)
+// //       if (elem->IsQuadratic())
+// //         aQuadEnforcedQuadrangleSet.insert(elem);
+// //       else
+//       anEnforcedQuadrangleSet.insert(elem);
+//     }
+//   }
   
   
   // put nodes to theNodeByGhs3dId vector
@@ -1548,7 +1555,8 @@ static bool writeGMFFile(const char*   theMeshFileName,
 //
 ////  }
 
-  int nedge[2], ntri[3], nquad[4], nedgeP2[3], ntriP2[6], nquadQ2[9];
+  // GHS3D does not accept quadratic elements in input mesh file (Ghs3d 4.2)
+  int nedge[2], ntri[3]/*, nquad[4]*/ /*, nedgeP2[3], ntriP2[6], nquadQ2[9]*/;
   
   // GmfEdges
   int usedEnforcedEdges = 0;
@@ -1578,37 +1586,38 @@ static bool writeGMFFile(const char*   theMeshFileName,
 //    GmfCloseMesh(idxRequired);
   }
   
-  // GmfEdgesP2
-  int usedEnforcedEdgesP2 = 0;
-  if (aQuadEnforcedEdgeSet.size()) {
-//    idxRequired = GmfOpenMesh(theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
-//    if (!idxRequired)
-//      return false;
-    GmfSetKwd(idx, GmfEdgesP2, aQuadEnforcedEdgeSet.size());
-//    GmfSetKwd(idxRequired, GmfEdges, anEnforcedEdgeSet.size());
-    for(elemIt = aQuadEnforcedEdgeSet.begin() ; elemIt != aQuadEnforcedEdgeSet.end() ; ++elemIt) {
-      elem = (*elemIt);
-      nodeIt = elem->nodesIterator();
-      int index=0;
-      while ( nodeIt->more() ) {
-        // find GHS3D ID
-        const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-        map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-        if (it == anEnforcedNodeToGhs3dIdMap.end())
-          throw "Node not found";
-        nedgeP2[index] = it->second;
-        index++;
-      }
-      GmfSetLin(idx, GmfEdgesP2, nedgeP2[0], nedgeP2[1], nedgeP2[2], dummyint);
-//      GmfSetLin(idxRequired, GmfEdges, nedge[0], nedge[1], dummyint);
-      usedEnforcedEdgesP2++;
-    }
-//    GmfCloseMesh(idxRequired);
-  }
+  // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
+//   // GmfEdgesP2
+//   int usedEnforcedEdgesP2 = 0;
+//   if (aQuadEnforcedEdgeSet.size()) {
+// //    idxRequired = GmfOpenMesh(theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
+// //    if (!idxRequired)
+// //      return false;
+//     GmfSetKwd(idx, GmfEdgesP2, aQuadEnforcedEdgeSet.size());
+// //    GmfSetKwd(idxRequired, GmfEdges, anEnforcedEdgeSet.size());
+//     for(elemIt = aQuadEnforcedEdgeSet.begin() ; elemIt != aQuadEnforcedEdgeSet.end() ; ++elemIt) {
+//       elem = (*elemIt);
+//       nodeIt = elem->nodesIterator();
+//       int index=0;
+//       while ( nodeIt->more() ) {
+//         // find GHS3D ID
+//         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+//         map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
+//         if (it == anEnforcedNodeToGhs3dIdMap.end())
+//           throw "Node not found";
+//         nedgeP2[index] = it->second;
+//         index++;
+//       }
+//       GmfSetLin(idx, GmfEdgesP2, nedgeP2[0], nedgeP2[1], nedgeP2[2], dummyint);
+// //      GmfSetLin(idxRequired, GmfEdges, nedge[0], nedge[1], dummyint);
+//       usedEnforcedEdgesP2++;
+//     }
+// //    GmfCloseMesh(idxRequired);
+//   }
 
-  if (usedEnforcedEdges+usedEnforcedEdgesP2) {
-    GmfSetKwd(idx, GmfRequiredEdges, usedEnforcedEdges+usedEnforcedEdgesP2);
-    for (int enfID=1;enfID<=usedEnforcedEdges+usedEnforcedEdgesP2;enfID++) {
+  if (usedEnforcedEdges/*+usedEnforcedEdgesP2*/) {
+    GmfSetKwd(idx, GmfRequiredEdges, usedEnforcedEdges/*+usedEnforcedEdgesP2*/);
+    for (int enfID=1;enfID<=usedEnforcedEdges/*+usedEnforcedEdgesP2*/;enfID++) {
       GmfSetLin(idx, GmfRequiredEdges, enfID);
     }
   }
@@ -1652,103 +1661,106 @@ static bool writeGMFFile(const char*   theMeshFileName,
     }
   }
   
-  // GmfTrianglesP2
-  int usedEnforcedTrianglesP2 = 0;
-  if (aQuadElemSet.size()+aQuadEnforcedTriangleSet.size()) {
-    GmfSetKwd(idx, GmfTrianglesP2, aQuadElemSet.size()+aQuadEnforcedTriangleSet.size());
-    for(elemIt = aQuadElemSet.begin() ; elemIt != aQuadElemSet.end() ; ++elemIt) {
-      elem = (*elemIt);
-      nodeIt = elem->nodesIterator();
-      int index=0;
-      while ( nodeIt->more() ) {
-        // find GHS3D ID
-        const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-        map< const SMDS_MeshNode*,int >::iterator it = aNodeToGhs3dIdMap.find(node);
-        if (it == aNodeToGhs3dIdMap.end())
-          throw "Node not found";
-        ntriP2[index] = it->second;
-        index++;
-      }
-      GmfSetLin(idx, GmfTrianglesP2, ntriP2[0], ntriP2[1], ntriP2[2], ntriP2[3], ntriP2[4], ntriP2[5], dummyint);
-    }
-    if (aQuadEnforcedTriangleSet.size()) {
-      for(elemIt = aQuadEnforcedTriangleSet.begin() ; elemIt != aQuadEnforcedTriangleSet.end() ; ++elemIt) {
-        elem = (*elemIt);
-        nodeIt = elem->nodesIterator();
-        int index=0;
-        while ( nodeIt->more() ) {
-          // find GHS3D ID
-          const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-          map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-          if (it == anEnforcedNodeToGhs3dIdMap.end())
-            throw "Node not found";
-          ntriP2[index] = it->second;
-          index++;
-        }
-        GmfSetLin(idx, GmfTrianglesP2, ntriP2[0], ntriP2[1], ntriP2[2], ntriP2[3], ntriP2[4], ntriP2[5], dummyint);
-        usedEnforcedTrianglesP2++;
-      }
-    }
-  }
+  // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
+//   // GmfTrianglesP2
+//   int usedEnforcedTrianglesP2 = 0;
+//   if (aQuadElemSet.size()+aQuadEnforcedTriangleSet.size()) {
+//     GmfSetKwd(idx, GmfTrianglesP2, aQuadElemSet.size()+aQuadEnforcedTriangleSet.size());
+//     for(elemIt = aQuadElemSet.begin() ; elemIt != aQuadElemSet.end() ; ++elemIt) {
+//       elem = (*elemIt);
+//       nodeIt = elem->nodesIterator();
+//       int index=0;
+//       while ( nodeIt->more() ) {
+//         // find GHS3D ID
+//         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+//         map< const SMDS_MeshNode*,int >::iterator it = aNodeToGhs3dIdMap.find(node);
+//         if (it == aNodeToGhs3dIdMap.end())
+//           throw "Node not found";
+//         ntriP2[index] = it->second;
+//         index++;
+//       }
+//       GmfSetLin(idx, GmfTrianglesP2, ntriP2[0], ntriP2[1], ntriP2[2], ntriP2[3], ntriP2[4], ntriP2[5], dummyint);
+//     }
+//     if (aQuadEnforcedTriangleSet.size()) {
+//       for(elemIt = aQuadEnforcedTriangleSet.begin() ; elemIt != aQuadEnforcedTriangleSet.end() ; ++elemIt) {
+//         elem = (*elemIt);
+//         nodeIt = elem->nodesIterator();
+//         int index=0;
+//         while ( nodeIt->more() ) {
+//           // find GHS3D ID
+//           const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+//           map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
+//           if (it == anEnforcedNodeToGhs3dIdMap.end())
+//             throw "Node not found";
+//           ntriP2[index] = it->second;
+//           index++;
+//         }
+//         GmfSetLin(idx, GmfTrianglesP2, ntriP2[0], ntriP2[1], ntriP2[2], ntriP2[3], ntriP2[4], ntriP2[5], dummyint);
+//         usedEnforcedTrianglesP2++;
+//       }
+//     }
+//   }
   
-  if (usedEnforcedTriangles+usedEnforcedTrianglesP2) {
-    GmfSetKwd(idx, GmfRequiredTriangles, usedEnforcedTriangles+usedEnforcedTrianglesP2);
-    for (int enfID=1;enfID<=usedEnforcedTriangles+usedEnforcedTrianglesP2;enfID++)
-      GmfSetLin(idx, GmfRequiredTriangles, anElemSet.size()+aQuadElemSet.size()+enfID);
+  if (usedEnforcedTriangles/*+usedEnforcedTrianglesP2*/) {
+    GmfSetKwd(idx, GmfRequiredTriangles, usedEnforcedTriangles/*+usedEnforcedTrianglesP2*/);
+    for (int enfID=1;enfID<=usedEnforcedTriangles/*+usedEnforcedTrianglesP2*/;enfID++)
+      GmfSetLin(idx, GmfRequiredTriangles, anElemSet.size()/*+aQuadElemSet.size()*/+enfID);
   }
 
-  // GmfQuadrangles
-  int usedEnforcedQuadrilaterals = 0;
-  if (anEnforcedQuadrangleSet.size()) {
-    GmfSetKwd(idx, GmfQuadrilaterals, anEnforcedQuadrangleSet.size());
-    for(elemIt = anEnforcedQuadrangleSet.begin() ; elemIt != anEnforcedQuadrangleSet.end() ; ++elemIt) {
-      elem = (*elemIt);
-      nodeIt = elem->nodesIterator();
-      int index=0;
-      for ( int j = 0; j < 4; ++j ) {
-        // find GHS3D ID
-        const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-        map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-        if (it == anEnforcedNodeToGhs3dIdMap.end())
-          throw "Node not found";
-        nquad[index] = it->second;
-        index++;
-      }
-      GmfSetLin(idx, GmfQuadrilaterals, nquad[0], nquad[1], nquad[2], nquad[3], dummyint);
-      usedEnforcedQuadrilaterals++;
-    }
-  }
-  
-  // GmfQuadranglesQ2
-  int usedEnforcedQuadrilateralsQ2 = 0;
-  if (aQuadEnforcedQuadrangleSet.size()) {
-    GmfSetKwd(idx, GmfQuadrilateralsQ2, aQuadEnforcedQuadrangleSet.size());
-    for(elemIt = aQuadEnforcedQuadrangleSet.begin() ; elemIt != aQuadEnforcedQuadrangleSet.end() ; ++elemIt) {
-      elem = (*elemIt);
-      nodeIt = elem->nodesIterator();
-      int index=0;
-      while ( nodeIt->more() ) {
-        // find GHS3D ID
-        const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-        map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-        if (it == anEnforcedNodeToGhs3dIdMap.end())
-          throw "Node not found";
-        nquadQ2[index] = it->second;
-        index++;
-      }
-      //
-      // !!! The last value in nquadQ2 is missing because in Salome the quadratic quadrilaterals have only 8 points !!!
-      //
-      GmfSetLin(idx, GmfQuadrilateralsQ2, nquadQ2[0], nquadQ2[1], nquadQ2[2], nquadQ2[3], nquadQ2[4], nquadQ2[5], nquadQ2[6], nquadQ2[7], nquadQ2[8], dummyint);
-      usedEnforcedQuadrilateralsQ2++;
-    }
-  }
-  
-  if (usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2) {
-    GmfSetKwd(idx, GmfRequiredQuadrilaterals, usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2);
-    for (int enfID=1;enfID<=usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2;enfID++)
-      GmfSetLin(idx, GmfRequiredQuadrilaterals, enfID);
-  }
+  // TODO
+//   // GmfQuadrangles
+//   int usedEnforcedQuadrilaterals = 0;
+//   if (anEnforcedQuadrangleSet.size()) {
+//     GmfSetKwd(idx, GmfQuadrilaterals, anEnforcedQuadrangleSet.size());
+//     for(elemIt = anEnforcedQuadrangleSet.begin() ; elemIt != anEnforcedQuadrangleSet.end() ; ++elemIt) {
+//       elem = (*elemIt);
+//       nodeIt = elem->nodesIterator();
+//       int index=0;
+//       for ( int j = 0; j < 4; ++j ) {
+//         // find GHS3D ID
+//         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+//         map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
+//         if (it == anEnforcedNodeToGhs3dIdMap.end())
+//           throw "Node not found";
+//         nquad[index] = it->second;
+//         index++;
+//       }
+//       GmfSetLin(idx, GmfQuadrilaterals, nquad[0], nquad[1], nquad[2], nquad[3], dummyint);
+//       usedEnforcedQuadrilaterals++;
+//     }
+//   }
+//   
+//   // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
+//   // GmfQuadranglesQ2
+//   int usedEnforcedQuadrilateralsQ2 = 0;
+//   if (aQuadEnforcedQuadrangleSet.size()) {
+//     GmfSetKwd(idx, GmfQuadrilateralsQ2, aQuadEnforcedQuadrangleSet.size());
+//     for(elemIt = aQuadEnforcedQuadrangleSet.begin() ; elemIt != aQuadEnforcedQuadrangleSet.end() ; ++elemIt) {
+//       elem = (*elemIt);
+//       nodeIt = elem->nodesIterator();
+//       int index=0;
+//       while ( nodeIt->more() ) {
+//         // find GHS3D ID
+//         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
+//         map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
+//         if (it == anEnforcedNodeToGhs3dIdMap.end())
+//           throw "Node not found";
+//         nquadQ2[index] = it->second;
+//         index++;
+//       }
+//       //
+//       // !!! The last value in nquadQ2 is missing because in Salome the quadratic quadrilaterals have only 8 points !!!
+//       //
+//       GmfSetLin(idx, GmfQuadrilateralsQ2, nquadQ2[0], nquadQ2[1], nquadQ2[2], nquadQ2[3], nquadQ2[4], nquadQ2[5], nquadQ2[6], nquadQ2[7], nquadQ2[8], dummyint);
+//       usedEnforcedQuadrilateralsQ2++;
+//     }
+//   }
+//   
+//   if (usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2) {
+//     GmfSetKwd(idx, GmfRequiredQuadrilaterals, usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2);
+//     for (int enfID=1;enfID<=usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2;enfID++)
+//       GmfSetLin(idx, GmfRequiredQuadrilaterals, enfID);
+//   }
 
   GmfCloseMesh(idx);
   if (idxRequired)
@@ -2032,58 +2044,59 @@ static bool writeGMFFile(const char*   theMeshFileName,
   }
 
   /* QUADRANGLES ========================== */
-  if (nbQuadrangles) {
-    for ( int i = 1; i <= quadranglesMap.Extent(); i++ )
-    {
-      aShape = quadranglesMap(i);
-      theSubMesh = theProxyMesh.GetSubMesh(aShape);
-      if ( !theSubMesh ) continue;
-      itOnSubMesh = theSubMesh->GetElements();
-      for ( int j = 0; j < 4; ++j )
-      {
-        aFace = itOnSubMesh->next();
-        itOnSubFace = aFace->nodesIterator();
-        aqt.clear();
-        while ( itOnSubFace->more() ) {
-          // find GHS3D ID
-          aSmdsID = itOnSubFace->next()->GetID();
-          itOnMap = theSmdsToGhs3dIdMap.find( aSmdsID );
-          ASSERT( itOnMap != theSmdsToGhs3dIdMap.end() );
-          aqt.push_back((*itOnMap).second);
-        }
-        qt.push_back(aqt);
-      }
-    }
-  }
-
-  if (theEnforcedQuadrangles.size()) {
-    // Iterate over the enforced triangles
-    for(elemIt = theEnforcedQuadrangles.begin() ; elemIt != theEnforcedQuadrangles.end() ; ++elemIt) {
-      aFace = (*elemIt);
-      bool isOK = true;
-      itOnSubFace = aFace->nodesIterator();
-      aqt.clear();
-      for ( int j = 0; j < 4; ++j ) {
-        int aNodeID = itOnSubFace->next()->GetID();
-        itOnMap = theNodeId2NodeIndexMap.find(aNodeID);
-        if (itOnMap != theNodeId2NodeIndexMap.end())
-          aqt.push_back((*itOnMap).second);
-        else {
-          isOK = false;
-          theEnforcedQuadrangles.erase(elemIt);
-          break;
-        }
-      }
-      if (isOK)
-        qt.push_back(aqt);
-    }
-  }
-  
-  if (qt.size()) {
-    GmfSetKwd(idx, GmfQuadrilaterals, qt.size());
-    for (int i=0;i<qt.size();i++)
-      GmfSetLin(idx, GmfQuadrilaterals, qt[i][0], qt[i][1], qt[i][2], qt[i][3], dummyint);
-  }
+  // TODO: add pyramids ?
+//   if (nbQuadrangles) {
+//     for ( int i = 1; i <= quadranglesMap.Extent(); i++ )
+//     {
+//       aShape = quadranglesMap(i);
+//       theSubMesh = theProxyMesh.GetSubMesh(aShape);
+//       if ( !theSubMesh ) continue;
+//       itOnSubMesh = theSubMesh->GetElements();
+//       for ( int j = 0; j < 4; ++j )
+//       {
+//         aFace = itOnSubMesh->next();
+//         itOnSubFace = aFace->nodesIterator();
+//         aqt.clear();
+//         while ( itOnSubFace->more() ) {
+//           // find GHS3D ID
+//           aSmdsID = itOnSubFace->next()->GetID();
+//           itOnMap = theSmdsToGhs3dIdMap.find( aSmdsID );
+//           ASSERT( itOnMap != theSmdsToGhs3dIdMap.end() );
+//           aqt.push_back((*itOnMap).second);
+//         }
+//         qt.push_back(aqt);
+//       }
+//     }
+//   }
+// 
+//   if (theEnforcedQuadrangles.size()) {
+//     // Iterate over the enforced triangles
+//     for(elemIt = theEnforcedQuadrangles.begin() ; elemIt != theEnforcedQuadrangles.end() ; ++elemIt) {
+//       aFace = (*elemIt);
+//       bool isOK = true;
+//       itOnSubFace = aFace->nodesIterator();
+//       aqt.clear();
+//       for ( int j = 0; j < 4; ++j ) {
+//         int aNodeID = itOnSubFace->next()->GetID();
+//         itOnMap = theNodeId2NodeIndexMap.find(aNodeID);
+//         if (itOnMap != theNodeId2NodeIndexMap.end())
+//           aqt.push_back((*itOnMap).second);
+//         else {
+//           isOK = false;
+//           theEnforcedQuadrangles.erase(elemIt);
+//           break;
+//         }
+//       }
+//       if (isOK)
+//         qt.push_back(aqt);
+//     }
+//   }
+//   
+//   if (qt.size()) {
+//     GmfSetKwd(idx, GmfQuadrilaterals, qt.size());
+//     for (int i=0;i<qt.size();i++)
+//       GmfSetLin(idx, GmfQuadrilaterals, qt[i][0], qt[i][1], qt[i][2], qt[i][3], dummyint);
+//   }
   
 
   /* ========================== EDGES ========================== */
@@ -2120,418 +2133,6 @@ static bool writeGMFFile(const char*   theMeshFileName,
   GmfCloseMesh(idx);
   return true;
 }
-
-//=======================================================================
-//function : writeFaces
-//purpose  : Write Faces in case if generate 3D mesh with geometry
-//=======================================================================
-
-// static bool writeFaces (ofstream &             theFile,
-//                         const SMESH_ProxyMesh& theMesh,
-//                         const TopoDS_Shape&    theShape,
-//                         const map <int,int> &  theSmdsToGhs3dIdMap,
-//                         const map <int,int> &  theEnforcedNodeIdToGhs3dIdMap,
-//                         TIDSortedElemSet & theEnforcedEdges,
-//                         TIDSortedElemSet & theEnforcedTriangles,
-//                         TIDSortedElemSet & theEnforcedQuadrangles)
-// {
-//   // record structure:
-//   //
-//   // NB_ELEMS DUMMY_INT
-//   // Loop from 1 to NB_ELEMS
-//   // NB_NODES NODE_NB_1 NODE_NB_2 ... (NB_NODES + 1) times: DUMMY_INT
-// 
-//   TopoDS_Shape aShape;
-//   const SMESHDS_SubMesh* theSubMesh;
-//   const SMDS_MeshElement* aFace;
-//   const char* space    = "  ";
-//   const int   dummyint = 0;
-//   map<int,int>::const_iterator itOnMap;
-//   SMDS_ElemIteratorPtr itOnSubMesh, itOnSubFace;
-//   int nbNodes, aSmdsID;
-// 
-//   TIDSortedElemSet::const_iterator elemIt;
-//   int nbEnforcedEdges       = theEnforcedEdges.size();
-//   int nbEnforcedTriangles   = theEnforcedTriangles.size();
-//   int nbEnforcedQuadrangles = theEnforcedQuadrangles.size();
-//   // count triangles bound to geometry
-//   int nbTriangles = 0;
-// 
-//   TopTools_IndexedMapOfShape facesMap, trianglesMap, quadranglesMap;
-//   TopExp::MapShapes( theShape, TopAbs_FACE, facesMap );
-// 
-//   for ( int i = 1; i <= facesMap.Extent(); ++i )
-//     if (( theSubMesh  = theMesh.GetSubMesh( facesMap(i))))
-//       nbTriangles += theSubMesh->NbElements();
-// 
-//   std::cout << "    " << facesMap.Extent() << " shapes of 2D dimension and" << std::endl;
-//   if (nbEnforcedEdges+nbEnforcedTriangles+nbEnforcedQuadrangles)
-//     std::cout << "    " << nbEnforcedEdges+nbEnforcedTriangles+nbEnforcedQuadrangles 
-//                         << " enforced shapes:" << std::endl;
-//   if (nbEnforcedEdges)
-//     std::cout << "      " << nbEnforcedEdges << " enforced edges" << std::endl;
-//   if (nbEnforcedTriangles)
-//     std::cout << "      " << nbEnforcedTriangles << " enforced triangles" << std::endl;
-//   if (nbEnforcedQuadrangles)
-//     std::cout << "      " << nbEnforcedQuadrangles << " enforced quadrangles" << std::endl;
-//   std::cout << std::endl;
-// 
-// //   theFile << space << nbTriangles << space << dummyint << std::endl;
-//   std::ostringstream globalStream, localStream, aStream;
-// 
-//   //
-//   //        FACES : BEGIN
-//   //
-//   
-//   for ( int i = 1; i <= facesMap.Extent(); i++ )
-//   {
-//     aShape = facesMap(i);
-//     theSubMesh = theMesh.GetSubMesh(aShape);
-//     if ( !theSubMesh ) continue;
-//     itOnSubMesh = theSubMesh->GetElements();
-//     while ( itOnSubMesh->more() )
-//     {
-//       aFace = itOnSubMesh->next();
-//       nbNodes = aFace->NbNodes();
-// 
-//       localStream << nbNodes << space;
-// 
-//       itOnSubFace = aFace->nodesIterator();
-//       while ( itOnSubFace->more() ) {
-//         // find GHS3D ID
-//         aSmdsID = itOnSubFace->next()->GetID();
-//         itOnMap = theSmdsToGhs3dIdMap.find( aSmdsID );
-//         // if ( itOnMap == theSmdsToGhs3dIdMap.end() ) {
-//         //   cout << "not found node: " << aSmdsID << endl;
-//         //   return false;
-//         // }
-//         ASSERT( itOnMap != theSmdsToGhs3dIdMap.end() );
-// 
-//         localStream << (*itOnMap).second << space ;
-//       }
-// 
-//       // (NB_NODES + 1) times: DUMMY_INT
-//       for ( int j=0; j<=nbNodes; j++)
-//         localStream << dummyint << space ;
-// 
-//       localStream << std::endl;
-//     }
-//   }
-//   
-//   globalStream << localStream.str();
-//   localStream.str("");
-// 
-//   //
-//   //        FACES : END
-//   //
-// 
-//   //
-//   //        ENFORCED EDGES : BEGIN
-//   //
-//   
-//   // Iterate over the enforced edges
-//   int usedEnforcedEdges = 0;
-//   bool isOK;
-//   for(elemIt = theEnforcedEdges.begin() ; elemIt != theEnforcedEdges.end() ; ++elemIt) {
-//     aFace = (*elemIt);
-//     isOK = true;
-//     itOnSubFace = aFace->nodesIterator();
-//     aStream.str("");
-//     aStream << "2" << space ;
-//     while ( itOnSubFace->more() ) {
-//       aSmdsID = itOnSubFace->next()->GetID();
-//       itOnMap = theEnforcedNodeIdToGhs3dIdMap.find(aSmdsID);
-//       if (itOnMap != theEnforcedNodeIdToGhs3dIdMap.end())
-//         aStream << (*itOnMap).second << space;
-//       else {
-//         isOK = false;
-//         break;
-//       }
-//     }
-//     if (isOK) {
-//       for ( int j=0; j<=2; j++)
-//         aStream << dummyint << space ;
-// //       aStream << dummyint << space << dummyint;
-//       localStream << aStream.str() << std::endl;
-//       usedEnforcedEdges++;
-//     }
-//   }
-//   
-//   if (usedEnforcedEdges) {
-//     globalStream << localStream.str();
-//     localStream.str("");
-//   }
-// 
-//   //
-//   //        ENFORCED EDGES : END
-//   //
-//   //
-// 
-//   //
-//   //        ENFORCED TRIANGLES : BEGIN
-//   //
-//     // Iterate over the enforced triangles
-//   int usedEnforcedTriangles = 0;
-//   for(elemIt = theEnforcedTriangles.begin() ; elemIt != theEnforcedTriangles.end() ; ++elemIt) {
-//     aFace = (*elemIt);
-//     isOK = true;
-//     itOnSubFace = aFace->nodesIterator();
-//     aStream.str("");
-//     aStream << "3" << space ;
-//     while ( itOnSubFace->more() ) {
-//       aSmdsID = itOnSubFace->next()->GetID();
-//       itOnMap = theEnforcedNodeIdToGhs3dIdMap.find(aSmdsID);
-//       if (itOnMap != theEnforcedNodeIdToGhs3dIdMap.end())
-//         aStream << (*itOnMap).second << space;
-//       else {
-//         isOK = false;
-//         break;
-//       }
-//     }
-//     if (isOK) {
-//       for ( int j=0; j<=3; j++)
-//         aStream << dummyint << space ;
-//       localStream << aStream.str() << std::endl;
-//       usedEnforcedTriangles++;
-//     }
-//   }
-//   
-//   if (usedEnforcedTriangles) {
-//     globalStream << localStream.str();
-//     localStream.str("");
-//   }
-// 
-//   //
-//   //        ENFORCED TRIANGLES : END
-//   //
-// 
-//   //
-//   //        ENFORCED QUADRANGLES : BEGIN
-//   //
-//     // Iterate over the enforced quadrangles
-//   int usedEnforcedQuadrangles = 0;
-//   for(elemIt = theEnforcedQuadrangles.begin() ; elemIt != theEnforcedQuadrangles.end() ; ++elemIt) {
-//     aFace = (*elemIt);
-//     isOK = true;
-//     itOnSubFace = aFace->nodesIterator();
-//     aStream.str("");
-//     aStream << "4" << space ;
-//     while ( itOnSubFace->more() ) {
-//       aSmdsID = itOnSubFace->next()->GetID();
-//       itOnMap = theEnforcedNodeIdToGhs3dIdMap.find(aSmdsID);
-//       if (itOnMap != theEnforcedNodeIdToGhs3dIdMap.end())
-//         aStream << (*itOnMap).second << space;
-//       else {
-//         isOK = false;
-//         break;
-//       }
-//     }
-//     if (isOK) {
-//       for ( int j=0; j<=4; j++)
-//         aStream << dummyint << space ;
-//       localStream << aStream.str() << std::endl;
-//       usedEnforcedQuadrangles++;
-//     }
-//   }
-//   
-//   if (usedEnforcedQuadrangles) {
-//     globalStream << localStream.str();
-//     localStream.str("");
-//   }
-//   //
-//   //        ENFORCED QUADRANGLES : END
-//   //
-// 
-//   theFile
-//   << nbTriangles+usedEnforcedQuadrangles+usedEnforcedTriangles+usedEnforcedEdges
-//   << " 0" << std::endl
-//   << globalStream.str();
-// 
-//   return true;
-// }
-
-//=======================================================================
-//function : writePoints
-//purpose  : 
-//=======================================================================
-
-// static bool writePoints (ofstream &                       theFile,
-//                          SMESH_MesherHelper&              theHelper,
-//                          map <int,int> &                  theSmdsToGhs3dIdMap,
-//                          map <int,int> &                  theEnforcedNodeIdToGhs3dIdMap,
-//                          map <int,const SMDS_MeshNode*> & theGhs3dIdToNodeMap,
-//                          GHS3DPlugin_Hypothesis::TID2SizeMap & theNodeIDToSizeMap,
-//                          GHS3DPlugin_Hypothesis::TEnforcedVertexValues & theEnforcedVertices,
-//                          TIDSortedNodeSet & theEnforcedNodes)
-// {
-//   // record structure:
-//   //
-//   // NB_NODES
-//   // Loop from 1 to NB_NODES
-//   //   X Y Z DUMMY_INT
-// 
-//   SMESHDS_Mesh * theMesh = theHelper.GetMeshDS();
-//   int nbNodes = theMesh->NbNodes();
-//   if ( nbNodes == 0 )
-//     return false;
-//   int nbEnforcedVertices = theEnforcedVertices.size();
-//   int nbEnforcedNodes    = theEnforcedNodes.size();
-// 
-//   int aGhs3dID = 1;
-//   SMDS_NodeIteratorPtr it = theMesh->nodesIterator();
-//   const SMDS_MeshNode* node;
-// 
-//   // Issue 020674: EDF 870 SMESH: Mesh generated by Netgen not usable by GHS3D
-//   // The problem is in nodes on degenerated edges, we need to skip them
-//   if ( theHelper.HasDegeneratedEdges() )
-//   {
-//     // here we decrease total nb of nodes by nb of nodes on degenerated edges
-//     set<int> checkedSM;
-//     for (TopExp_Explorer e(theMesh->ShapeToMesh(), TopAbs_EDGE ); e.More(); e.Next())
-//     {
-//       SMESH_subMesh* sm = theHelper.GetMesh()->GetSubMesh( e.Current() );
-//       if ( checkedSM.insert( sm->GetId() ).second && theHelper.IsDegenShape(sm->GetId() )) {
-//         if ( sm->GetSubMeshDS() )
-//           nbNodes -= sm->GetSubMeshDS()->NbNodes();
-//       }
-//     }
-//   }
-// 
-//   const bool isQuadMesh = 
-//     theHelper.GetMesh()->NbEdges( ORDER_QUADRATIC ) ||
-//     theHelper.GetMesh()->NbFaces( ORDER_QUADRATIC ) ||
-//     theHelper.GetMesh()->NbVolumes( ORDER_QUADRATIC );
-//   if ( isQuadMesh )
-//   {
-//     // descrease nbNodes by nb of medium nodes
-//     while ( it->more() )
-//     {
-//       node = it->next();
-//       if ( !theHelper.IsDegenShape( node->getshapeId() ))
-//         nbNodes -= int( theHelper.IsMedium( node ));
-//     }
-//     it = theMesh->nodesIterator();
-//   }
-// 
-//   const char* space    = "  ";
-//   const int   dummyint = 0;
-// 
-//   // NB_NODES
-//   std::cout << std::endl;
-//   std::cout << "The initial 2D mesh contains :" << std::endl;
-//   std::cout << "    " << nbNodes << " nodes" << std::endl;
-//   if (nbEnforcedVertices > 0)
-//     std::cout << "    " << nbEnforcedVertices << " enforced vertices" << std::endl;
-//   if (nbEnforcedNodes > 0)
-//     std::cout << "    " << nbEnforcedNodes << " enforced nodes" << std::endl;
-// 
-// //   std::cout << std::endl;
-// //   std::cout << "Start writing in 'points' file ..." << std::endl;
-//   theFile << nbNodes << space << std::endl;
-// 
-//   // Loop from 1 to NB_NODES
-// 
-//   while ( it->more() )
-//   {
-//     node = it->next();
-//     if (( isQuadMesh && theHelper.IsMedium( node )) || // Issue 0021238
-//         theHelper.IsDegenShape( node->getshapeId() )) // Issue 0020674
-//       continue;
-// 
-//     theSmdsToGhs3dIdMap.insert( make_pair( node->GetID(), aGhs3dID ));
-//     theGhs3dIdToNodeMap.insert( make_pair( aGhs3dID, node ));
-//     aGhs3dID++;
-// 
-//     // X Y Z DUMMY_INT
-//     theFile
-//     << node->X() << space 
-//     << node->Y() << space 
-//     << node->Z() << space 
-//     << dummyint << space ;
-//     theFile << std::endl;
-// 
-//   }
-//   
-//   // Iterate over the enforced nodes
-//   TIDSortedNodeSet::const_iterator nodeIt;
-//   std::map<int,double> enfVertexIndexSizeMap;
-//   if (nbEnforcedNodes) {
-//     for(nodeIt = theEnforcedNodes.begin() ; nodeIt != theEnforcedNodes.end() ; ++nodeIt) {
-//       double x = (*nodeIt)->X();
-//       double y = (*nodeIt)->Y();
-//       double z = (*nodeIt)->Z();
-//       // Test if point is inside shape to mesh
-//       gp_Pnt myPoint(x,y,z);
-//       BRepClass3d_SolidClassifier scl(theMesh->ShapeToMesh());
-//       scl.Perform(myPoint, 1e-7);
-//       TopAbs_State result = scl.State();
-//       if ( result != TopAbs_IN )
-//         continue;
-//       std::vector<double> coords;
-//       coords.push_back(x);
-//       coords.push_back(y);
-//       coords.push_back(z);
-//       if (theEnforcedVertices.find(coords) != theEnforcedVertices.end())
-//         continue;
-//         
-//       double size = theNodeIDToSizeMap.find((*nodeIt)->GetID())->second;
-//   //       theGhs3dIdToNodeMap.insert( make_pair( nbNodes + i, (*nodeIt) ));
-//   //       MESSAGE("Adding enforced node (" << x << "," << y <<"," << z << ")");
-//       // X Y Z PHY_SIZE DUMMY_INT
-//       theFile
-//       << x << space 
-//       << y << space 
-//       << z << space
-//       << size << space
-//       << dummyint << space;
-//       theFile << std::endl;
-//       theEnforcedNodeIdToGhs3dIdMap.insert( make_pair( (*nodeIt)->GetID(), aGhs3dID ));
-//       enfVertexIndexSizeMap[aGhs3dID] = -1;
-//       aGhs3dID++;
-//   //     else
-//   //         MESSAGE("Enforced vertex (" << x << "," << y <<"," << z << ") is not inside the geometry: it was not added ");
-//     }
-//   }
-//   
-//   if (nbEnforcedVertices) {
-//     // Iterate over the enforced vertices
-//     GHS3DPlugin_Hypothesis::TEnforcedVertexValues::const_iterator vertexIt;
-// //     int i = 1;
-//     for(vertexIt = theEnforcedVertices.begin() ; vertexIt != theEnforcedVertices.end() ; ++vertexIt) {
-//       double x = vertexIt->first[0];
-//       double y = vertexIt->first[1];
-//       double z = vertexIt->first[2];
-//       // Test if point is inside shape to mesh
-//       gp_Pnt myPoint(x,y,z);
-//       BRepClass3d_SolidClassifier scl(theMesh->ShapeToMesh());
-//       scl.Perform(myPoint, 1e-7);
-//       TopAbs_State result = scl.State();
-//       if ( result != TopAbs_IN )
-//         continue;
-//   //         MESSAGE("Adding enforced vertex (" << x << "," << y <<"," << z << ") = " << vertexIt->second);
-//           // X Y Z PHY_SIZE DUMMY_INT
-//       theFile
-//       << x << space 
-//       << y << space 
-//       << z << space
-//       << vertexIt->second << space 
-//       << dummyint << space;
-//       theFile << std::endl;
-//       enfVertexIndexSizeMap[aGhs3dID] = vertexIt->second;
-//       aGhs3dID++;
-//       
-//   //     else
-//   //         MESSAGE("Enforced vertex (" << x << "," << y <<"," << z << ") is not inside the geometry: it was not added ");
-//     }
-//   }
-//   theFile << std::endl;
-//   
-//   
-// //   std::cout << std::endl;
-// //   std::cout << "End writing in 'points' file." << std::endl;
-// 
-//   return true;
-// }
 
 
 //=======================================================================
