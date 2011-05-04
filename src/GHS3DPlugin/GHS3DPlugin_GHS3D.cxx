@@ -979,6 +979,13 @@ static bool readGMFFile(const char*                     theFile,
   int nbInitialNodes = theNodeByGhs3dId.size();
   std::cout << "theNodeByGhs3dId.size(): " << nbInitialNodes << std::endl;
 
+  const bool isQuadMesh = 
+  theHelper->GetMesh()->NbEdges( ORDER_QUADRATIC ) ||
+  theHelper->GetMesh()->NbFaces( ORDER_QUADRATIC ) ||
+  theHelper->GetMesh()->NbVolumes( ORDER_QUADRATIC );
+  std::cout << "isQuadMesh: " << isQuadMesh << std::endl;
+  
+  theHelper->SetIsQuadratic(isQuadMesh);
   // ---------------------------------
   // Read generated elements and nodes
   // ---------------------------------
@@ -1072,7 +1079,6 @@ static bool readGMFFile(const char*                     theFile,
         }
         if (iElem >= nbInitialNodes) {
           GMFNode[ aGMFID ] = aGMFNode;
-          std::cout << "GMFNode["<<aGMFID<<"]: " << aGMFNode ;
           nodeAssigne[ aGMFID ] = 0;
         }
       }
@@ -1161,18 +1167,18 @@ static bool readGMFFile(const char*                     theFile,
         {
         case GmfEdges: {
           if (fullyCreatedElement)
-            theHelper->AddEdge( node[0], node[1] );
+            theHelper->AddEdge( node[0], node[1], /*id =*/0, /*force3d =*/false );
           break;
         }
         case GmfTriangles: {
           if (fullyCreatedElement)
-            theMeshDS->AddFace( node[0], node[1], node[2]);
+            theHelper->AddFace( node[0], node[1], node[2], /*id =*/0, /*force3d =*/false );
           break;
         }
 //         case GmfQuadrilaterals:
-//           theMeshDS->AddFace( node[0], node[1], node[2], node[3] ); break;
+//           theHelper->AddFace( node[0], node[1], node[2], node[3] ); break;
         case GmfTetrahedra:
-          theHelper->AddVolume( node[0], node[1], node[2], node[3] );
+          theHelper->AddVolume( node[0], node[1], node[2], node[3], /*id =*/0, /*force3d =*/false );
           break;
 //         case GmfHexahedra:
 //           theHelper->AddVolume( node[0], node[3], node[2], node[1],
