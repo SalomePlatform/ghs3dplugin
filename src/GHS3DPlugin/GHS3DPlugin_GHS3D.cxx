@@ -964,16 +964,20 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //=======================================================================
 
 
-static bool readGMFFile(const char* theFile,
+static bool readGMFFile(const char*                     theFile,
 #ifdef WITH_SMESH_CANCEL_COMPUTE
-                        GHS3DPlugin_GHS3D*  theAlgo,
+                        GHS3DPlugin_GHS3D*              theAlgo,
 #endif 
-                        SMESH_MesherHelper* theHelper,
-                        TIDSortedNodeSet &  theEnforcedNodes,
-                        TIDSortedElemSet &  theEnforcedTriangles,
-                        TIDSortedElemSet &  theEnforcedQuadrangles)
+                        SMESH_MesherHelper*             theHelper,
+                        vector <const SMDS_MeshNode*> & theNodeByGhs3dId,
+                        TIDSortedNodeSet &              theEnforcedNodes,
+                        TIDSortedElemSet &              theEnforcedTriangles,
+                        TIDSortedElemSet &              theEnforcedQuadrangles)
 {
-  SMESHDS_Mesh* theMesh = theHelper->GetMeshDS();
+  SMESHDS_Mesh* theMeshDS = theHelper->GetMeshDS();
+
+  int nbInitialNodes = theNodeByGhs3dId.size();
+  std::cout << "theNodeByGhs3dId.size(): " << nbInitialNodes << std::endl;
 
   // ---------------------------------
   // Read generated elements and nodes
@@ -985,14 +989,14 @@ static bool readGMFFile(const char* theFile,
   SMDS_MeshNode** GMFNode;
   std::map <GmfKwdCod,int> tabRef;
 
-  tabRef[GmfVertices]       = 3;
-  tabRef[GmfCorners]        = 1;
-  tabRef[GmfEdges]          = 2;
-  tabRef[GmfRidges]         = 1;
-  tabRef[GmfTriangles]      = 3;
-  tabRef[GmfQuadrilaterals] = 4;
-  tabRef[GmfTetrahedra]     = 4;
-  tabRef[GmfHexahedra]      = 8;
+  tabRef[GmfVertices]       = 3; // for new nodes and enforced nodes
+//   tabRef[GmfCorners]        = 1;
+  tabRef[GmfEdges]          = 2; // for enforced edges
+//   tabRef[GmfRidges]         = 1;
+  tabRef[GmfTriangles]      = 3; // for enforced faces
+//   tabRef[GmfQuadrilaterals] = 4;
+  tabRef[GmfTetrahedra]     = 4; // for new tetras
+//   tabRef[GmfHexahedra]      = 8;
 
   int ver, dim;
   MESSAGE("Read " << theFile << " file");
@@ -1000,11 +1004,13 @@ static bool readGMFFile(const char* theFile,
   if (!InpMsh)
     return false;
 
-  // TODO: - Get the medium nodes from quadratic elements
-  //       - Get the 3d elements
-  theHelper->GetMesh()->Clear();
+  // TODO:
+  // Do not clear mesh : DONE
+  // Skip input nodes : DONE
+  // Skip input face (keep only enforced faces) : DONE
+  // Skip input edge (keep only enforced edges) : DONE
 
-  int nbVertices = GmfStatKwd(InpMsh, GmfVertices);
+  int nbVertices = GmfStatKwd(InpMsh, GmfVertices) - nbInitialNodes;
   GMFNode = new SMDS_MeshNode*[ nbVertices + 1 ];
   nodeAssigne = new int[ nbVertices + 1 ];
 
@@ -1031,10 +1037,12 @@ static bool readGMFFile(const char* theFile,
     else
       continue;
 
-    int id[nbElem*tabRef[token]];
+    int id[nbElem*tabRef[token]]; // node ids
 
     if (token == GmfVertices) {
       std::cout << " vertices" << std::endl;
+      std::cout << nbInitialNodes << " from input mesh " << std::endl;
+
       int aGMFID;
 
       float VerTab_f[nbElem][3];
@@ -1050,29 +1058,35 @@ static bool readGMFFile(const char* theFile,
           return false;
         }
 #endif
-        aGMFID = iElem + 1;
+        if (iElem >= nbInitialNodes)
+          aGMFID = iElem -nbInitialNodes +1;
         if (ver == GmfFloat) {
           GmfGetLin(InpMsh, token, &VerTab_f[nbElem][0], &VerTab_f[nbElem][1], &VerTab_f[nbElem][2], &dummy);
-          aGMFNode = theMesh->AddNode(VerTab_f[nbElem][0], VerTab_f[nbElem][1], VerTab_f[nbElem][2]);
+          if (iElem >= nbInitialNodes)
+            aGMFNode = theMeshDS->AddNode(VerTab_f[nbElem][0], VerTab_f[nbElem][1], VerTab_f[nbElem][2]);
         }
         else {
           GmfGetLin(InpMsh, token, &VerTab_d[nbElem][0], &VerTab_d[nbElem][1], &VerTab_d[nbElem][2], &dummy);
-          aGMFNode = theMesh->AddNode(VerTab_d[nbElem][0], VerTab_d[nbElem][1], VerTab_d[nbElem][2]);
+          if (iElem >= nbInitialNodes)
+            aGMFNode = theMeshDS->AddNode(VerTab_d[nbElem][0], VerTab_d[nbElem][1], VerTab_d[nbElem][2]);
         }
-        GMFNode[ aGMFID ] = aGMFNode;
-        nodeAssigne[ aGMFID ] = 0;
+        if (iElem >= nbInitialNodes) {
+          GMFNode[ aGMFID ] = aGMFNode;
+          std::cout << "GMFNode["<<aGMFID<<"]: " << aGMFNode ;
+          nodeAssigne[ aGMFID ] = 0;
+        }
       }
     }
-    else if (token == GmfCorners && nbElem > 0) {
-      std::cout << " corners" << std::endl;
-      for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]]);
-    }
-    else if (token == GmfRidges && nbElem > 0) {
-      std::cout << " ridges" << std::endl;
-      for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]]);
-    }
+//     else if (token == GmfCorners && nbElem > 0) {
+//       std::cout << " corners" << std::endl;
+//       for ( int iElem = 0; iElem < nbElem; iElem++ )
+//         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]]);
+//     }
+//     else if (token == GmfRidges && nbElem > 0) {
+//       std::cout << " ridges" << std::endl;
+//       for ( int iElem = 0; iElem < nbElem; iElem++ )
+//         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]]);
+//     }
     else if (token == GmfEdges && nbElem > 0) {
       std::cout << " edges" << std::endl;
       for ( int iElem = 0; iElem < nbElem; iElem++ )
@@ -1083,33 +1097,34 @@ static bool readGMFFile(const char* theFile,
       for ( int iElem = 0; iElem < nbElem; iElem++ )
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &dummy);
     }
-    else if (token == GmfQuadrilaterals && nbElem > 0) {
-      std::cout << " Quadrilaterals" << std::endl;
-      for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &dummy);
-    }
+//     else if (token == GmfQuadrilaterals && nbElem > 0) {
+//       std::cout << " Quadrilaterals" << std::endl;
+//       for ( int iElem = 0; iElem < nbElem; iElem++ )
+//         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &dummy);
+//     }
     else if (token == GmfTetrahedra && nbElem > 0) {
       std::cout << " Tetrahedra" << std::endl;
       for ( int iElem = 0; iElem < nbElem; iElem++ )
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &dummy);
     }
-    else if (token == GmfHexahedra && nbElem > 0) {
-      std::cout << " Hexahedra" << std::endl;
-      for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3],
-                  &id[iElem*tabRef[token]+4], &id[iElem*tabRef[token]+5], &id[iElem*tabRef[token]+6], &id[iElem*tabRef[token]+7], &dummy);
-    }
+//     else if (token == GmfHexahedra && nbElem > 0) {
+//       std::cout << " Hexahedra" << std::endl;
+//       for ( int iElem = 0; iElem < nbElem; iElem++ )
+//         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3],
+//                   &id[iElem*tabRef[token]+4], &id[iElem*tabRef[token]+5], &id[iElem*tabRef[token]+6], &id[iElem*tabRef[token]+7], &dummy);
+//     }
     std::cout << std::endl;
 
     switch (token) {
-    case GmfCorners:
-    case GmfRidges:
+//     case GmfCorners:
+//     case GmfRidges:
     case GmfEdges:
     case GmfTriangles:
-    case GmfQuadrilaterals:
+//     case GmfQuadrilaterals:
     case GmfTetrahedra:
-    case GmfHexahedra: {
-      std::vector< SMDS_MeshNode* > node( nbRef );
+//     case GmfHexahedra:
+    {
+      std::vector< const SMDS_MeshNode* > node( nbRef );
       std::vector< int >          nodeID( nbRef );
       std::vector< SMDS_MeshNode* > enfNode( nbRef );
 
@@ -1123,33 +1138,48 @@ static bool readGMFFile(const char* theFile,
           return false;
         }
 #endif
+        // Check if elem is already in input mesh. If yes => skip
+        bool fullyCreatedElement = false; // if at least one of the nodes was created
         for ( int iRef = 0; iRef < nbRef; iRef++ )
         {
           aGMFNodeID = id[iElem*tabRef[token]+iRef]; // read nbRef aGMFNodeID
-          node  [ iRef ] = GMFNode[ aGMFNodeID ];
-          nodeID[ iRef ] = aGMFNodeID;
+          if (aGMFNodeID <= nbInitialNodes) // input nodes
+          {
+            aGMFNodeID--;
+            node[ iRef ] = theNodeByGhs3dId[aGMFNodeID];
+          }
+          else
+          {
+            fullyCreatedElement = true;
+            aGMFNodeID -= nbInitialNodes;
+            nodeID[ iRef ] = aGMFNodeID ;
+            node  [ iRef ] = GMFNode[ aGMFNodeID ];
+          }
         }
 
         switch (token)
         {
-        case GmfEdges:
-          theHelper->AddEdge( node[0], node[1] ); break;
+        case GmfEdges: {
+          if (fullyCreatedElement)
+            theHelper->AddEdge( node[0], node[1] );
+          break;
+        }
         case GmfTriangles: {
-          theMesh->AddFace( node[0], node[1], node[2]);
+          if (fullyCreatedElement)
+            theMeshDS->AddFace( node[0], node[1], node[2]);
           break;
         }
-        case GmfQuadrilaterals: {
-          theMesh->AddFace( node[0], node[1], node[2], node[3] );
-          break;
-        }
+//         case GmfQuadrilaterals:
+//           theMeshDS->AddFace( node[0], node[1], node[2], node[3] ); break;
         case GmfTetrahedra:
-          theHelper->AddVolume( node[0], node[1], node[2], node[3] ); break;
-        case GmfHexahedra:
-          theHelper->AddVolume( node[0], node[3], node[2], node[1],
-                                node[4], node[7], node[6], node[5] ); break;
+          theHelper->AddVolume( node[0], node[1], node[2], node[3] );
+          break;
+//         case GmfHexahedra:
+//           theHelper->AddVolume( node[0], node[3], node[2], node[1],
+//                                 node[4], node[7], node[6], node[5] ); break;
         default: continue;
         }
-        if ( token == GmfTriangles || token == GmfQuadrilaterals ) // "Quadrilaterals" and "Triangles"
+        if ( token == GmfTriangles /*|| token == GmfQuadrilaterals*/ )
           for ( int iRef = 0; iRef < nbRef; iRef++ )
             nodeAssigne[ nodeID[ iRef ]] = 1;
       }
@@ -1169,7 +1199,7 @@ static bool readGMFFile(const char* theFile,
     }
 #endif
     if ( !nodeAssigne[ i+1 ])
-      theMesh->SetNodeInVolume( GMFNode[ i+1 ], shapeID );
+      theMeshDS->SetNodeInVolume( GMFNode[ i+1 ], shapeID );
   }
 
   GmfCloseMesh(InpMsh);
@@ -1178,18 +1208,18 @@ static bool readGMFFile(const char* theFile,
   return true;
 }
 
-static bool writeGMFFile(const char*   theMeshFileName,
-                         const char*   theRequiredFileName,
-                         const char*   theSolFileName,
-                         const SMESH_ProxyMesh&           theProxyMesh,
-                         SMESH_Mesh *                     theMesh,
-                         vector <const SMDS_MeshNode*> &  theNodeByGhs3dId,
-                         vector <const SMDS_MeshNode*> &  theEnforcedNodeByGhs3dId,
-                         TIDSortedNodeSet &               theEnforcedNodes,
-                         TIDSortedElemSet &               theEnforcedEdges,
-                         TIDSortedElemSet &               theEnforcedTriangles,
-                         TIDSortedElemSet &               theEnforcedQuadrangles,
-                         GHS3DPlugin_Hypothesis::TEnforcedVertexValues & theEnforcedVertices)
+static bool writeGMFFile(const char*                                     theMeshFileName,
+                         const char*                                     theRequiredFileName,
+                         const char*                                     theSolFileName,
+                         const SMESH_ProxyMesh&                          theProxyMesh,
+                         SMESH_Mesh *                                    theMesh,
+                         vector <const SMDS_MeshNode*> &                 theNodeByGhs3dId,
+                         vector <const SMDS_MeshNode*> &                 theEnforcedNodeByGhs3dId,
+                         TIDSortedNodeSet &                              theEnforcedNodes,
+                         TIDSortedElemSet &                              theEnforcedEdges,
+                         TIDSortedElemSet &                              theEnforcedTriangles,
+                         TIDSortedElemSet &                              theEnforcedQuadrangles,
+                         GHS3DPlugin_Hypothesis::TEnforcedVertexValues & theEnforcedVertices )
 {
   MESSAGE("writeGMFFile w/o geometry");
   int idx, idxRequired, idxSol;
@@ -2583,6 +2613,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     INFOS( "Can't write into " << aSmdsToGhs3dIdMapFileName);
     return error(SMESH_Comment("Can't write into ") << aSmdsToGhs3dIdMapFileName);
   }
+  INFOS( "Writing ids relation into " << aSmdsToGhs3dIdMapFileName);
   aIdsFile << "Smds Ghs3d" << std::endl;
   map <int,int>::const_iterator myit;
   for (myit=aSmdsToGhs3dIdMap.begin() ; myit != aSmdsToGhs3dIdMap.end() ; ++myit) {
@@ -2914,7 +2945,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 #ifdef WITH_SMESH_CANCEL_COMPUTE
                    this,
 #endif
-                   theHelper, 
+                   theHelper, aNodeByGhs3dId,
                    enforcedNodesFromEnforcedElem, enforcedTriangles, enforcedQuadrangles);
 // #endif
   
@@ -3558,9 +3589,10 @@ bool GHS3DPlugin_GHS3D::importGMFMesh(const char* theGMFFileName, SMESH_Mesh& th
   SMESH_MesherHelper* helper = new SMESH_MesherHelper(theMesh );
   TIDSortedElemSet dummyElemSet;
   TIDSortedNodeSet dummyNodeSet;
+  vector <const SMDS_MeshNode*> dummyNodeVector;
   return readGMFFile(theGMFFileName, 
 #ifdef WITH_SMESH_CANCEL_COMPUTE
                    this,
 #endif
-                   helper, dummyNodeSet , dummyElemSet, dummyElemSet);
+                   helper, dummyNodeVector, dummyNodeSet , dummyElemSet, dummyElemSet);
 }
