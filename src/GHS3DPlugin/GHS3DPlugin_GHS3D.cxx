@@ -1178,7 +1178,7 @@ static bool readGMFFile(const char*                     theFile,
 //         case GmfQuadrilaterals:
 //           theHelper->AddFace( node[0], node[1], node[2], node[3] ); break;
         case GmfTetrahedra:
-          theHelper->AddVolume( node[0], node[1], node[2], node[3], /*id =*/0, /*force3d =*/false );
+          theHelper->AddVolume( node[1], node[0], node[2], node[3], /*id =*/0, /*force3d =*/false );
           break;
 //         case GmfHexahedra:
 //           theHelper->AddVolume( node[0], node[3], node[2], node[1],
@@ -1196,14 +1196,6 @@ static bool readGMFFile(const char*                     theFile,
 
   shapeID = theHelper->GetSubShapeID();
   for ( int i = 0; i < nbVertices; ++i ) {
-#ifdef WITH_SMESH_CANCEL_COMPUTE
-    if(theAlgo->computeCanceled()) {
-      GmfCloseMesh(InpMsh);
-      delete [] GMFNode;
-      delete [] nodeAssigne;
-      return false;
-    }
-#endif
     if ( !nodeAssigne[ i+1 ])
       theMeshDS->SetNodeInVolume( GMFNode[ i+1 ], shapeID );
   }
