@@ -169,11 +169,11 @@ public:
   const TIDSortedNodeSet _GetEnforcedNodes() const { return _enfNodes; }
   const TIDSortedElemSet _GetEnforcedEdges() const { return _enfEdges; }
   const TIDSortedElemSet _GetEnforcedTriangles() const { return _enfTriangles; }
-  const TIDSortedElemSet _GetEnforcedQuadrangles() const { return _enfQuadrangles; }
+//   const TIDSortedElemSet _GetEnforcedQuadrangles() const { return _enfQuadrangles; }
   typedef std::map<int,std::vector<int> > TElemID2NodeIDMap;
   const TElemID2NodeIDMap _GetEdgeID2NodeIDMap() const {return _edgeID2nodeIDMap; }
   const TElemID2NodeIDMap _GetTri2NodeMap() const {return _triID2nodeIDMap; }
-  const TElemID2NodeIDMap _GetQuad2NodeMap() const {return _quadID2nodeIDMap; }
+//   const TElemID2NodeIDMap _GetQuad2NodeMap() const {return _quadID2nodeIDMap; }
   typedef std::map<int,double> TID2SizeMap;
   const TID2SizeMap _GetNodeIDToSizeMap() const {return _nodeIDToSizeMap; }
   const TID2SizeMap _GetElementIDToSizeMap() const {return _elementIDToSizeMap; }
@@ -209,7 +209,7 @@ public:
   static TIDSortedNodeSet GetEnforcedNodes(const GHS3DPlugin_Hypothesis* hyp);
   static TIDSortedElemSet GetEnforcedEdges(const GHS3DPlugin_Hypothesis* hyp);
   static TIDSortedElemSet GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp);
-  static TIDSortedElemSet GetEnforcedQuadrangles(const GHS3DPlugin_Hypothesis* hyp);
+//   static TIDSortedElemSet GetEnforcedQuadrangles(const GHS3DPlugin_Hypothesis* hyp);
   static TElemID2NodeIDMap GetEdgeID2NodeIDMap(const GHS3DPlugin_Hypothesis* hyp);
   static TElemID2NodeIDMap GetTri2NodeMap(const GHS3DPlugin_Hypothesis* hyp);
   static TElemID2NodeIDMap GetQuad2NodeMap(const GHS3DPlugin_Hypothesis* hyp);
@@ -250,10 +250,10 @@ private:
   TIDSortedNodeSet _enfNodes;
   TIDSortedElemSet _enfEdges;
   TIDSortedElemSet _enfTriangles;
-  TIDSortedElemSet _enfQuadrangles;
+//   TIDSortedElemSet _enfQuadrangles;
   TElemID2NodeIDMap _edgeID2nodeIDMap;
   TElemID2NodeIDMap _triID2nodeIDMap;
-  TElemID2NodeIDMap _quadID2nodeIDMap;
+//   TElemID2NodeIDMap _quadID2nodeIDMap;
   TID2SizeMap _nodeIDToSizeMap;
   TID2SizeMap _elementIDToSizeMap;
 };

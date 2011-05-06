@@ -54,14 +54,14 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   myEnforcedVertices(DefaultEnforcedVertices()),
   _enfNodes(DefaultIDSortedNodeSet()),
   _enfEdges(DefaultIDSortedElemSet()),
-  _enfTriangles(DefaultIDSortedElemSet()),
-  _enfQuadrangles(DefaultIDSortedElemSet())
+  _enfTriangles(DefaultIDSortedElemSet())/*,*/
+//   _enfQuadrangles(DefaultIDSortedElemSet())
 {
   _name = "GHS3D_Parameters";
   _param_algo_dim = 3;
   _edgeID2nodeIDMap.clear();
   _triID2nodeIDMap.clear();
-  _quadID2nodeIDMap.clear();
+//   _quadID2nodeIDMap.clear();
   _nodeIDToSizeMap.clear();
   _elementIDToSizeMap.clear();
 }
@@ -392,6 +392,7 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
   MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedElements");
   TIDSortedElemSet::const_iterator it = theElemSet.begin();
   const SMDS_MeshElement* elem;
+  bool added = false;
   for (;it != theElemSet.end();++it)
   {
     elem = (*it);
@@ -403,6 +404,7 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
 //           MESSAGE("This is a node");
           _enfNodes.insert(node);
           _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+          added = true;
         }
         else {
 //           MESSAGE("This is an element");
@@ -410,8 +412,8 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
           SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
           for (;nodeIt->more();)
             _nodeIDToSizeMap.insert(make_pair(nodeIt->next()->GetID(), size));
+          added = true;
         }
-        NotifySubMeshesHypothesisModification();
         break;
       case SMESH::EDGE:
         if (node) {
@@ -429,6 +431,7 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
               _edgeID2nodeIDMap[elem->GetID()].push_back(node->GetID());
               _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
             }
+            added = true;
           }
           else if (elem->GetType() > SMDSAbs_Edge) {
             SMDS_ElemIteratorPtr it = elem->edgesIterator();
@@ -444,9 +447,9 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
                 _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
               }
             }
+            added = true;
           }
         }
-        NotifySubMeshesHypothesisModification();
         break;
       case SMESH::FACE:
         if (node) {
@@ -456,62 +459,68 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
 //           MESSAGE("This is an element");
           if (elem->GetType() == SMDSAbs_Face)
           {
-            if (elem->NbNodes() == 3) {
+            if (elem->NbCornerNodes() == 3) {
               _enfTriangles.insert(elem);
 //               _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
               _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
-              SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
-              for (;nodeIt->more();) {
-                node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
-                _triID2nodeIDMap[elem->GetID()].push_back(node->GetID());
-                _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
-              }
+//               TEST
+//               SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
+//               for ( int j = 0; j < 3; ++j ) {
+//                 node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+//                 _triID2nodeIDMap[elem->GetID()].push_back(node->GetID());
+//                 _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+//               }
+              added = true;
             }
-            else if (elem->NbNodes() == 4) {
-              _enfQuadrangles.insert(elem);
-//               _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
-              _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
-              SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
-              for (;nodeIt->more();) {
-                node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
-                _quadID2nodeIDMap[elem->GetID()].push_back(node->GetID());
-                _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
-              }
-            }
+//             else if (elem->NbCornerNodes() == 4) {
+//               _enfQuadrangles.insert(elem);
+// //               _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
+//               _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
+//               SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
+//               for (int j = 0; j < 4; ++j) {
+//                 node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+//                 _quadID2nodeIDMap[elem->GetID()].push_back(node->GetID());
+//                 _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+//               }
+//               added = true;
+//             }
           }
-          else if (elem->GetType() > SMDSAbs_Face) {
+          else if (elem->GetType() > SMDSAbs_Face) { // Group of faces
             SMDS_ElemIteratorPtr it = elem->facesIterator();
             for (;it->more();) {
               const SMDS_MeshElement* aFace = it->next();
-              if (aFace->NbNodes() == 3) {
+              if (aFace->NbCornerNodes() == 3) {
                 _enfTriangles.insert(aFace);
 //                 _enfNodes.insert(aFace->begin_nodes(),aFace->end_nodes());
                 _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
                 SMDS_ElemIteratorPtr nodeIt = aFace->nodesIterator();
-                for (;nodeIt->more();) {
+                for (int j = 0; j < 3; ++j) {
                   node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
                   _triID2nodeIDMap[aFace->GetID()].push_back(node->GetID());
                   _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
                 }
+                added = true;
               }
-              else if (aFace->NbNodes() == 4) {
-                _enfQuadrangles.insert(aFace);
-//                 _enfNodes.insert(aFace->begin_nodes(),aFace->end_nodes());
-                _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
-                SMDS_ElemIteratorPtr nodeIt = aFace->nodesIterator();
-                for (;nodeIt->more();) {
-                  node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
-                  _quadID2nodeIDMap[aFace->GetID()].push_back(node->GetID());
-                  _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
-                }
-              }
+//               else if (aFace->NbCornerNodes() == 4) {
+//                 _enfQuadrangles.insert(aFace);
+// //                 _enfNodes.insert(aFace->begin_nodes(),aFace->end_nodes());
+//                 _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
+//                 SMDS_ElemIteratorPtr nodeIt = aFace->nodesIterator();
+//                 for (int j = 0; j < 4; ++j) {
+//                   node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+//                   _quadID2nodeIDMap[aFace->GetID()].push_back(node->GetID());
+//                   _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+//                 }
+//                 added = true;
+//               }
             }
           }
         }
-        NotifySubMeshesHypothesisModification();
         break;
     };
   }
+  if (added)
+    NotifySubMeshesHypothesisModification();
 }
 
 //=======================================================================
@@ -571,7 +580,7 @@ void GHS3DPlugin_Hypothesis::ClearEnforcedMeshes()
    _enfNodes.clear();
    _enfEdges.clear();
    _enfTriangles.clear();
-   _enfQuadrangles.clear();
+//    _enfQuadrangles.clear();
 //    _edgeID2nodeIDMap.clear();
 //    _triID2nodeIDMap.clear();
 //    _quadID2nodeIDMap.clear();
@@ -1109,10 +1118,10 @@ TIDSortedElemSet GHS3DPlugin_Hypothesis::GetEnforcedTriangles(const GHS3DPlugin_
     return hyp ? hyp->_GetEnforcedTriangles():DefaultIDSortedElemSet();
 }
 
-TIDSortedElemSet GHS3DPlugin_Hypothesis::GetEnforcedQuadrangles(const GHS3DPlugin_Hypothesis* hyp)
-{
-    return hyp ? hyp->_GetEnforcedQuadrangles():DefaultIDSortedElemSet();
-}
+// TIDSortedElemSet GHS3DPlugin_Hypothesis::GetEnforcedQuadrangles(const GHS3DPlugin_Hypothesis* hyp)
+// {
+//     return hyp ? hyp->_GetEnforcedQuadrangles():DefaultIDSortedElemSet();
+// }
 
 GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetEdgeID2NodeIDMap(const GHS3DPlugin_Hypothesis* hyp)
 {
@@ -1124,10 +1133,10 @@ GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetTri2NodeMap
     return hyp ? hyp->_GetTri2NodeMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
 }
 
-GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetQuad2NodeMap(const GHS3DPlugin_Hypothesis* hyp)
-{
-    return hyp ? hyp->_GetQuad2NodeMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
-}
+// GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetQuad2NodeMap(const GHS3DPlugin_Hypothesis* hyp)
+// {
+//     return hyp ? hyp->_GetQuad2NodeMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
+// }
 
 GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)
 {
