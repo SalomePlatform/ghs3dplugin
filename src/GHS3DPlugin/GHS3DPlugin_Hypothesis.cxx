@@ -425,12 +425,12 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
             _enfEdges.insert(elem);
 //             _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
             _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
-            SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
-            for (int j = 0; j < 2; ++j) {
-              node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
-              _edgeID2nodeIDMap[elem->GetID()].push_back(node->GetID());
-              _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
-            }
+//             SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
+//             for (int j = 0; j < 2; ++j) {
+//               node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+//               _edgeID2nodeIDMap[elem->GetID()].push_back(node->GetID());
+//               _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+//             }
             added = true;
           }
           else if (elem->GetType() > SMDSAbs_Edge) {
@@ -438,14 +438,14 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
             for (;it->more();) {
               const SMDS_MeshElement* anEdge = it->next();
               _enfEdges.insert(anEdge);
-//               _enfNodes.insert(anEdge->begin_nodes(),anEdge->end_nodes());
+// //               _enfNodes.insert(anEdge->begin_nodes(),anEdge->end_nodes());
               _elementIDToSizeMap.insert(make_pair(anEdge->GetID(), size));
-              SMDS_ElemIteratorPtr nodeIt = anEdge->nodesIterator();
-              for (int j = 0; j < 2; ++j) {
-                node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
-                _edgeID2nodeIDMap[anEdge->GetID()].push_back(node->GetID());
-                _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
-              }
+//               SMDS_ElemIteratorPtr nodeIt = anEdge->nodesIterator();
+//               for (int j = 0; j < 2; ++j) {
+//                 node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+//                 _edgeID2nodeIDMap[anEdge->GetID()].push_back(node->GetID());
+//                 _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+//               }
             }
             added = true;
           }
@@ -493,12 +493,12 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
                 _enfTriangles.insert(aFace);
 //                 _enfNodes.insert(aFace->begin_nodes(),aFace->end_nodes());
                 _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
-                SMDS_ElemIteratorPtr nodeIt = aFace->nodesIterator();
-                for (int j = 0; j < 3; ++j) {
-                  node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
-                  _triID2nodeIDMap[aFace->GetID()].push_back(node->GetID());
-                  _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
-                }
+//                 SMDS_ElemIteratorPtr nodeIt = aFace->nodesIterator();
+//                 for (int j = 0; j < 3; ++j) {
+//                   node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+//                   _triID2nodeIDMap[aFace->GetID()].push_back(node->GetID());
+//                   _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+//                 }
                 added = true;
               }
 //               else if (aFace->NbCornerNodes() == 4) {
