@@ -426,7 +426,7 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
 //             _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
             _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
             SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
-            for (;nodeIt->more();) {
+            for (int j = 0; j < 2; ++j) {
               node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
               _edgeID2nodeIDMap[elem->GetID()].push_back(node->GetID());
               _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
@@ -441,7 +441,7 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
 //               _enfNodes.insert(anEdge->begin_nodes(),anEdge->end_nodes());
               _elementIDToSizeMap.insert(make_pair(anEdge->GetID(), size));
               SMDS_ElemIteratorPtr nodeIt = anEdge->nodesIterator();
-              for (;nodeIt->more();) {
+              for (int j = 0; j < 2; ++j) {
                 node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
                 _edgeID2nodeIDMap[anEdge->GetID()].push_back(node->GetID());
                 _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
