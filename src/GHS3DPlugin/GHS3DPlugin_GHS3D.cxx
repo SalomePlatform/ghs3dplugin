@@ -985,7 +985,8 @@ static bool readGMFFile(const char*                     theFile,
   theHelper->GetMesh()->NbVolumes( ORDER_QUADRATIC );
   std::cout << "isQuadMesh: " << isQuadMesh << std::endl;
   
-  theHelper->SetIsQuadratic(isQuadMesh);
+  theHelper->IsQuadraticSubMesh( theHelper->GetSubShape() );
+
   // ---------------------------------
   // Read generated elements and nodes
   // ---------------------------------
