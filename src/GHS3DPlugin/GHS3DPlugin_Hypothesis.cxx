@@ -54,16 +54,16 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   myEnforcedVertices(DefaultEnforcedVertices()),
   _enfNodes(DefaultIDSortedNodeSet()),
   _enfEdges(DefaultIDSortedElemSet()),
-  _enfTriangles(DefaultIDSortedElemSet())/*,*/
+  _enfTriangles(DefaultIDSortedElemSet()),
+  _nodeIDToSizeMap(DefaultID2SizeMap()),
+  _elementIDToSizeMap(DefaultID2SizeMap())
 //   _enfQuadrangles(DefaultIDSortedElemSet())
 {
   _name = "GHS3D_Parameters";
   _param_algo_dim = 3;
-  _edgeID2nodeIDMap.clear();
-  _triID2nodeIDMap.clear();
+//   _edgeID2nodeIDMap.clear();
+//   _triID2nodeIDMap.clear();
 //   _quadID2nodeIDMap.clear();
-  _nodeIDToSizeMap.clear();
-  _elementIDToSizeMap.clear();
 }
 
 //=======================================================================
@@ -401,13 +401,11 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
     switch (elementType) {
       case SMESH::NODE:
         if (node) {
-//           MESSAGE("This is a node");
           _enfNodes.insert(node);
           _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
           added = true;
         }
         else {
-//           MESSAGE("This is an element");
           _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
           SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
           for (;nodeIt->more();)
@@ -416,103 +414,62 @@ void GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
         }
         break;
       case SMESH::EDGE:
-        if (node) {
-//           MESSAGE("This is a node");
-        }
-        else {
-//           MESSAGE("This is an element");
-          if (elem->GetType() == SMDSAbs_Edge) {
-            _enfEdges.insert(elem);
-//             _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
-            _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
+        if (elem->GetType() == SMDSAbs_Edge) {
+          _enfEdges.insert(elem);
+          _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
 //             SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
 //             for (int j = 0; j < 2; ++j) {
 //               node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
 //               _edgeID2nodeIDMap[elem->GetID()].push_back(node->GetID());
 //               _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
 //             }
-            added = true;
-          }
-          else if (elem->GetType() > SMDSAbs_Edge) {
-            SMDS_ElemIteratorPtr it = elem->edgesIterator();
-            for (;it->more();) {
-              const SMDS_MeshElement* anEdge = it->next();
-              _enfEdges.insert(anEdge);
-// //               _enfNodes.insert(anEdge->begin_nodes(),anEdge->end_nodes());
-              _elementIDToSizeMap.insert(make_pair(anEdge->GetID(), size));
+          added = true;
+        }
+        else if (elem->GetType() > SMDSAbs_Edge) {
+          SMDS_ElemIteratorPtr it = elem->edgesIterator();
+          for (;it->more();) {
+            const SMDS_MeshElement* anEdge = it->next();
+            _enfEdges.insert(anEdge);
+            _elementIDToSizeMap.insert(make_pair(anEdge->GetID(), size));
 //               SMDS_ElemIteratorPtr nodeIt = anEdge->nodesIterator();
 //               for (int j = 0; j < 2; ++j) {
 //                 node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
 //                 _edgeID2nodeIDMap[anEdge->GetID()].push_back(node->GetID());
 //                 _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
 //               }
-            }
-            added = true;
           }
+          added = true;
         }
         break;
       case SMESH::FACE:
-        if (node) {
-//           MESSAGE("This is a node");
-        }
-        else {
-//           MESSAGE("This is an element");
-          if (elem->GetType() == SMDSAbs_Face)
-          {
-            if (elem->NbCornerNodes() == 3) {
-              _enfTriangles.insert(elem);
-//               _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
-              _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
-//               TEST
+        if (elem->GetType() == SMDSAbs_Face)
+        {
+          if (elem->NbCornerNodes() == 3) {
+            _enfTriangles.insert(elem);
+            _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
 //               SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
 //               for ( int j = 0; j < 3; ++j ) {
 //                 node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
 //                 _triID2nodeIDMap[elem->GetID()].push_back(node->GetID());
 //                 _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
 //               }
-              added = true;
-            }
-//             else if (elem->NbCornerNodes() == 4) {
-//               _enfQuadrangles.insert(elem);
-// //               _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
-//               _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
-//               SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
-//               for (int j = 0; j < 4; ++j) {
-//                 node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
-//                 _quadID2nodeIDMap[elem->GetID()].push_back(node->GetID());
-//                 _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
-//               }
-//               added = true;
-//             }
+            added = true;
           }
-          else if (elem->GetType() > SMDSAbs_Face) { // Group of faces
-            SMDS_ElemIteratorPtr it = elem->facesIterator();
-            for (;it->more();) {
-              const SMDS_MeshElement* aFace = it->next();
-              if (aFace->NbCornerNodes() == 3) {
-                _enfTriangles.insert(aFace);
-//                 _enfNodes.insert(aFace->begin_nodes(),aFace->end_nodes());
-                _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
+        }
+        else if (elem->GetType() > SMDSAbs_Face) { // Group of faces
+          SMDS_ElemIteratorPtr it = elem->facesIterator();
+          for (;it->more();) {
+            const SMDS_MeshElement* aFace = it->next();
+            if (aFace->NbCornerNodes() == 3) {
+              _enfTriangles.insert(aFace);
+              _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
 //                 SMDS_ElemIteratorPtr nodeIt = aFace->nodesIterator();
 //                 for (int j = 0; j < 3; ++j) {
 //                   node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
 //                   _triID2nodeIDMap[aFace->GetID()].push_back(node->GetID());
 //                   _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
 //                 }
-                added = true;
-              }
-//               else if (aFace->NbCornerNodes() == 4) {
-//                 _enfQuadrangles.insert(aFace);
-// //                 _enfNodes.insert(aFace->begin_nodes(),aFace->end_nodes());
-//                 _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
-//                 SMDS_ElemIteratorPtr nodeIt = aFace->nodesIterator();
-//                 for (int j = 0; j < 4; ++j) {
-//                   node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
-//                   _quadID2nodeIDMap[aFace->GetID()].push_back(node->GetID());
-//                   _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
-//                 }
-//                 added = true;
-//               }
+              added = true;
             }
           }
         }
@@ -584,8 +541,8 @@ void GHS3DPlugin_Hypothesis::ClearEnforcedMeshes()
 //    _edgeID2nodeIDMap.clear();
 //    _triID2nodeIDMap.clear();
 //    _quadID2nodeIDMap.clear();
-//    _nodeIDToSizeMap.clear();
-//    _elementIDToSizeMap.clear();
+   _nodeIDToSizeMap.clear();
+   _elementIDToSizeMap.clear();
    NotifySubMeshesHypothesisModification();
 }
 
@@ -745,6 +702,11 @@ TIDSortedNodeSet GHS3DPlugin_Hypothesis::DefaultIDSortedNodeSet()
 TIDSortedElemSet GHS3DPlugin_Hypothesis::DefaultIDSortedElemSet()
 {
   return TIDSortedElemSet();
+}
+
+GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::DefaultID2SizeMap()
+{
+  return GHS3DPlugin_Hypothesis::TID2SizeMap();
 }
 
 //=======================================================================
@@ -1123,15 +1085,15 @@ TIDSortedElemSet GHS3DPlugin_Hypothesis::GetEnforcedTriangles(const GHS3DPlugin_
 //     return hyp ? hyp->_GetEnforcedQuadrangles():DefaultIDSortedElemSet();
 // }
 
-GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetEdgeID2NodeIDMap(const GHS3DPlugin_Hypothesis* hyp)
-{
-    return hyp ? hyp->_GetEdgeID2NodeIDMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
-}
-
-GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetTri2NodeMap(const GHS3DPlugin_Hypothesis* hyp)
-{
-    return hyp ? hyp->_GetTri2NodeMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
-}
+// GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetEdgeID2NodeIDMap(const GHS3DPlugin_Hypothesis* hyp)
+// {
+//     return hyp ? hyp->_GetEdgeID2NodeIDMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
+// }
+// 
+// GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetTri2NodeMap(const GHS3DPlugin_Hypothesis* hyp)
+// {
+//     return hyp ? hyp->_GetTri2NodeMap(): GHS3DPlugin_Hypothesis::TElemID2NodeIDMap();
+// }
 
 // GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetQuad2NodeMap(const GHS3DPlugin_Hypothesis* hyp)
 // {
@@ -1140,10 +1102,10 @@ GHS3DPlugin_Hypothesis::TElemID2NodeIDMap GHS3DPlugin_Hypothesis::GetTri2NodeMap
 
 GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)
 {
-    return hyp ? hyp->_GetNodeIDToSizeMap(): GHS3DPlugin_Hypothesis::TID2SizeMap();
+    return hyp ? hyp->_GetNodeIDToSizeMap(): DefaultID2SizeMap();
 }
 
 GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetElementIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)
 {
-    return hyp ? hyp->_GetElementIDToSizeMap(): GHS3DPlugin_Hypothesis::TID2SizeMap();
+    return hyp ? hyp->_GetElementIDToSizeMap(): DefaultID2SizeMap();
 }

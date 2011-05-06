@@ -170,9 +170,9 @@ public:
   const TIDSortedElemSet _GetEnforcedEdges() const { return _enfEdges; }
   const TIDSortedElemSet _GetEnforcedTriangles() const { return _enfTriangles; }
 //   const TIDSortedElemSet _GetEnforcedQuadrangles() const { return _enfQuadrangles; }
-  typedef std::map<int,std::vector<int> > TElemID2NodeIDMap;
-  const TElemID2NodeIDMap _GetEdgeID2NodeIDMap() const {return _edgeID2nodeIDMap; }
-  const TElemID2NodeIDMap _GetTri2NodeMap() const {return _triID2nodeIDMap; }
+//   typedef std::map<int,std::vector<int> > TElemID2NodeIDMap;
+//   const TElemID2NodeIDMap _GetEdgeID2NodeIDMap() const {return _edgeID2nodeIDMap; }
+//   const TElemID2NodeIDMap _GetTri2NodeMap() const {return _triID2nodeIDMap; }
 //   const TElemID2NodeIDMap _GetQuad2NodeMap() const {return _quadID2nodeIDMap; }
   typedef std::map<int,double> TID2SizeMap;
   const TID2SizeMap _GetNodeIDToSizeMap() const {return _nodeIDToSizeMap; }
@@ -192,6 +192,7 @@ public:
   static TEnforcedVertexValues DefaultEnforcedVertices();
   static TIDSortedNodeSet DefaultIDSortedNodeSet();
   static TIDSortedElemSet DefaultIDSortedElemSet();
+  static TID2SizeMap DefaultID2SizeMap();
 
   /*!
    * \brief Return command to run ghs3d mesher excluding file prefix (-f)
@@ -210,9 +211,9 @@ public:
   static TIDSortedElemSet GetEnforcedEdges(const GHS3DPlugin_Hypothesis* hyp);
   static TIDSortedElemSet GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp);
 //   static TIDSortedElemSet GetEnforcedQuadrangles(const GHS3DPlugin_Hypothesis* hyp);
-  static TElemID2NodeIDMap GetEdgeID2NodeIDMap(const GHS3DPlugin_Hypothesis* hyp);
-  static TElemID2NodeIDMap GetTri2NodeMap(const GHS3DPlugin_Hypothesis* hyp);
-  static TElemID2NodeIDMap GetQuad2NodeMap(const GHS3DPlugin_Hypothesis* hyp);
+//   static TElemID2NodeIDMap GetEdgeID2NodeIDMap(const GHS3DPlugin_Hypothesis* hyp);
+//   static TElemID2NodeIDMap GetTri2NodeMap(const GHS3DPlugin_Hypothesis* hyp);
+//   static TElemID2NodeIDMap GetQuad2NodeMap(const GHS3DPlugin_Hypothesis* hyp);
   static TID2SizeMap GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp);
   static TID2SizeMap GetElementIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp);
   
@@ -251,8 +252,8 @@ private:
   TIDSortedElemSet _enfEdges;
   TIDSortedElemSet _enfTriangles;
 //   TIDSortedElemSet _enfQuadrangles;
-  TElemID2NodeIDMap _edgeID2nodeIDMap;
-  TElemID2NodeIDMap _triID2nodeIDMap;
+//   TElemID2NodeIDMap _edgeID2nodeIDMap;
+//   TElemID2NodeIDMap _triID2nodeIDMap;
 //   TElemID2NodeIDMap _quadID2nodeIDMap;
   TID2SizeMap _nodeIDToSizeMap;
   TID2SizeMap _elementIDToSizeMap;
