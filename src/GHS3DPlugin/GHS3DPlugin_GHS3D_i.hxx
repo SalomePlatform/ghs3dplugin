@@ -50,7 +50,7 @@ public:
   // Get implementation
   ::GHS3DPlugin_GHS3D* GetImpl();
 
-  virtual bool importGMFMesh(const char* theGMFFileName);
+  virtual SMESH::SMESH_Mesh_ptr importGMFMesh(const char* theGMFFileName);
 };
 
 #endif

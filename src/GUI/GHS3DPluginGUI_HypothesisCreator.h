@@ -41,6 +41,7 @@
 #include <QItemDelegate>
 #include <map>
 #include <vector>
+#include <set>
 #include CORBA_SERVER_HEADER(GHS3DPlugin_Algorithm)
 
 class QWidget;
@@ -55,8 +56,32 @@ class QDoubleSpinBox;
 
 class LightApp_SelectionMgr;
 
-typedef std::vector<double> GHS3DEnforcedVertex;
-typedef std::vector<GHS3DEnforcedVertex> TEnforcedVertexValues;
+// Enforced vertex
+struct TEnfVertex{
+  std::string name;
+  std::string geomEntry;
+  std::vector<double> coords;
+  std::string groupName;
+  double size;
+};
+
+struct CompareEnfVertices
+{
+  bool operator () (const TEnfVertex* e1, const TEnfVertex* e2) const {
+    if (e1 && e2) {
+      if (e1->coords.size() && e2->coords.size())
+        return (e1->coords < e2->coords);
+      else
+        return (e1->geomEntry < e2->geomEntry);
+    }
+    return false;
+  }
+};
+
+// List of enforced vertices
+typedef std::set< TEnfVertex*, CompareEnfVertices > TEnfVertexList;
+
+// typedef std::vector<GHS3DEnforcedVertex> TEnforcedVertexCoordsValues;
 
 typedef struct
 {
@@ -64,7 +89,7 @@ typedef struct
   int     myMaximumMemory,myInitialMemory,myOptimizationLevel;
   QString myName,myWorkingDir,myTextOption;
   short   myVerboseLevel;
-  TEnforcedVertexValues myEnforcedVertices;
+  TEnfVertexList myEnforcedVertices;
 } GHS3DHypothesisData;
 
 /*!

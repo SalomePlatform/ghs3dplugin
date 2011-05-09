@@ -350,11 +350,160 @@ char* GHS3DPlugin_Hypothesis_i::GetTextOption()
 //function : SetEnforcedVertex
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis_i::SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size)
-{
+bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size)
+    throw (SALOME::SALOME_Exception) {
   ASSERT(myBaseImpl);
-  this->GetImpl()->SetEnforcedVertex(x,y,z,size);
-  SMESH::TPythonDump() << _this() << ".SetEnforcedVertex( " << x << ", " << y << ", " << z << ", " << size  << " )";
+  MESSAGE("IDL : SetEnforcedVertex( "<< x << ", " << y << ", " << z << ", " << size << ")");
+  return _SetEnforcedVertex(size, x, y, z);
+}
+
+bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theGroupName)
+    throw (SALOME::SALOME_Exception) {
+  ASSERT(myBaseImpl);
+  MESSAGE("IDL : SetEnforcedVertexWithGroup( "<< x << ", " << y << ", " << z << ", " << size << ", " << theGroupName << ")");
+  return _SetEnforcedVertex(size, x, y, z, "", "", theGroupName);
+}
+
+bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size)
+    throw (SALOME::SALOME_Exception) {
+  ASSERT(myBaseImpl);
+  
+  if ((theVertex->GetShapeType() != GEOM::VERTEX) && (theVertex->GetShapeType() != GEOM::COMPOUND)) {
+    MESSAGE("theVertex shape type is not VERTEX or COMPOUND");
+    THROW_SALOME_CORBA_EXCEPTION("theVertex shape type is not VERTEX or COMPOUND", SALOME::BAD_PARAM);
+  }
+  
+  string theVertexEntry = theVertex->GetStudyEntry();
+  if (theVertexEntry.empty()) {
+    GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
+    SMESH_Gen_i *smeshGen = SMESH_Gen_i::GetSMESHGen();
+    string aName;
+    if (theVertex->GetShapeType() == GEOM::VERTEX)
+      aName = "Vertex_";
+    if (theVertex->GetShapeType() == GEOM::COMPOUND)
+      aName = "Compound_";
+    aName += theVertex->GetEntry();
+    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(smeshGen->GetCurrentStudy(), NULL, theVertex, aName.c_str());
+    if (!theSVertex->_is_nil())
+      theVertexEntry = theSVertex->GetID();
+  }
+  if (theVertexEntry.empty())
+    THROW_SALOME_CORBA_EXCEPTION( "Geom object is not published in study" ,SALOME::BAD_PARAM );
+
+  string theVertexName = theVertex->GetName();
+  MESSAGE("IDL : SetEnforcedVertexGeom( "<< theVertexEntry << ", " << size<< ")");
+  
+  return _SetEnforcedVertex(size, 0, 0, 0, theVertexName.c_str(), theVertexEntry.c_str());
+}
+
+bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size, const char* theGroupName)
+    throw (SALOME::SALOME_Exception) {
+  ASSERT(myBaseImpl);
+  
+  if ((theVertex->GetShapeType() != GEOM::VERTEX) && (theVertex->GetShapeType() != GEOM::COMPOUND)) {
+    MESSAGE("theVertex shape type is not VERTEX or COMPOUND");
+    THROW_SALOME_CORBA_EXCEPTION("theVertex shape type is not VERTEX or COMPOUND", SALOME::BAD_PARAM);
+  }
+  
+  string theVertexEntry = theVertex->GetStudyEntry();
+  if (theVertexEntry.empty()) {
+    GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
+    SMESH_Gen_i *smeshGen = SMESH_Gen_i::GetSMESHGen();
+    string aName;
+    if (theVertex->GetShapeType() == GEOM::VERTEX)
+      aName = "Vertex_";
+    if (theVertex->GetShapeType() == GEOM::COMPOUND)
+      aName = "Compound_";
+    aName += theVertex->GetEntry();
+    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(smeshGen->GetCurrentStudy(), NULL, theVertex, aName.c_str());
+    if (!theSVertex->_is_nil())
+      theVertexEntry = theSVertex->GetID();
+  }
+  if (theVertexEntry.empty())
+    THROW_SALOME_CORBA_EXCEPTION( "Geom object is not published in study" ,SALOME::BAD_PARAM );
+
+  string theVertexName = theVertex->GetName();
+  MESSAGE("IDL : SetEnforcedVertexGeomWithGroup( "<< theVertexEntry << ", " << size<< ", " << theGroupName << ")");
+  
+  return _SetEnforcedVertex(size, 0, 0, 0, theVertexName.c_str(), theVertexEntry.c_str(), theGroupName);
+}
+
+bool GHS3DPlugin_Hypothesis_i:: _SetEnforcedVertex(CORBA::Double size, CORBA::Double x, CORBA::Double y, CORBA::Double z,
+                                                   const char* theVertexName, const char* theVertexEntry, const char* theGroupName)
+    throw (SALOME::SALOME_Exception) {
+  ASSERT(myBaseImpl);
+  MESSAGE("IDL : _SetEnforcedVertex(" << size << ", " << x << ", " << y << ", " << z << ", \"" << theVertexName << "\", \"" << theVertexEntry << "\", \"" << theGroupName << "\")");
+  bool newValue = false;
+
+  if (string(theVertexEntry).empty()) {
+    ::GHS3DPlugin_Hypothesis::TCoordsGHS3DEnforcedVertexMap coordsList = this->GetImpl()->_GetEnforcedVerticesByCoords();
+    std::vector<double> coords;
+    coords.push_back(x);
+    coords.push_back(y);
+    coords.push_back(z);
+    if (coordsList.find(coords) == coordsList.end()) {
+      MESSAGE("Coords not found: add it in coordsList");
+      newValue = true;
+    } else {
+      MESSAGE("Coords already found, compare names");
+      ::GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex *enfVertex = this->GetImpl()->GetEnforcedVertex(x, y, z);
+      if ((enfVertex->name != theVertexName) || (enfVertex->groupName != theGroupName) || (enfVertex->size != size)) {
+        MESSAGE("The names or size are different: update");
+//          this->GetImpl()->ClearEnforcedVertex(theFaceEntry, x, y, z);
+        newValue = true;
+      }
+      else {
+        MESSAGE("The names and size are identical");
+      }
+    }
+
+    if (newValue) {
+      if (string(theVertexName).empty()) {
+        if (string(theGroupName).empty())
+          SMESH::TPythonDump() << _this() << ".SetEnforcedVertex(" << x << ", " << y << ", " << z << ", " << size << ")";
+        else
+          SMESH::TPythonDump() << _this() << ".SetEnforcedVertexWithGroup(" << x << ", " << y << ", " << z << ", " << size << ", \"" << theGroupName << "\")";
+//       else
+//         if (string(theGroupName).empty())
+//           SMESH::TPythonDump() << _this() << ".SetEnforcedVertexNamed(" << theFaceEntry << ", " << x << ", " << y << ", " << z << ", \"" << theVertexName << "\")";
+//         else
+//           SMESH::TPythonDump() << _this() << ".SetEnforcedVertexNamedWithGroup(" << theFaceEntry << ", " << x << ", " << y << ", " << z << ", \"" 
+//                                           << theVertexName << "\", \"" << theGroupName << "\")";
+      }
+    }
+  } else {
+    ::GHS3DPlugin_Hypothesis::TGeomEntryGHS3DEnforcedVertexMap enfVertexEntryList = this->GetImpl()->_GetEnforcedVerticesByEntry();
+//     ::BLSURFPlugin_Hypothesis::TGeomEntryGHS3DEnforcedVertexMap::const_iterator it = enfVertexEntryList.find(theVertexEntry);
+    if ( enfVertexEntryList.find(theVertexEntry) == enfVertexEntryList.end()) {
+      MESSAGE("Geom entry not found: add it in enfVertexEntryList");
+      newValue = true;
+    }
+    else {
+      MESSAGE("Geom entry already found, compare names");
+      ::GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex *enfVertex = this->GetImpl()->GetEnforcedVertex(theVertexEntry);
+      if ((enfVertex->name != theVertexName) || (enfVertex->groupName != theGroupName) || (enfVertex->size != size)) {
+        MESSAGE("The names or size are different: update");
+//          this->GetImpl()->ClearEnforcedVertex(theFaceEntry, x, y, z);
+        newValue = true;
+      }
+      else {
+        MESSAGE("The names and size are identical");
+      }
+    }
+
+    if (newValue) {
+      if (string(theGroupName).empty())
+        SMESH::TPythonDump() << _this() << ".SetEnforcedVertexGeom(" << theVertexEntry << ", " << size << ")";
+      else
+        SMESH::TPythonDump() << _this() << ".SetEnforcedVertexGeomWithGroup(" << theVertexEntry << ", " << size << ", \"" << theGroupName << "\")";
+    }
+  }
+
+  if (newValue)
+    this->GetImpl()->SetEnforcedVertex(theVertexName, theVertexEntry, theGroupName, size, x, y, z);
+
+  MESSAGE("IDL : SetEnforcedVertexEntry END");
+  return newValue;
 }
 
 //=======================================================================
@@ -366,7 +515,7 @@ CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertex(CORBA::Double x, CORBA
 {
   ASSERT(myBaseImpl);
   try {
-    return this->GetImpl()->GetEnforcedVertex(x,y,z);
+    return this->GetImpl()->GetEnforcedVertex(x,y,z)->size;
   }
   catch (const std::invalid_argument& ex) {
     SALOME::ExceptionStruct ExDescription;
@@ -383,6 +532,55 @@ CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertex(CORBA::Double x, CORBA
 }
 
 //=======================================================================
+//function : GetEnforcedVertex
+//=======================================================================
+
+CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex)
+  throw (SALOME::SALOME_Exception)
+{
+  ASSERT(myBaseImpl);
+  
+  if ((theVertex->GetShapeType() != GEOM::VERTEX) && (theVertex->GetShapeType() != GEOM::COMPOUND)) {
+    MESSAGE("theVertex shape type is not VERTEX or COMPOUND");
+    THROW_SALOME_CORBA_EXCEPTION("theVertex shape type is not VERTEX or COMPOUND", SALOME::BAD_PARAM);
+  }
+  
+  string theVertexEntry = theVertex->GetStudyEntry();
+  if (theVertexEntry.empty()) {
+    GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
+    SMESH_Gen_i *smeshGen = SMESH_Gen_i::GetSMESHGen();
+    string aName;
+    if (theVertex->GetShapeType() == GEOM::VERTEX)
+      aName = "Vertex_";
+    if (theVertex->GetShapeType() == GEOM::COMPOUND)
+      aName = "Compound_";
+    aName += theVertex->GetEntry();
+    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(smeshGen->GetCurrentStudy(), NULL, theVertex, aName.c_str());
+    if (!theSVertex->_is_nil())
+      theVertexEntry = theSVertex->GetID();
+  }
+  if (theVertexEntry.empty())
+    THROW_SALOME_CORBA_EXCEPTION( "Geom object is not published in study" ,SALOME::BAD_PARAM );
+
+  string theVertexName = theVertex->GetName();
+  
+  try {
+    return this->GetImpl()->GetEnforcedVertex(theVertexName)->size;
+  }
+  catch (const std::invalid_argument& ex) {
+    SALOME::ExceptionStruct ExDescription;
+    ExDescription.text = ex.what();
+    ExDescription.type = SALOME::BAD_PARAM;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::GetEnforcedVertexGeom(theVertex)";
+    ExDescription.lineNumber = 0;
+    throw SALOME::SALOME_Exception(ExDescription);
+  }
+  catch (SALOME_Exception& ex) {
+    THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+  }
+}
+
+//=======================================================================
 //function : GetEnforcedVertices
 //=======================================================================
 
@@ -391,20 +589,30 @@ GHS3DPlugin::GHS3DEnforcedVertexList* GHS3DPlugin_Hypothesis_i::GetEnforcedVerti
   ASSERT(myBaseImpl);
   GHS3DPlugin::GHS3DEnforcedVertexList_var result = new GHS3DPlugin::GHS3DEnforcedVertexList();
 
-  const ::GHS3DPlugin_Hypothesis::TEnforcedVertexValues sizeMaps = this->GetImpl()->_GetEnforcedVertices();
-  int size = sizeMaps.size();
-  result->length( size );
+  const ::GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList enfVertexList = this->GetImpl()->_GetEnforcedVertices();
+  result->length( enfVertexList.size() );
 
-  ::GHS3DPlugin_Hypothesis::TEnforcedVertexValues::const_iterator it;
-  int i = 0;
-  for (it = sizeMaps.begin() ; it != sizeMaps.end(); it++ ) {
-    GHS3DPlugin::GHS3DEnforcedVertex_var myVertex = new GHS3DPlugin::GHS3DEnforcedVertex();
-    myVertex->x = it->first[0];
-    myVertex->y = it->first[1];
-    myVertex->z = it->first[2];
-    myVertex->size = it->second;
-    result[i]=myVertex;
-    i++;
+  ::GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList::const_iterator it = enfVertexList.begin();
+
+  for (int i = 0 ; it != enfVertexList.end(); ++it, ++i ) {
+    ::GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* currentVertex = (*it);
+    GHS3DPlugin::GHS3DEnforcedVertex_var enfVertex = new GHS3DPlugin::GHS3DEnforcedVertex();
+    // Name
+    enfVertex->name = CORBA::string_dup(currentVertex->name.c_str());
+    // Geom Vertex Entry
+    enfVertex->geomEntry = CORBA::string_dup(currentVertex->geomEntry.c_str());
+    // Coords
+    GHS3DPlugin::TCoords_var coords = new GHS3DPlugin::TCoords();
+    coords->length(currentVertex->coords.size());
+    for (int ind = 0; ind < currentVertex->coords.size(); ind++)
+      coords[ind] = currentVertex->coords[ind];
+    enfVertex->coords = coords;
+    // Group Name
+    enfVertex->groupName = CORBA::string_dup(currentVertex->groupName.c_str());
+    // Size
+    enfVertex->size = currentVertex->size;
+    
+    result[i]=enfVertex;
     }
 
   return result._retn();
@@ -414,13 +622,14 @@ GHS3DPlugin::GHS3DEnforcedVertexList* GHS3DPlugin_Hypothesis_i::GetEnforcedVerti
 //function : RemoveEnforcedVertex
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z)
+bool GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z)
   throw (SALOME::SALOME_Exception)
 {
   ASSERT(myBaseImpl);
+  bool res = false;
   try {
-    this->GetImpl()->RemoveEnforcedVertex(x,y,z);
-    SMESH::TPythonDump() << _this() << ".RemoveEnforcedVertex( " << x << ", " << y << ", " << z << " )";
+    res = this->GetImpl()->RemoveEnforcedVertex(x,y,z);
+    SMESH::TPythonDump() << " isDone = " << _this() << ".RemoveEnforcedVertex( " << x << ", " << y << ", " << z << " )";
   }
   catch (const std::invalid_argument& ex) {
     SALOME::ExceptionStruct ExDescription;
@@ -433,6 +642,53 @@ void GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertex(CORBA::Double x, CORBA::Doub
   catch (SALOME_Exception& ex) {
     THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
   }
+  return res;
+}
+
+bool GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex)
+  throw (SALOME::SALOME_Exception)
+{
+  ASSERT(myBaseImpl);
+  
+  if ((theVertex->GetShapeType() != GEOM::VERTEX) && (theVertex->GetShapeType() != GEOM::COMPOUND)) {
+    MESSAGE("theVertex shape type is not VERTEX or COMPOUND");
+    THROW_SALOME_CORBA_EXCEPTION("theVertex shape type is not VERTEX or COMPOUND", SALOME::BAD_PARAM);
+  }
+  
+  string theVertexEntry = theVertex->GetStudyEntry();
+  if (theVertexEntry.empty()) {
+    GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
+    SMESH_Gen_i *smeshGen = SMESH_Gen_i::GetSMESHGen();
+    string aName;
+    if (theVertex->GetShapeType() == GEOM::VERTEX)
+      aName = "Vertex_";
+    if (theVertex->GetShapeType() == GEOM::COMPOUND)
+      aName = "Compound_";
+    aName += theVertex->GetEntry();
+    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(smeshGen->GetCurrentStudy(), NULL, theVertex, aName.c_str());
+    if (!theSVertex->_is_nil())
+      theVertexEntry = theSVertex->GetID();
+  }
+  if (theVertexEntry.empty())
+    THROW_SALOME_CORBA_EXCEPTION( "Geom object is not published in study" ,SALOME::BAD_PARAM );
+  
+  bool res = false;
+  try {
+    res = this->GetImpl()->RemoveEnforcedVertex(0,0,0, theVertexEntry.c_str());
+    SMESH::TPythonDump() << "isDone = " << _this() << ".RemoveEnforcedVertexGeom( " << theVertexEntry.c_str() << " )";
+  }
+  catch (const std::invalid_argument& ex) {
+    SALOME::ExceptionStruct ExDescription;
+    ExDescription.text = ex.what();
+    ExDescription.type = SALOME::BAD_PARAM;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::RemoveEnforcedVertex(x,y,z)";
+    ExDescription.lineNumber = 408;
+    throw SALOME::SALOME_Exception(ExDescription);
+  }
+  catch (SALOME_Exception& ex) {
+    THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+  }
+  return res;
 }
 
 //=======================================================================
@@ -460,11 +716,11 @@ void GHS3DPlugin_Hypothesis_i::ClearEnforcedMeshes()
 /*!
  * \brief Adds enforced elements of type elementType using another mesh/sub-mesh/mesh group theSource.
  */
-void GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType)
+bool GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType)
   throw (SALOME::SALOME_Exception)
 {
 #if GHS3D_VERSION >= 42
-  _SetEnforcedMesh(theSource, theType, -1.0);
+  bool res = _SetEnforcedMesh(theSource, theType, -1.0);
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
   if (theGroup_i)
@@ -477,6 +733,7 @@ void GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSour
     SMESH::TPythonDump () << _this() << ".SetEnforcedMesh( " 
                           << theSource << ".GetMesh(), " << theType << " )";
   }
+  return res;
 #else
   SALOME::ExceptionStruct ExDescription;
   ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
@@ -490,7 +747,7 @@ void GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSour
 /*!
  * \brief Adds enforced elements of type elementType using another mesh/sub-mesh/mesh group theSource and a size.
  */
-void GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize)
+bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize)
   throw (SALOME::SALOME_Exception)
 {
   if (theSize <= 0) {
@@ -502,7 +759,7 @@ void GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr the
     throw SALOME::SALOME_Exception(ExDescription);
   }
   
-  _SetEnforcedMesh(theSource, theType, theSize);
+  bool res = _SetEnforcedMesh(theSource, theType, theSize);
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
   if (theGroup_i)
@@ -515,9 +772,10 @@ void GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr the
     SMESH::TPythonDump () << _this() << ".SetEnforcedMeshSize( " 
                           << theSource << ".GetMesh(), " << theType << ", " << theSize << " )";
   }
+  return res;
 }
 
-void GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize)
+bool GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize)
   throw (SALOME::SALOME_Exception)
 {
   ASSERT(myBaseImpl);
@@ -561,7 +819,7 @@ void GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSou
   if (anImplPtr)
     theMeshDS = anImplPtr->GetImpl().GetMeshDS();
   else
-    return;
+    return false;
   
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
@@ -570,7 +828,7 @@ void GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSou
   if (theMesh_i)
   {
     try {
-      this->GetImpl()->SetEnforcedMesh(anImplPtr->GetImpl(), theType, theSize);
+      return this->GetImpl()->SetEnforcedMesh(anImplPtr->GetImpl(), theType, theSize);
     }
     catch (const std::invalid_argument& ex) {
       SALOME::ExceptionStruct ExDescription;
@@ -617,7 +875,7 @@ void GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSou
     MESSAGE("Add "<<theElemSet.size()<<" types["<<theType<<"] from source group "<< theGroup_i->GetName());
 
     try {
-      this->GetImpl()->SetEnforcedElements(theElemSet, theType, theSize);
+      return this->GetImpl()->SetEnforcedElements(theElemSet, theType, theSize);
     }
     catch (const std::invalid_argument& ex) {
       SALOME::ExceptionStruct ExDescription;
@@ -631,6 +889,7 @@ void GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSou
       THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
     }
   }
+  return false;
 }
 //=============================================================================
 /*!

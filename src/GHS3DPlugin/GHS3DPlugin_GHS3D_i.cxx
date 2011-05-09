@@ -92,13 +92,13 @@ GHS3DPlugin_GHS3D_i::~GHS3DPlugin_GHS3D_i()
  */
 //=============================================================================
 
-bool GHS3DPlugin_GHS3D_i::importGMFMesh(const char* theGMFFileName)
+SMESH::SMESH_Mesh_ptr GHS3DPlugin_GHS3D_i::importGMFMesh(const char* theGMFFileName)
 {
   MESSAGE( "GHS3DPlugin_GHS3D_i::importGMFMesh" );
-
-  SMESH::SMESH_Mesh_ptr theMesh = SMESH_Gen_i::GetSMESHGen()->CreateEmptyMesh();
-  SMESH_Gen_i::GetSMESHGen()->RemoveLastFromPythonScript(SMESH_Gen_i::GetSMESHGen()->GetCurrentStudy()->StudyId());
-  SALOMEDS::SObject_ptr theSMesh = SMESH_Gen_i::GetSMESHGen()->ObjectToSObject(SMESH_Gen_i::GetSMESHGen()->GetCurrentStudy(), theMesh);
+  SMESH_Gen_i* smeshGen = SMESH_Gen_i::GetSMESHGen();
+  SMESH::SMESH_Mesh_ptr theMesh = smeshGen->CreateEmptyMesh();
+  smeshGen->RemoveLastFromPythonScript(smeshGen->GetCurrentStudy()->StudyId());
+  SALOMEDS::SObject_ptr theSMesh = smeshGen->ObjectToSObject(smeshGen->GetCurrentStudy(), theMesh);
 #ifdef WINNT
 #define SEP '\\'
 #else
@@ -107,13 +107,12 @@ bool GHS3DPlugin_GHS3D_i::importGMFMesh(const char* theGMFFileName)
   string strFileName (theGMFFileName);
   strFileName = strFileName.substr(strFileName.rfind(SEP)+1);
   strFileName.erase(strFileName.rfind('.'));
-  SMESH_Gen_i::GetSMESHGen()->SetName(theSMesh, strFileName.c_str());
-  SMESH_Mesh_i* meshServant = dynamic_cast<SMESH_Mesh_i*>( SMESH_Gen_i::GetSMESHGen()->GetServant( theMesh ).in() );
+  smeshGen->SetName(theSMesh, strFileName.c_str());
+  SMESH_Mesh_i* meshServant = dynamic_cast<SMESH_Mesh_i*>( smeshGen->GetServant( theMesh ).in() );
   ASSERT( meshServant );
   if ( meshServant ) {
-    bool res = GetImpl()->importGMFMesh(theGMFFileName, meshServant->GetImpl());
-    SMESH::TPythonDump() << "isDone = " << _this() << ".importGMFMesh( \"" << theGMFFileName << "\")";
-    return res;
+    if (GetImpl()->importGMFMesh(theGMFFileName, meshServant->GetImpl()))
+      SMESH::TPythonDump() << theSMesh << " = " << _this() << ".importGMFMesh( \"" << theGMFFileName << "\")";
   }
-  return false;
+  return theMesh;
 }

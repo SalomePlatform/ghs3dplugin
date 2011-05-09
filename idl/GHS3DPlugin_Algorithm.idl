@@ -33,10 +33,12 @@
  */
 module GHS3DPlugin
 {
+  typedef sequence<double,3> TCoords;
   struct GHS3DEnforcedVertex {
-    double x;
-    double y;
-    double z;
+    string name;
+    string geomEntry;
+    TCoords coords;
+    string groupName;
     double size;
   };
   
@@ -46,7 +48,7 @@ module GHS3DPlugin
    */
   interface GHS3DPlugin_GHS3D : SMESH::SMESH_3D_Algo
   {
-    boolean importGMFMesh(in string aGMFFileName);
+    SMESH::SMESH_Mesh importGMFMesh(in string aGMFFileName);
   };
 
   /*!
@@ -131,14 +133,18 @@ module GHS3DPlugin
     /*!
      * To set an enforced vertex
      */
-    void SetEnforcedVertex(in double x, in double y, in double z, in double size);
+    boolean SetEnforcedVertex(in double x, in double y, in double z, in double size) raises (SALOME::SALOME_Exception);
+    boolean SetEnforcedVertexGeom(in GEOM::GEOM_Object theVertex, in double size) raises (SALOME::SALOME_Exception);
+    boolean SetEnforcedVertexGeomWithGroup(in GEOM::GEOM_Object theVertex, in double size, in string groupName) raises (SALOME::SALOME_Exception);
     double GetEnforcedVertex(in double x, in double y, in double z) raises (SALOME::SALOME_Exception);
-    void RemoveEnforcedVertex(in double x, in double y, in double z) raises (SALOME::SALOME_Exception);
+    double GetEnforcedVertexGeom(in GEOM::GEOM_Object theVertex) raises (SALOME::SALOME_Exception);
+    boolean RemoveEnforcedVertex(in double x, in double y, in double z) raises (SALOME::SALOME_Exception);
+    boolean RemoveEnforcedVertexGeom(in GEOM::GEOM_Object theVertex) raises (SALOME::SALOME_Exception);
     GHS3DEnforcedVertexList GetEnforcedVertices();
     void ClearEnforcedVertices();
     
-    void SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType) raises (SALOME::SALOME_Exception);
-    void SetEnforcedMeshSize(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in double size) raises (SALOME::SALOME_Exception);
+    boolean SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType) raises (SALOME::SALOME_Exception);
+    boolean SetEnforcedMeshSize(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in double size) raises (SALOME::SALOME_Exception);
     void ClearEnforcedMeshes();
   };
 };
