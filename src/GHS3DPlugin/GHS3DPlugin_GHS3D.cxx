@@ -1046,7 +1046,7 @@ static bool readGMFFile(const char*                     theFile,
     else
       continue;
 
-    int id[nbElem*tabRef[token]]; // node ids
+    vector<int> id (nbElem*tabRef[token]); // node ids
 
     if (token == GmfVertices) {
       std::cout << " vertices" << std::endl;
@@ -1086,12 +1086,34 @@ static bool readGMFFile(const char*                     theFile,
         if (ver == GmfFloat) {
           GmfGetLin(InpMsh, token, &VerTab_f[nbElem][0], &VerTab_f[nbElem][1], &VerTab_f[nbElem][2], &dummy);
           if (iElem >= nbInitialNodes)
-            aGMFNode = theMeshDS->AddNode(VerTab_f[nbElem][0], VerTab_f[nbElem][1], VerTab_f[nbElem][2]);
+          {
+            if ( elemSearcher &&
+                 elemSearcher->FindElementsByPoint( gp_Pnt(VerTab_f[nbElem][0],
+                                                           VerTab_f[nbElem][1],
+                                                           VerTab_f[nbElem][2]),
+                                                    SMDSAbs_Volume, foundVolumes ))
+              aGMFNode = 0;
+            else
+              aGMFNode = theMeshDS->AddNode(VerTab_f[nbElem][0],
+                                            VerTab_f[nbElem][1],
+                                            VerTab_f[nbElem][2]);
+          }
         }
         else {
           GmfGetLin(InpMsh, token, &VerTab_d[nbElem][0], &VerTab_d[nbElem][1], &VerTab_d[nbElem][2], &dummy);
           if (iElem >= nbInitialNodes)
-            aGMFNode = theMeshDS->AddNode(VerTab_d[nbElem][0], VerTab_d[nbElem][1], VerTab_d[nbElem][2]);
+          {
+            if ( elemSearcher &&
+                 elemSearcher->FindElementsByPoint( gp_Pnt(VerTab_d[nbElem][0],
+                                                           VerTab_d[nbElem][1],
+                                                           VerTab_d[nbElem][2]),
+                                                    SMDSAbs_Volume, foundVolumes ))
+              aGMFNode = 0;
+            else
+              aGMFNode = theMeshDS->AddNode(VerTab_d[nbElem][0],
+                                            VerTab_d[nbElem][1],
+                                            VerTab_d[nbElem][2]);
+          }
         }
         if (iElem >= nbInitialNodes) {
           GMFNode[ aGMFID ] = aGMFNode;
