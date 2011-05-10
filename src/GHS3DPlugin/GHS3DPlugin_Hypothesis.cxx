@@ -56,9 +56,9 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   _enfVertexEntrySizeList(DefaultGHS3DEnforcedVertexEntryValues()),
   _coordsEnfVertexMap(DefaultCoordsGHS3DEnforcedVertexMap()),
   _geomEntryEnfVertexMap(DefaultGeomEntryGHS3DEnforcedVertexMap()),
-  _enfNodes(DefaultIDSortedNodeSet()),
-  _enfEdges(DefaultIDSortedElemSet()),
-  _enfTriangles(DefaultIDSortedElemSet()),
+  _enfNodes(TIDSortedNodeGroupMap()),
+  _enfEdges(TIDSortedElemGroupMap()),
+  _enfTriangles(TIDSortedElemGroupMap()),
   _nodeIDToSizeMap(DefaultID2SizeMap()),
   _elementIDToSizeMap(DefaultID2SizeMap())
 {
@@ -414,7 +414,7 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedVertex(std::string theName, std::string 
 //=======================================================================
 //function : SetEnforcedMesh
 //=======================================================================
-bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, double size)
+bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, double size, std::string groupName)
 {
   TIDSortedElemSet theElemSet;
   SMDS_ElemIteratorPtr eIt;
@@ -422,13 +422,13 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::Element
   while ( eIt->more() )
     theElemSet.insert( eIt->next() );
   MESSAGE("Add "<<theElemSet.size()<<" types["<<elementType<<"] from source mesh");
-  return SetEnforcedElements( theElemSet, elementType, size);
+  return SetEnforcedElements( theElemSet, elementType, size, groupName);
 }
 
 //=======================================================================
 //function : SetEnforcedElements
 //=======================================================================
-bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, double size)
+bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, double size, std::string groupName)
 {
   MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedElements");
   TIDSortedElemSet::const_iterator it = theElemSet.begin();
@@ -442,21 +442,24 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
       case SMESH::NODE:
         node = dynamic_cast<const SMDS_MeshNode*>(elem);
         if (node) {
-          _enfNodes.insert(node);
+          _enfNodes.insert(make_pair(node,groupName));
           _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
           added = true;
         }
         else {
-          _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
+//           _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
           SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
-          for (;nodeIt->more();)
-            _nodeIDToSizeMap.insert(make_pair(nodeIt->next()->GetID(), size));
+          for (;nodeIt->more();) {
+            node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
+            _enfNodes.insert(make_pair(node,groupName));
+            _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+          }
           added = true;
         }
         break;
       case SMESH::EDGE:
         if (elem->GetType() == SMDSAbs_Edge) {
-          _enfEdges.insert(elem);
+          _enfEdges.insert(make_pair(elem,groupName));
           _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
           added = true;
         }
@@ -464,7 +467,7 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
           SMDS_ElemIteratorPtr it = elem->edgesIterator();
           for (;it->more();) {
             const SMDS_MeshElement* anEdge = it->next();
-            _enfEdges.insert(anEdge);
+            _enfEdges.insert(make_pair(anEdge,groupName));
             _elementIDToSizeMap.insert(make_pair(anEdge->GetID(), size));
           }
           added = true;
@@ -474,7 +477,7 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
         if (elem->GetType() == SMDSAbs_Face)
         {
           if (elem->NbCornerNodes() == 3) {
-            _enfTriangles.insert(elem);
+            _enfTriangles.insert(make_pair(elem,groupName));
             _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
             added = true;
           }
@@ -484,7 +487,7 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
           for (;it->more();) {
             const SMDS_MeshElement* aFace = it->next();
             if (aFace->NbCornerNodes() == 3) {
-              _enfTriangles.insert(aFace);
+              _enfTriangles.insert(make_pair(aFace,groupName));
               _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
               added = true;
             }
@@ -749,24 +752,6 @@ bool GHS3DPlugin_Hypothesis::DefaultToUseFEMCorrection()
 bool GHS3DPlugin_Hypothesis::DefaultToRemoveCentralPoint()
 {
   return false;
-}
-
-//=======================================================================
-//function : DefaultIDSortedNodeSet
-//=======================================================================
-
-TIDSortedNodeSet GHS3DPlugin_Hypothesis::DefaultIDSortedNodeSet()
-{
-  return TIDSortedNodeSet();
-}
-
-//=======================================================================
-//function : DefaultIDSortedElemSet
-//=======================================================================
-
-TIDSortedElemSet GHS3DPlugin_Hypothesis::DefaultIDSortedElemSet()
-{
-  return TIDSortedElemSet();
 }
 
 //=======================================================================
@@ -1085,7 +1070,11 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  /*dflts*/
 std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
                                             const bool                    hasShapeToMesh)
 {
-  TCollection_AsciiString cmd( "ghs3d" ); // ghs3dV4.1_32bits (to permit the .mesh output)
+  TCollection_AsciiString cmd;
+  if (hasShapeToMesh)
+    cmd = "ghs3d-41"; // to use old mesh2 format
+  else
+    cmd = "ghs3d"; // to use new mesh format
   // check if any option is overridden by hyp->myTextOption
   bool m   = hyp ? ( hyp->myTextOption.find("-m")  == std::string::npos ) : true;
   bool M   = hyp ? ( hyp->myTextOption.find("-M")  == std::string::npos ) : true;
@@ -1242,19 +1231,19 @@ GHS3DPlugin_Hypothesis::TGeomEntryGHS3DEnforcedVertexMap GHS3DPlugin_Hypothesis:
   return hyp ? hyp->_GetEnforcedVerticesByEntry(): DefaultGeomEntryGHS3DEnforcedVertexMap();
 }
 
-TIDSortedNodeSet GHS3DPlugin_Hypothesis::GetEnforcedNodes(const GHS3DPlugin_Hypothesis* hyp)
+GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap GHS3DPlugin_Hypothesis::GetEnforcedNodes(const GHS3DPlugin_Hypothesis* hyp)
 {
-  return hyp ? hyp->_GetEnforcedNodes():DefaultIDSortedNodeSet();
+  return hyp ? hyp->_GetEnforcedNodes():DefaultIDSortedNodeGroupMap();
 }
 
-TIDSortedElemSet GHS3DPlugin_Hypothesis::GetEnforcedEdges(const GHS3DPlugin_Hypothesis* hyp)
+GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap GHS3DPlugin_Hypothesis::GetEnforcedEdges(const GHS3DPlugin_Hypothesis* hyp)
 {
-  return hyp ? hyp->_GetEnforcedEdges():DefaultIDSortedElemSet();
+  return hyp ? hyp->_GetEnforcedEdges():DefaultIDSortedElemGroupMap();
 }
 
-TIDSortedElemSet GHS3DPlugin_Hypothesis::GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp)
+GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap GHS3DPlugin_Hypothesis::GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp)
 {
-  return hyp ? hyp->_GetEnforcedTriangles():DefaultIDSortedElemSet();
+  return hyp ? hyp->_GetEnforcedTriangles():DefaultIDSortedElemGroupMap();
 }
 
 GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)

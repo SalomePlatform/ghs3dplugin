@@ -27,6 +27,8 @@
 
 #include "GHS3DPlugin_Defs.hxx"
 
+#include <SMDS_MeshNode.hxx>
+
 #include "SMESH_Hypothesis.hxx"
 #include "SMESH_Mesh_i.hxx"
 #include "SMESH_Gen_i.hxx"
@@ -75,6 +77,9 @@ public:
   typedef std::map< std::string, TGHS3DEnforcedVertex* > TGroupNameGHS3DEnforcedVertexMap;
   
   typedef std::map<int,double> TID2SizeMap;
+  
+  typedef std::map<const SMDS_MeshElement*, std::string, TIDCompare > TIDSortedElemGroupMap;
+  typedef std::map<const SMDS_MeshNode*, std::string, TIDCompare > TIDSortedNodeGroupMap;
   
   /*!
    * To mesh "holes" in a solid or not. Default is to mesh.
@@ -187,12 +192,12 @@ public:
   /*!
    * To set enforced elements
    */
-  bool SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, double size);
-  bool SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, double size);
+  bool SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, double size, std::string groupName = "");
+  bool SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, double size, std::string groupName = "");
   void ClearEnforcedMeshes();
-  const TIDSortedNodeSet _GetEnforcedNodes() const { return _enfNodes; }
-  const TIDSortedElemSet _GetEnforcedEdges() const { return _enfEdges; }
-  const TIDSortedElemSet _GetEnforcedTriangles() const { return _enfTriangles; }
+  const TIDSortedNodeGroupMap _GetEnforcedNodes() const { return _enfNodes; }
+  const TIDSortedElemGroupMap _GetEnforcedEdges() const { return _enfEdges; }
+  const TIDSortedElemGroupMap _GetEnforcedTriangles() const { return _enfTriangles; }
   const TID2SizeMap _GetNodeIDToSizeMap() const {return _nodeIDToSizeMap; }
   const TID2SizeMap _GetElementIDToSizeMap() const {return _elementIDToSizeMap; }
   /*!
@@ -203,9 +208,9 @@ public:
   static TGHS3DEnforcedVertexEntryValues  GetEnforcedVerticesEntrySize(const GHS3DPlugin_Hypothesis* hyp);
   static TCoordsGHS3DEnforcedVertexMap GetEnforcedVerticesByCoords(const GHS3DPlugin_Hypothesis* hyp);
   static TGeomEntryGHS3DEnforcedVertexMap GetEnforcedVerticesByEntry(const GHS3DPlugin_Hypothesis* hyp);
-  static TIDSortedNodeSet GetEnforcedNodes(const GHS3DPlugin_Hypothesis* hyp);
-  static TIDSortedElemSet GetEnforcedEdges(const GHS3DPlugin_Hypothesis* hyp);
-  static TIDSortedElemSet GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp);
+  static TIDSortedNodeGroupMap GetEnforcedNodes(const GHS3DPlugin_Hypothesis* hyp);
+  static TIDSortedElemGroupMap GetEnforcedEdges(const GHS3DPlugin_Hypothesis* hyp);
+  static TIDSortedElemGroupMap GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp);
   static TID2SizeMap GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp);
   static TID2SizeMap GetElementIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp);
   
@@ -227,8 +232,8 @@ public:
   static TCoordsGHS3DEnforcedVertexMap DefaultCoordsGHS3DEnforcedVertexMap() {return TCoordsGHS3DEnforcedVertexMap();}
   static TGeomEntryGHS3DEnforcedVertexMap DefaultGeomEntryGHS3DEnforcedVertexMap() {return TGeomEntryGHS3DEnforcedVertexMap();}
   static TGroupNameGHS3DEnforcedVertexMap DefaultGroupNameGHS3DEnforcedVertexMap() {return TGroupNameGHS3DEnforcedVertexMap();}
-  static TIDSortedNodeSet DefaultIDSortedNodeSet();
-  static TIDSortedElemSet DefaultIDSortedElemSet();
+  static TIDSortedNodeGroupMap DefaultIDSortedNodeGroupMap() {return TIDSortedNodeGroupMap();}
+  static TIDSortedElemGroupMap DefaultIDSortedElemGroupMap() {return TIDSortedElemGroupMap();}
   static TID2SizeMap DefaultID2SizeMap();
   
   // Persistence
@@ -268,9 +273,9 @@ private:
   TCoordsGHS3DEnforcedVertexMap _coordsEnfVertexMap;
   // map to get "geom" enf vertex (through the geom entries)
   TGeomEntryGHS3DEnforcedVertexMap _geomEntryEnfVertexMap;
-  TIDSortedNodeSet _enfNodes;
-  TIDSortedElemSet _enfEdges;
-  TIDSortedElemSet _enfTriangles;
+  TIDSortedNodeGroupMap _enfNodes;
+  TIDSortedElemGroupMap _enfEdges;
+  TIDSortedElemGroupMap _enfTriangles;
   TID2SizeMap _nodeIDToSizeMap;
   TID2SizeMap _elementIDToSizeMap;
 };

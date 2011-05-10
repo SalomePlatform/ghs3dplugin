@@ -142,7 +142,9 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
    * To set an enforced mesh
    */
   bool SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, const char* theGroupName) throw (SALOME::SALOME_Exception);
   bool SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size, const char* theGroupName) throw (SALOME::SALOME_Exception);
   void ClearEnforcedMeshes();
 
   // Get implementation
@@ -153,7 +155,7 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   
   private:
   
-  bool _SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size) throw (SALOME::SALOME_Exception);
+  bool _SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size, const char* theGroupName="") throw (SALOME::SALOME_Exception);
 };
 
 #endif

@@ -144,7 +144,9 @@ module GHS3DPlugin
     void ClearEnforcedVertices();
     
     boolean SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType) raises (SALOME::SALOME_Exception);
+    boolean SetEnforcedMeshWithGroup(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in string groupName) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedMeshSize(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in double size) raises (SALOME::SALOME_Exception);
+    boolean SetEnforcedMeshSizeWithGroup(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in double size, in string groupName) raises (SALOME::SALOME_Exception);
     void ClearEnforcedMeshes();
   };
 };

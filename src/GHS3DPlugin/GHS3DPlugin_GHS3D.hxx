@@ -28,6 +28,7 @@
 
 #include "SMESH_3D_Algo.hxx"
 #include "SMESH_Gen.hxx"
+#include "SMESH_Gen_i.hxx"
 
 #include <map>
 #include <vector>
@@ -48,6 +49,7 @@ class SMESH_Mesh;
 class StdMeshers_ViscousLayers;
 class TCollection_AsciiString;
 class _Ghs2smdsConvertor;
+class TopoDS_Shape;
 
 class GHS3DPlugin_GHS3D: public SMESH_3D_Algo
 {
@@ -79,12 +81,15 @@ private:
 
   bool storeErrorDescription(const TCollection_AsciiString& logFile,
                              const _Ghs2smdsConvertor &     toSmdsConvertor );
-
+  TopoDS_Shape entryToShape(std::string entry);
+  
   int  _iShape;
   int  _nbShape;
   bool _keepFiles;
   const GHS3DPlugin_Hypothesis* _hyp;
   const StdMeshers_ViscousLayers* _viscousLayersHyp;
+  SALOMEDS::Study_var myStudy;
+  SMESH_Gen_i* smeshGen_i;
 
 #ifdef WITH_SMESH_CANCEL_COMPUTE
   volatile bool _compute_canceled;
