@@ -4063,9 +4063,11 @@ bool GHS3DPlugin_GHS3D::importGMFMesh(const char* theGMFFileName, SMESH_Mesh& th
 //   TopoDS_Shape theShape = theMesh.GetShapeToMesh();
   vector <const SMDS_MeshNode*> dummyNodeVector;
   map<const SMDS_MeshNode*,int> dummyNodeMap;
-  return readGMFFile(theGMFFileName, 
+  bool ok = readGMFFile(theGMFFileName, 
 #ifdef WITH_SMESH_CANCEL_COMPUTE
-                   this,
+                        this,
 #endif
-                   helper, theMesh.GetShapeToMesh(), dummyNodeVector, dummyNodeMap);
+                        helper, theMesh.GetShapeToMesh(), dummyNodeVector, dummyNodeMap);
+  theMesh.GetMeshDS()->Modified();
+  return ok;
 }
