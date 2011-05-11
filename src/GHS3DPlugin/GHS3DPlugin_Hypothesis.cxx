@@ -25,6 +25,7 @@
 //
 #include "GHS3DPlugin_Hypothesis.hxx"
 #include <SMESH_ProxyMesh.hxx>
+#include <SMESH_Group.hxx>
 #include <StdMeshers_QuadToTriaAdaptor.hxx>
 
 #include <TCollection_AsciiString.hxx>
@@ -417,11 +418,42 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedVertex(std::string theName, std::string 
 bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, double size, std::string groupName)
 {
   TIDSortedElemSet theElemSet;
-  SMDS_ElemIteratorPtr eIt;
-  eIt = theMesh.GetMeshDS()->elementsIterator(SMDSAbs_ElementType(elementType));
+  SMDS_ElemIteratorPtr eIt = theMesh.GetMeshDS()->elementsIterator(SMDSAbs_ElementType(elementType));
   while ( eIt->more() )
     theElemSet.insert( eIt->next() );
   MESSAGE("Add "<<theElemSet.size()<<" types["<<elementType<<"] from source mesh");
+  return SetEnforcedElements( theElemSet, elementType, size, groupName);
+}
+
+//=======================================================================
+//function : SetEnforcedGroup
+//=======================================================================
+bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::long_array_var theIDs, SMESH::ElementType elementType, double size, std::string groupName)
+{
+  MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedGroup");
+  TIDSortedElemSet theElemSet;
+    if ( theIDs->length() == 0 ){MESSAGE("The source group is empty");}
+    for (int i=0; i < theIDs->length(); i++) {
+      CORBA::Long ind = theIDs[i];
+      if (elementType == SMESH::NODE)
+      {
+        const SMDS_MeshNode * node = theMeshDS->FindNode(ind);
+        if (node)
+          theElemSet.insert( node );
+      }
+      else
+      {
+        const SMDS_MeshElement * elem = theMeshDS->FindElement(ind);
+        if (elem)
+          theElemSet.insert( elem );
+      }
+    }
+
+//   SMDS_ElemIteratorPtr it = theGroup->GetGroupDS()->GetElements();
+//   while ( it->more() ) 
+//     theElemSet.insert( it->next() );
+
+  MESSAGE("Add "<<theElemSet.size()<<" types["<<elementType<<"] from source group ");
   return SetEnforcedElements( theElemSet, elementType, size, groupName);
 }
 
@@ -447,7 +479,6 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
           added = true;
         }
         else {
-//           _enfNodes.insert(elem->begin_nodes(),elem->end_nodes());
           SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
           for (;nodeIt->more();) {
             node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());

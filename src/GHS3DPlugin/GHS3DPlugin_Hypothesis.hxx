@@ -193,6 +193,7 @@ public:
    * To set enforced elements
    */
   bool SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, double size, std::string groupName = "");
+  bool SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::long_array_var theIDs, SMESH::ElementType elementType, double size, std::string groupName = "");
   bool SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, double size, std::string groupName = "");
   void ClearEnforcedMeshes();
   const TIDSortedNodeGroupMap _GetEnforcedNodes() const { return _enfNodes; }
@@ -278,6 +279,7 @@ private:
   TIDSortedElemGroupMap _enfTriangles;
   TID2SizeMap _nodeIDToSizeMap;
   TID2SizeMap _elementIDToSizeMap;
+  std::map<std::string, TIDSortedElemSet > _entryToElemsMap;
 };
 
 

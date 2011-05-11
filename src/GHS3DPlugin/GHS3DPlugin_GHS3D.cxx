@@ -1009,16 +1009,11 @@ static void updateMeshGroups(SMESH_Mesh* theMesh,
   while (grIt->more()) {
     SMESH_Group * group = grIt->next();
     if ( !group ) continue;
-    MESSAGE("Group: " << group->GetName());
     SMESHDS_GroupBase* groupDS = group->GetGroupDS();
     if ( !groupDS ) continue;
-    MESSAGE("group->SMDSGroup().GetType(): " << (groupDS->GetType()));
-    MESSAGE("group->SMDSGroup().GetType()==anElem->GetType(): " << (groupDS->GetType()==anElem->GetType()));
-    MESSAGE("currentEnfVertex->grpName.compare(group->GetStoreName())==0: " << (groupName.compare(group->GetName())==0));
     if ( groupDS->GetType()==anElem->GetType() && groupName.compare(group->GetName())==0) {
       SMESHDS_Group* aGroupDS = static_cast<SMESHDS_Group*>( groupDS );
       aGroupDS->SMDSGroup().Add(anElem);
-      MESSAGE("Elem ID added in group: " << anElem->GetID());
       groupDone = true;
       MESSAGE("Successfully added enforced element to existing group " << groupName);
       break;
@@ -1051,7 +1046,7 @@ static bool readGMFFile(const char*                     theFile,
                         TopoDS_Shape                    theSolid,
                         vector <const SMDS_MeshNode*> & theNodeByGhs3dId,
                         map<const SMDS_MeshNode*,int> & theNodeToGhs3dIdMap,
-                        std::map<std::vector<double>, std::string> & enfVerticesWithGroup,
+                        std::vector<std::string> &      aNodeGroupByGhs3dId,
                         std::vector<std::string> &      anEdgeGroupByGhs3dId,
                         std::vector<std::string> &      aFaceGroupByGhs3dId)
 {
@@ -1194,8 +1189,8 @@ static bool readGMFFile(const char*                     theFile,
           coords.push_back(x);
           coords.push_back(y);
           coords.push_back(z);
-          if (enfVerticesWithGroup.find(coords) != enfVerticesWithGroup.end())
-            updateMeshGroups(theHelper->GetMesh(), aGMFNode, enfVerticesWithGroup[coords]);
+          if (aGMFID-1 < aNodeGroupByGhs3dId.size() && !aNodeGroupByGhs3dId.at(aGMFID-1).empty())
+            updateMeshGroups(theHelper->GetMesh(), aGMFNode, aNodeGroupByGhs3dId.at(aGMFID-1));
         }
       }
     }
@@ -1285,7 +1280,8 @@ static bool readGMFFile(const char*                     theFile,
         case GmfEdges:
           if (fullyCreatedElement) {
             aCreatedElem = theHelper->AddEdge( node[0], node[1], /*id =*/0, /*force3d =*/false );
-            updateMeshGroups(theHelper->GetMesh(), aCreatedElem, anEdgeGroupByGhs3dId[iElem]);
+            if (!anEdgeGroupByGhs3dId[iElem].empty())
+              updateMeshGroups(theHelper->GetMesh(), aCreatedElem, anEdgeGroupByGhs3dId[iElem]);
           }
           break;
         case GmfTriangles:
@@ -1293,7 +1289,8 @@ static bool readGMFFile(const char*                     theFile,
             aCreatedElem = theHelper->AddFace( node[0], node[1], node[2], /*id =*/0, /*force3d =*/false );
             for ( int iRef = 0; iRef < nbRef; iRef++ )
               nodeAssigne[ nodeID[ iRef ]] = 1;
-            updateMeshGroups(theHelper->GetMesh(), aCreatedElem, aFaceGroupByGhs3dId[iElem]);
+            if (!aFaceGroupByGhs3dId[iElem].empty())
+              updateMeshGroups(theHelper->GetMesh(), aCreatedElem, aFaceGroupByGhs3dId[iElem]);
           }
           break;
         case GmfQuadrilaterals:
@@ -1366,11 +1363,13 @@ static bool writeGMFFile(const char*                                     theMesh
                          std::vector <const SMDS_MeshNode*> &            theNodeByGhs3dId,
                          std::vector <const SMDS_MeshNode*> &            theEnforcedNodeByGhs3dId,
                          std::map<const SMDS_MeshNode*,int> &            aNodeToGhs3dIdMap,
+                         std::vector<std::string> &                      aNodeGroupByGhs3dId,
                          std::vector<std::string> &                      anEdgeGroupByGhs3dId,
                          std::vector<std::string> &                      aFaceGroupByGhs3dId,
                          GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap & theEnforcedNodes,
                          GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap & theEnforcedEdges,
                          GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap & theEnforcedTriangles,
+                         std::map<std::vector<double>, std::string> &    enfVerticesWithGroup,
                          GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues & theEnforcedVertices)
 {
   MESSAGE("writeGMFFile w/o geometry");
@@ -1379,11 +1378,9 @@ static bool writeGMFFile(const char*                                     theMesh
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues::const_iterator vertexIt;
   std::vector<double> enfVertexSizes;
   const SMDS_MeshElement* elem;
-  TIDSortedElemSet anElemSet, theKeptEnforcedEdges, theKeptEnforcedTriangles/*, theKeptEnforcedQuadrangles*/;
-  // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
-//   TIDSortedElemSet aQuadElemSet, aQuadEnforcedEdgeSet, aQuadEnforcedTriangleSet, aQuadEnforcedQuadrangleSet;
+  TIDSortedElemSet anElemSet, theKeptEnforcedEdges, theKeptEnforcedTriangles;
   SMDS_ElemIteratorPtr nodeIt;
-  map<const SMDS_MeshNode*,int> /*aNodeToGhs3dIdMap,*/ anEnforcedNodeToGhs3dIdMap;
+  map<const SMDS_MeshNode*,int> anEnforcedNodeToGhs3dIdMap;
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap::iterator elemIt;
   TIDSortedElemSet::iterator elemSetIt;
   bool isOK;
@@ -1408,10 +1405,6 @@ static bool writeGMFFile(const char*                                     theMesh
   while ( eIt->more() )
   {
     elem = eIt->next();
-    // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
-//     if (elem->IsQuadratic())
-//       aQuadElemSet.insert(elem);
-//     else
     anElemSet.insert(elem);
     nodeIt = elem->nodesIterator();
     nbNodes = elem->NbCornerNodes();
@@ -1452,10 +1445,6 @@ static bool writeGMFFile(const char*                                     theMesh
         int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
         anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
       }
-      // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
-//       if (elem->IsQuadratic())
-//         aQuadEnforcedEdgeSet.insert(elem);
-//       else
       theKeptEnforcedEdges.insert(elem);
     }
   }
@@ -1488,10 +1477,6 @@ static bool writeGMFFile(const char*                                     theMesh
         int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
         anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
       }
-      // GHS3D does not accept TrianglesP2 in input mesh file (Ghs3d 4.2)
-//       if (elem->IsQuadratic())
-//         aQuadEnforcedTriangleSet.insert(elem);
-//       else
       theKeptEnforcedTriangles.insert(elem);
     }
   }
@@ -1535,6 +1520,32 @@ static bool writeGMFFile(const char*                                     theMesh
     theOrderedNodes.push_back(node);
   }
   
+  // Iterate over the enforced nodes given by enforced elements
+  ghs3dNodeIt = theEnforcedNodeByGhs3dId.begin();
+  after  = theEnforcedNodeByGhs3dId.end();
+  std::cout << theEnforcedNodeByGhs3dId.size() << " nodes from enforced elements ..." << std::endl;
+  for ( ; ghs3dNodeIt != after; ++ghs3dNodeIt )
+  {
+    const SMDS_MeshNode* node = *ghs3dNodeIt;
+    std::vector<double> coords;
+    coords.push_back(node->X());
+    coords.push_back(node->Y());
+    coords.push_back(node->Z());
+    
+    if (nodesCoords.find(coords) != nodesCoords.end()) {
+      std::cout << "Node at " << node->X()<<", " <<node->Y()<<", " <<node->Z() << " found" << std::endl;
+      continue;
+    }
+    
+    if (theEnforcedVertices.find(coords) != theEnforcedVertices.end())
+      continue;
+    
+    nodesCoords.insert(coords);
+    theOrderedNodes.push_back(node);
+//     theRequiredNodes.push_back(node);
+  }
+  
+  
   // Iterate over the enforced nodes
   GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap::const_iterator enfNodeIt;
   std::cout << theEnforcedNodes.size() << " nodes from enforced nodes ..." << std::endl;
@@ -1561,35 +1572,11 @@ static bool writeGMFFile(const char*                                     theMesh
       continue;
     
     nodesCoords.insert(coords);
-    theOrderedNodes.push_back(node);
+//     theOrderedNodes.push_back(node);
     theRequiredNodes.push_back(node);
   }
-  // Iterate over the enforced nodes given by enforced elements
-  ghs3dNodeIt = theEnforcedNodeByGhs3dId.begin();
-  after  = theEnforcedNodeByGhs3dId.end();
-  std::cout << theEnforcedNodeByGhs3dId.size() << " nodes from enforced elements ..." << std::endl;
-  for ( ; ghs3dNodeIt != after; ++ghs3dNodeIt )
-  {
-    const SMDS_MeshNode* node = *ghs3dNodeIt;
-    std::vector<double> coords;
-    coords.push_back(node->X());
-    coords.push_back(node->Y());
-    coords.push_back(node->Z());
-    
-    if (nodesCoords.find(coords) != nodesCoords.end()) {
-      std::cout << "Node at " << node->X()<<", " <<node->Y()<<", " <<node->Z() << " found" << std::endl;
-      continue;
-    }
-    
-    if (theEnforcedVertices.find(coords) != theEnforcedVertices.end())
-      continue;
-    
-    nodesCoords.insert(coords);
-    theOrderedNodes.push_back(node);
-    theRequiredNodes.push_back(node);
-  }
+  int requiredNodes = theRequiredNodes.size();
   
-//   int requiredNodes = theRequiredNodes.size();
   int solSize = 0;
   std::vector<std::vector<double> > ReqVerTab;
   if (nbEnforcedVertices) {
@@ -1620,32 +1607,12 @@ static bool writeGMFFile(const char*                                     theMesh
   GmfSetKwd(idx, GmfVertices, theOrderedNodes.size()/*+solSize*/);
   for (ghs3dNodeIt = theOrderedNodes.begin();ghs3dNodeIt != theOrderedNodes.end();++ghs3dNodeIt)
     GmfSetLin(idx, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
-//   for (int i=0;i<solSize;i++) {
-//     std::cout << ReqVerTab[i][0] <<" "<< ReqVerTab[i][1] << " "<< ReqVerTab[i][2] << std::endl;
-//     GmfSetLin(idx, GmfVertices, ReqVerTab[i][0], ReqVerTab[i][1], ReqVerTab[i][2], dummyint);
-//   }
+
   std::cout << "End writting required nodes in GmfVertices" << std::endl;
 
-//   if (requiredNodes + solSize) {
-//     GmfSetKwd(idx, GmfRequiredVertices, requiredNodes+solSize);
-//     if (requiredNodes) {
-//       std::cout << "Begin writting required nodes in GmfRequiredVertices" << std::endl;
-//       int startId = theOrderedNodes.size()-requiredNodes+1;
-//       std::cout << "startId: " << startId << std::endl;
-//       for (int i=0;i<requiredNodes;i++)
-//         GmfSetLin(idx, GmfRequiredVertices, startId+i);
-//       std::cout << "End writting required nodes in GmfRequiredVertices" << std::endl;
-//     }
-  if (solSize) {
-    
-//     std::cout << "Begin writting required vertices in GmfRequiredVertices" << std::endl;
-//     int startId = theOrderedNodes.size()+1;
-//     std::cout << "startId: " << startId << std::endl;
-//     for (int i=0;i<solSize;i++)
-//       GmfSetLin(idx, GmfRequiredVertices, startId+i);
-//     std::cout << "End writting required vertices in GmfRequiredVertices" << std::endl;
-
-    std::cout << "Begin writting in sol file" << std::endl;
+  if (requiredNodes + solSize) {
+    std::cout << "Begin writting in req and sol file" << std::endl;
+    aNodeGroupByGhs3dId.resize( requiredNodes + solSize );
     idxRequired = GmfOpenMesh(theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
     if (!idxRequired) {
       GmfCloseMesh(idx);
@@ -1659,65 +1626,31 @@ static bool writeGMFFile(const char*                                     theMesh
       return false;
     }
     int TypTab[] = {GmfSca};
-    GmfSetKwd(idxRequired, GmfVertices, solSize);
-    GmfSetKwd(idxSol, GmfSolAtVertices, solSize, 1, TypTab);
+    GmfSetKwd(idxRequired, GmfVertices, requiredNodes + solSize);
+    GmfSetKwd(idxSol, GmfSolAtVertices, requiredNodes + solSize, 1, TypTab);
+    int usedEnforcedNodes = 0;
+    for (ghs3dNodeIt = theRequiredNodes.begin();ghs3dNodeIt != theRequiredNodes.end();++ghs3dNodeIt) {
+      GmfSetLin(idxRequired, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
+      GmfSetLin(idxSol, GmfSolAtVertices, 0.0);
+      aNodeGroupByGhs3dId[usedEnforcedNodes] = theEnforcedNodes.find((*ghs3dNodeIt))->second;
+      usedEnforcedNodes++;
+    }
+
     for (int i=0;i<solSize;i++) {
       std::cout << ReqVerTab[i][0] <<" "<< ReqVerTab[i][1] << " "<< ReqVerTab[i][2] << std::endl;
       std::cout << "enfVertexSizes.at("<<i<<"): " << enfVertexSizes.at(i) << std::endl;
       double solTab[] = {enfVertexSizes.at(i)};
       GmfSetLin(idxRequired, GmfVertices, ReqVerTab[i][0], ReqVerTab[i][1], ReqVerTab[i][2], dummyint);
       GmfSetLin(idxSol, GmfSolAtVertices, solTab);
+      aNodeGroupByGhs3dId[usedEnforcedNodes] = enfVerticesWithGroup.find(ReqVerTab[i])->second;
+      std::cout << "aNodeGroupByGhs3dId["<<usedEnforcedNodes<<"] = \""<<enfVerticesWithGroup.find(ReqVerTab[i])->second<<"\""<<std::endl;
+      usedEnforcedNodes++;
     }
-    std::cout << "End writting in sol file" << std::endl;
+    std::cout << "End writting in req and sol file" << std::endl;
   }
-//   }
 
-//  // GmfRequiredVertices + GmfSolAtVertices
-////  std::cout << "theRequiredNodes.size() + solSize: " << theRequiredNodes.size()+ solSize << std::endl;
-////  std::cout << "theRequiredNodes.size(): " << theRequiredNodes.size() << std::endl;
-//  std::cout << "solSize: " << solSize << std::endl;
-////  if (theRequiredNodes.size()+ solSize) {
-////    GmfSetKwd(idx, GmfRequiredVertices, theRequiredNodes.size()+solSize);
-////
-////    if (theRequiredNodes.size()) {
-////      std::cout << "Begin writting required nodes in GmfRequiredVertices" << std::endl;
-////      int startId = theOrderedNodes.size()-theRequiredNodes.size();
-////      std::cout << "startId: " << startId << std::endl;
-////      for (int i=1;i<=theRequiredNodes.size();i++)
-////        GmfSetLin(idx, GmfRequiredVertices, startId+i);
-////      std::cout << "End writting required nodes in GmfRequiredVertices" << std::endl;
-////    }
-//
-//    if (solSize) {
-//      std::cout << "Begin writting in sol file" << std::endl;
-//      GmfSetKwd(idx, GmfRequiredVertices, solSize);
-//      idxSol = GmfOpenMesh(theSolFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
-//      if (!idxSol) {
-//        GmfCloseMesh(idx);
-//        if (idxRequired)
-//          GmfCloseMesh(idxRequired);
-//        return false;
-//      }
-//
-//      int TypTab[] = {GmfSca};
-////      GmfSetKwd(idxRequired, GmfVertices, solSize);
-//      GmfSetKwd(idxSol, GmfSolAtVertices, solSize, 1, TypTab);
-//
-//      for (int i=0;i<solSize;i++) {
-//        double solTab[] = {enfVertexSizes.at(i)};
-//        GmfSetLin(idx, GmfRequiredVertices, theOrderedNodes.size()+i+1);
-//        GmfSetLin(idxSol, GmfSolAtVertices, solTab);
-////      GmfSetLin(idxRequired, GmfVertices, ReqVerTab[i][0], ReqVerTab[i][1], ReqVerTab[i][2], dummyint);
-//      }
-//      std::cout << "End writting in sol file" << std::endl;
-//    }
-//
-////  }
-
-  // GHS3D does not accept quadratic elements in input mesh file (Ghs3d 4.2)
-  int nedge[2], ntri[3]/*, nquad[4]*/ /*, nedgeP2[3], ntriP2[6], nquadQ2[9]*/;
-  
-  
+  int nedge[2], ntri[3];
+    
   // GmfEdges
   int usedEnforcedEdges = 0;
   if (theKeptEnforcedEdges.size()) {
@@ -1747,39 +1680,11 @@ static bool writeGMFFile(const char*                                     theMesh
     }
 //    GmfCloseMesh(idxRequired);
   }
-  
-  // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
-//   // GmfEdgesP2
-//   int usedEnforcedEdgesP2 = 0;
-//   if (aQuadEnforcedEdgeSet.size()) {
-// //    idxRequired = GmfOpenMesh(theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
-// //    if (!idxRequired)
-// //      return false;
-//     GmfSetKwd(idx, GmfEdgesP2, aQuadEnforcedEdgeSet.size());
-// //    GmfSetKwd(idxRequired, GmfEdges, theKeptEnforcedEdges.size());
-//     for(elemIt = aQuadEnforcedEdgeSet.begin() ; elemIt != aQuadEnforcedEdgeSet.end() ; ++elemIt) {
-//       elem = (*elemIt);
-//       nodeIt = elem->nodesIterator();
-//       int index=0;
-//       while ( nodeIt->more() ) {
-//         // find GHS3D ID
-//         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-//         map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-//         if (it == anEnforcedNodeToGhs3dIdMap.end())
-//           throw "Node not found";
-//         nedgeP2[index] = it->second;
-//         index++;
-//       }
-//       GmfSetLin(idx, GmfEdgesP2, nedgeP2[0], nedgeP2[1], nedgeP2[2], dummyint);
-// //      GmfSetLin(idxRequired, GmfEdges, nedge[0], nedge[1], dummyint);
-//       usedEnforcedEdgesP2++;
-//     }
-// //    GmfCloseMesh(idxRequired);
-//   }
 
-  if (usedEnforcedEdges/*+usedEnforcedEdgesP2*/) {
-    GmfSetKwd(idx, GmfRequiredEdges, usedEnforcedEdges/*+usedEnforcedEdgesP2*/);
-    for (int enfID=1;enfID<=usedEnforcedEdges/*+usedEnforcedEdgesP2*/;enfID++) {
+
+  if (usedEnforcedEdges) {
+    GmfSetKwd(idx, GmfRequiredEdges, usedEnforcedEdges);
+    for (int enfID=1;enfID<=usedEnforcedEdges;enfID++) {
       GmfSetLin(idx, GmfRequiredEdges, enfID);
     }
   }
@@ -1826,107 +1731,13 @@ static bool writeGMFFile(const char*                                     theMesh
       }
     }
   }
-  
-  // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
-//   // GmfTrianglesP2
-//   int usedEnforcedTrianglesP2 = 0;
-//   if (aQuadElemSet.size()+aQuadEnforcedTriangleSet.size()) {
-//     GmfSetKwd(idx, GmfTrianglesP2, aQuadElemSet.size()+aQuadEnforcedTriangleSet.size());
-//     for(elemIt = aQuadElemSet.begin() ; elemIt != aQuadElemSet.end() ; ++elemIt) {
-//       elem = (*elemIt);
-//       nodeIt = elem->nodesIterator();
-//       int index=0;
-//       while ( nodeIt->more() ) {
-//         // find GHS3D ID
-//         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-//         map< const SMDS_MeshNode*,int >::iterator it = aNodeToGhs3dIdMap.find(node);
-//         if (it == aNodeToGhs3dIdMap.end())
-//           throw "Node not found";
-//         ntriP2[index] = it->second;
-//         index++;
-//       }
-//       GmfSetLin(idx, GmfTrianglesP2, ntriP2[0], ntriP2[1], ntriP2[2], ntriP2[3], ntriP2[4], ntriP2[5], dummyint);
-//     }
-//     if (aQuadEnforcedTriangleSet.size()) {
-//       for(elemIt = aQuadEnforcedTriangleSet.begin() ; elemIt != aQuadEnforcedTriangleSet.end() ; ++elemIt) {
-//         elem = (*elemIt);
-//         nodeIt = elem->nodesIterator();
-//         int index=0;
-//         while ( nodeIt->more() ) {
-//           // find GHS3D ID
-//           const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-//           map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-//           if (it == anEnforcedNodeToGhs3dIdMap.end())
-//             throw "Node not found";
-//           ntriP2[index] = it->second;
-//           index++;
-//         }
-//         GmfSetLin(idx, GmfTrianglesP2, ntriP2[0], ntriP2[1], ntriP2[2], ntriP2[3], ntriP2[4], ntriP2[5], dummyint);
-//         usedEnforcedTrianglesP2++;
-//       }
-//     }
-//   }
-  
-  if (usedEnforcedTriangles/*+usedEnforcedTrianglesP2*/) {
-    GmfSetKwd(idx, GmfRequiredTriangles, usedEnforcedTriangles/*+usedEnforcedTrianglesP2*/);
-    for (int enfID=1;enfID<=usedEnforcedTriangles/*+usedEnforcedTrianglesP2*/;enfID++)
-      GmfSetLin(idx, GmfRequiredTriangles, anElemSet.size()/*+aQuadElemSet.size()*/+enfID);
-  }
 
-  // TODO
-//   // GmfQuadrangles
-//   int usedEnforcedQuadrilaterals = 0;
-//   if (anEnforcedQuadrangleSet.size()) {
-//     GmfSetKwd(idx, GmfQuadrilaterals, anEnforcedQuadrangleSet.size());
-//     for(elemIt = anEnforcedQuadrangleSet.begin() ; elemIt != anEnforcedQuadrangleSet.end() ; ++elemIt) {
-//       elem = (*elemIt);
-//       nodeIt = elem->nodesIterator();
-//       int index=0;
-//       for ( int j = 0; j < 4; ++j ) {
-//         // find GHS3D ID
-//         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-//         map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-//         if (it == anEnforcedNodeToGhs3dIdMap.end())
-//           throw "Node not found";
-//         nquad[index] = it->second;
-//         index++;
-//       }
-//       GmfSetLin(idx, GmfQuadrilaterals, nquad[0], nquad[1], nquad[2], nquad[3], dummyint);
-//       usedEnforcedQuadrilaterals++;
-//     }
-//   }
-//   
-//   // GHS3D does not accept EdgesP2 in input mesh file (Ghs3d 4.2)
-//   // GmfQuadranglesQ2
-//   int usedEnforcedQuadrilateralsQ2 = 0;
-//   if (aQuadEnforcedQuadrangleSet.size()) {
-//     GmfSetKwd(idx, GmfQuadrilateralsQ2, aQuadEnforcedQuadrangleSet.size());
-//     for(elemIt = aQuadEnforcedQuadrangleSet.begin() ; elemIt != aQuadEnforcedQuadrangleSet.end() ; ++elemIt) {
-//       elem = (*elemIt);
-//       nodeIt = elem->nodesIterator();
-//       int index=0;
-//       while ( nodeIt->more() ) {
-//         // find GHS3D ID
-//         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-//         map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-//         if (it == anEnforcedNodeToGhs3dIdMap.end())
-//           throw "Node not found";
-//         nquadQ2[index] = it->second;
-//         index++;
-//       }
-//       //
-//       // !!! The last value in nquadQ2 is missing because in Salome the quadratic quadrilaterals have only 8 points !!!
-//       //
-//       GmfSetLin(idx, GmfQuadrilateralsQ2, nquadQ2[0], nquadQ2[1], nquadQ2[2], nquadQ2[3], nquadQ2[4], nquadQ2[5], nquadQ2[6], nquadQ2[7], nquadQ2[8], dummyint);
-//       usedEnforcedQuadrilateralsQ2++;
-//     }
-//   }
-//   
-//   if (usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2) {
-//     GmfSetKwd(idx, GmfRequiredQuadrilaterals, usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2);
-//     for (int enfID=1;enfID<=usedEnforcedQuadrilaterals+usedEnforcedQuadrilateralsQ2;enfID++)
-//       GmfSetLin(idx, GmfRequiredQuadrilaterals, enfID);
-//   }
+  
+  if (usedEnforcedTriangles) {
+    GmfSetKwd(idx, GmfRequiredTriangles, usedEnforcedTriangles);
+    for (int enfID=1;enfID<=usedEnforcedTriangles;enfID++)
+      GmfSetLin(idx, GmfRequiredTriangles, anElemSet.size()+enfID);
+  }
 
   GmfCloseMesh(idx);
   if (idxRequired)
@@ -3506,19 +3317,19 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     }
   }
   
-  const SMDS_MeshNode* enfNode;
+//   const SMDS_MeshNode* enfNode;
   GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap enforcedNodes = GHS3DPlugin_Hypothesis::GetEnforcedNodes(_hyp);
-  GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap::const_iterator enfNodeIt = enforcedNodes.begin();
-  for ( ; enfNodeIt != enforcedNodes.end() ; ++enfNodeIt)
-  {
-    enfNode = enfNodeIt->first;
-    coords.clear();
-    coords.push_back(enfNode->X());
-    coords.push_back(enfNode->Y());
-    coords.push_back(enfNode->Z());
-    if (enfVerticesWithGroup.find(coords) == enfVerticesWithGroup.end())
-      enfVerticesWithGroup.insert(make_pair(coords,enfNodeIt->second));
-  }
+//   GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap::const_iterator enfNodeIt = enforcedNodes.begin();
+//   for ( ; enfNodeIt != enforcedNodes.end() ; ++enfNodeIt)
+//   {
+//     enfNode = enfNodeIt->first;
+//     coords.clear();
+//     coords.push_back(enfNode->X());
+//     coords.push_back(enfNode->Y());
+//     coords.push_back(enfNode->Z());
+//     if (enfVerticesWithGro
+//       enfVerticesWithGroup.insert(make_pair(coords,enfNodeIt->second));
+//   }
   
   
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap enforcedEdges = GHS3DPlugin_Hypothesis::GetEnforcedEdges(_hyp);
@@ -3533,7 +3344,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   
   std::vector <const SMDS_MeshNode*> aNodeByGhs3dId, anEnforcedNodeByGhs3dId;
   std::map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
-  std::vector<std::string> anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId;
+  std::vector<std::string> aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId;
   {
     SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
     if ( theMesh.NbQuadrangles() > 0 )
@@ -3545,9 +3356,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
     Ok = writeGMFFile(aGMFFileName.ToCString(), aRequiredVerticesFileName.ToCString(), aSolFileName.ToCString(),
                       *proxyMesh, &theMesh,
-                      aNodeByGhs3dId, anEnforcedNodeByGhs3dId, aNodeToGhs3dIdMap, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
-                      enforcedNodes, enforcedEdges, enforcedTriangles, /*enforcedQuadrangles,*/
-                      coordsSizeMap);
+                      aNodeByGhs3dId, anEnforcedNodeByGhs3dId, aNodeToGhs3dIdMap, 
+                      aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
+                      enforcedNodes, enforcedEdges, enforcedTriangles,
+                      enfVerticesWithGroup, coordsSizeMap);
   }
 
   // -----------------
@@ -3557,7 +3369,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   TCollection_AsciiString cmd = TCollection_AsciiString((char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp, false ).c_str());
 
   cmd += TCollection_AsciiString(" --in ") + aGenericName;
-  if ( nbEnforcedVertices + nbEnforcedVertices)
+  if ( nbEnforcedVertices + nbEnforcedNodes)
     cmd += TCollection_AsciiString(" --required_vertices ") + aGenericNameRequired;
   cmd += TCollection_AsciiString(" --out ") + aResultFileName;
   cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
@@ -3584,7 +3396,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                    this,
 #endif
                    theHelper, theShape, aNodeByGhs3dId, aNodeToGhs3dIdMap,
-                   enfVerticesWithGroup, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId);
+                   aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId);
   
   // ---------------------
   // remove working files
@@ -4222,13 +4034,13 @@ bool GHS3DPlugin_GHS3D::importGMFMesh(const char* theGMFFileName, SMESH_Mesh& th
   std::vector <const SMDS_MeshNode*> dummyNodeVector;
   std::map<const SMDS_MeshNode*,int> dummyNodeMap;
   std::map<std::vector<double>, std::string> dummyEnfVertGroup;
-  std::vector<std::string> dummyElemGroup1, dummyElemGroup2;
+  std::vector<std::string> dummyElemGroup;
   
   bool ok = readGMFFile(theGMFFileName, 
 #ifdef WITH_SMESH_CANCEL_COMPUTE
                         this,
 #endif
-                        helper, theMesh.GetShapeToMesh(), dummyNodeVector, dummyNodeMap, dummyEnfVertGroup, dummyElemGroup1, dummyElemGroup2);
+                        helper, theMesh.GetShapeToMesh(), dummyNodeVector, dummyNodeMap, dummyElemGroup, dummyElemGroup, dummyElemGroup);
   theMesh.GetMeshDS()->Modified();
   return ok;
 }

@@ -35,6 +35,7 @@
 #include "SMESH_Group_i.hxx"
 #include "SMESH_Gen_i.hxx"
 #include "SMESH_TypeDefs.hxx"
+#include "SMESHDS_GroupBase.hxx"
 
 #ifndef GHS3D_VERSION
 #define GHS3D_VERSION 41
@@ -521,8 +522,8 @@ CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertex(CORBA::Double x, CORBA
     SALOME::ExceptionStruct ExDescription;
     ExDescription.text = ex.what();
     ExDescription.type = SALOME::BAD_PARAM;
-    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::GetEnforcedVertex(x,y,z)";
-    ExDescription.lineNumber = 0;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+    ExDescription.lineNumber = 513;
     throw SALOME::SALOME_Exception(ExDescription);
   }
   catch (SALOME_Exception& ex) {
@@ -571,8 +572,8 @@ CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertexGeom(GEOM::GEOM_Object_
     SALOME::ExceptionStruct ExDescription;
     ExDescription.text = ex.what();
     ExDescription.type = SALOME::BAD_PARAM;
-    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::GetEnforcedVertexGeom(theVertex)";
-    ExDescription.lineNumber = 0;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+    ExDescription.lineNumber = 538;
     throw SALOME::SALOME_Exception(ExDescription);
   }
   catch (SALOME_Exception& ex) {
@@ -635,8 +636,8 @@ bool GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertex(CORBA::Double x, CORBA::Doub
     SALOME::ExceptionStruct ExDescription;
     ExDescription.text = ex.what();
     ExDescription.type = SALOME::BAD_PARAM;
-    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::RemoveEnforcedVertex(x,y,z)";
-    ExDescription.lineNumber = 408;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+    ExDescription.lineNumber = 625;
     throw SALOME::SALOME_Exception(ExDescription);
   }
   catch (SALOME_Exception& ex) {
@@ -681,8 +682,8 @@ bool GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr th
     SALOME::ExceptionStruct ExDescription;
     ExDescription.text = ex.what();
     ExDescription.type = SALOME::BAD_PARAM;
-    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::RemoveEnforcedVertex(x,y,z)";
-    ExDescription.lineNumber = 408;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+    ExDescription.lineNumber = 648;
     throw SALOME::SALOME_Exception(ExDescription);
   }
   catch (SALOME_Exception& ex) {
@@ -723,7 +724,8 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_pt
   bool res = _SetEnforcedMesh(theSource, theType, -1.0, theGroupName);
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
-  if (theGroup_i)
+  SMESH_GroupOnGeom_i* theGroupOnGeom_i = SMESH::DownCast<SMESH_GroupOnGeom_i*>( theSource);
+  if (theGroup_i or theGroupOnGeom_i)
   {
     SMESH::TPythonDump () << _this() << ".SetEnforcedMeshWithGroup( " 
                           << theSource << ", " << theType << ", \"" << theGroupName << "\" )";
@@ -738,8 +740,8 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_pt
   SALOME::ExceptionStruct ExDescription;
   ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
   ExDescription.type = SALOME::BAD_PARAM;
-  ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::SetEnforcedMesh(theSource, theType)";
-  ExDescription.lineNumber = 463;
+  ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+  ExDescription.lineNumber = 719;
   throw SALOME::SALOME_Exception(ExDescription);
 #endif
 }
@@ -750,11 +752,13 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_pt
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType)
   throw (SALOME::SALOME_Exception)
 {
+  MESSAGE("GHS3DPlugin_Hypothesis_i::SetEnforcedMesh");
 #if GHS3D_VERSION >= 42
   bool res = _SetEnforcedMesh(theSource, theType, -1.0);
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
-  if (theGroup_i)
+  SMESH_GroupOnGeom_i* theGroupOnGeom_i = SMESH::DownCast<SMESH_GroupOnGeom_i*>( theSource);
+  if (theGroup_i or theGroupOnGeom_i)
   {
     SMESH::TPythonDump () << _this() << ".SetEnforcedMesh( " 
                           << theSource << ", " << theType << " )";
@@ -769,8 +773,8 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSour
   SALOME::ExceptionStruct ExDescription;
   ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
   ExDescription.type = SALOME::BAD_PARAM;
-  ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::SetEnforcedMesh(theSource, theType)";
-  ExDescription.lineNumber = 463;
+  ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+  ExDescription.lineNumber = 750;
   throw SALOME::SALOME_Exception(ExDescription);
 #endif
 }
@@ -785,15 +789,16 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSourc
     SALOME::ExceptionStruct ExDescription;
     ExDescription.text = "Size cannot be negative";
     ExDescription.type = SALOME::BAD_PARAM;
-    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::SetEnforcedMeshSize(theSource, theType)";
-    ExDescription.lineNumber = 475;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+    ExDescription.lineNumber = 781;
     throw SALOME::SALOME_Exception(ExDescription);
   }
   
   bool res = _SetEnforcedMesh(theSource, theType, theSize,theGroupName);
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
-  if (theGroup_i)
+  SMESH_GroupOnGeom_i* theGroupOnGeom_i = SMESH::DownCast<SMESH_GroupOnGeom_i*>( theSource);
+  if (theGroup_i or theGroupOnGeom_i)
   {
     SMESH::TPythonDump () << _this() << ".SetEnforcedMeshSizeWithGroup( " 
                           << theSource << ", " << theType << ", " << theSize << ", \"" << theGroupName << "\" )";
@@ -816,15 +821,16 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr the
     SALOME::ExceptionStruct ExDescription;
     ExDescription.text = "Size cannot be negative";
     ExDescription.type = SALOME::BAD_PARAM;
-    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::SetEnforcedMeshSize(theSource, theType)";
-    ExDescription.lineNumber = 475;
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+    ExDescription.lineNumber = 812;
     throw SALOME::SALOME_Exception(ExDescription);
   }
   
   bool res = _SetEnforcedMesh(theSource, theType, theSize);
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
-  if (theGroup_i)
+  SMESH_GroupOnGeom_i* theGroupOnGeom_i = SMESH::DownCast<SMESH_GroupOnGeom_i*>( theSource);
+  if (theGroup_i or theGroupOnGeom_i)
   {
     SMESH::TPythonDump () << _this() << ".SetEnforcedMeshSize( " 
                           << theSource << ", " << theType << ", " << theSize << " )";
@@ -840,6 +846,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr the
 bool GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize, const char* theGroupName)
   throw (SALOME::SALOME_Exception)
 {
+  MESSAGE("GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh");
   ASSERT(myBaseImpl);
   
   if (CORBA::is_nil( theSource ))
@@ -847,103 +854,88 @@ bool GHS3DPlugin_Hypothesis_i::_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSou
     SALOME::ExceptionStruct ExDescription;
     ExDescription.text = "The source mesh CORBA object is NULL";
     ExDescription.type = SALOME::BAD_PARAM;
-    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize, theGroupName)";
+    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
     ExDescription.lineNumber = 840;
     throw SALOME::SALOME_Exception(ExDescription);
   }
   
   if ((theType != SMESH::NODE) && (theType != SMESH::EDGE) && (theType != SMESH::FACE))
   {
-    SALOME::ExceptionStruct ExDescription;
-    ExDescription.text = "Bad elementType";
-    ExDescription.type = SALOME::BAD_PARAM;
-    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize, theGroupName)";
-    ExDescription.lineNumber = 840;
-    throw SALOME::SALOME_Exception(ExDescription);
+    return 0;
+//     SALOME::ExceptionStruct ExDescription;
+//     ExDescription.text = "Bad elementType";
+//     ExDescription.type = SALOME::BAD_PARAM;
+//     ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+//     ExDescription.lineNumber = 840;
+//     throw SALOME::SALOME_Exception(ExDescription);
   }
   
   SMESH::array_of_ElementType_var types = theSource->GetTypes();
-//   MESSAGE("Required type is "<<theType);
-//   MESSAGE("Available types:");
-//   for (int i=0;i<types->length();i++){MESSAGE(types[i]);}
+  MESSAGE("Required type is "<<theType);
+  MESSAGE("Available types:");
+  for (int i=0;i<types->length();i++){MESSAGE(types[i]);}
   if ( types->length() >= 1 && types[types->length()-1] <  theType)
   {
-    SALOME::ExceptionStruct ExDescription;
-    ExDescription.text = "The source mesh has bad type";
-    ExDescription.type = SALOME::BAD_PARAM;
-    ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize, theGroupName)";
-    ExDescription.lineNumber = 840;
-    throw SALOME::SALOME_Exception(ExDescription);
+    return 0;
+//     SALOME::ExceptionStruct ExDescription;
+//     ExDescription.text = "The source mesh has bad type";
+//     ExDescription.type = SALOME::BAD_PARAM;
+//     ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+//     ExDescription.lineNumber = 840;
+//     throw SALOME::SALOME_Exception(ExDescription);
   }
-  
-  SMESHDS_Mesh* theMeshDS;
-  SMESH_Mesh_i* anImplPtr = SMESH::DownCast<SMESH_Mesh_i*>(theSource->GetMesh());
-  if (anImplPtr)
-    theMeshDS = anImplPtr->GetImpl().GetMeshDS();
-  else
-    return false;
   
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
+  SMESH_GroupOnGeom_i* theGroupOnGeom_i = SMESH::DownCast<SMESH_GroupOnGeom_i*>( theSource);
   TIDSortedElemSet theElemSet;
 
   if (theMesh_i)
   {
     try {
-      return this->GetImpl()->SetEnforcedMesh(anImplPtr->GetImpl(), theType, theSize, theGroupName);
+      return this->GetImpl()->SetEnforcedMesh(theMesh_i->GetImpl(), theType, theSize, theGroupName);
     }
     catch (const std::invalid_argument& ex) {
       SALOME::ExceptionStruct ExDescription;
       ExDescription.text = ex.what();
       ExDescription.type = SALOME::BAD_PARAM;
-      ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize, theGroupName)";
+      ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
       ExDescription.lineNumber = 840;
       throw SALOME::SALOME_Exception(ExDescription);
     }
     catch (SALOME_Exception& ex) {
       THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
     }
-//
-//      SMESH::long_array_var anIDs = theMesh_i->GetElementsByType(theType);
-//      if ( anIDs->length() == 0 ){MESSAGE("The source mesh is empty");}
-//      for (int i=0; i<anIDs->length(); i++) {
-//        CORBA::Long ind = anIDs[i];
-//        const SMDS_MeshElement * elem = theMeshDS->FindElement(ind);
-//        if (elem)
-//          theElemSet.insert( elem );
-//      }
-////    }
-//    MESSAGE("Add "<<theElemSet.size()<<" types["<<theType<<"] from source mesh");
   }
   else if (theGroup_i && types->length() == 1 && types[0] == theType)
   {
-    SMESH::long_array_var anIDs = theGroup_i->GetListOfID();
-    if ( anIDs->length() == 0 ){MESSAGE("The source group is empty");}
-    for (int i=0; i<anIDs->length(); i++) {
-      CORBA::Long ind = anIDs[i];
-      if (theType == SMESH::NODE)
-      {
-        const SMDS_MeshNode * node = theMeshDS->FindNode(ind);
-        if (node)
-          theElemSet.insert( node );
-      }
-      else
-      {
-        const SMDS_MeshElement * elem = theMeshDS->FindElement(ind);
-        if (elem)
-          theElemSet.insert( elem );
-      }
-    }
-    MESSAGE("Add "<<theElemSet.size()<<" types["<<theType<<"] from source group "<< theGroup_i->GetName());
-
+    MESSAGE("The source is a group")
     try {
-      return this->GetImpl()->SetEnforcedElements(theElemSet, theType, theSize, theGroupName);
+      return this->GetImpl()->SetEnforcedGroup(theGroup_i->GetGroupDS()->GetMesh(),theGroup_i->GetListOfID(), theType, theSize, theGroupName);
     }
     catch (const std::invalid_argument& ex) {
       SALOME::ExceptionStruct ExDescription;
       ExDescription.text = ex.what();
       ExDescription.type = SALOME::BAD_PARAM;
-      ExDescription.sourceFile = "GHS3DPlugin_Hypothesis::_SetEnforcedMesh(theSource, theType, theSize, theGroupName)";
+      ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+      ExDescription.lineNumber = 840;
+      throw SALOME::SALOME_Exception(ExDescription);
+    }
+    catch (SALOME_Exception& ex) {
+      THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+    }
+  }
+  else if (theGroupOnGeom_i && types->length() == 1 && types[0] == theType)
+  {
+    MESSAGE("The source is a group on geom")
+    try {
+      return this->GetImpl()->SetEnforcedGroup(theGroupOnGeom_i->GetGroupDS()->GetMesh(),theGroupOnGeom_i->GetListOfID(), theType, theSize, theGroupName);
+    }
+    catch (const std::invalid_argument& ex) {
+      SALOME::ExceptionStruct ExDescription;
+      ExDescription.text = ex.what();
+      ExDescription.type = SALOME::BAD_PARAM;
+      ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
       ExDescription.lineNumber = 840;
       throw SALOME::SALOME_Exception(ExDescription);
     }
