@@ -1063,9 +1063,9 @@ static bool readGMFFile(const char*                     theFile,
   std::cout << "theHelper->GetMesh()->NbNodes(): " << nbMeshNodes << std::endl;
   
   const bool isQuadMesh = 
-  theHelper->GetMesh()->NbEdges( ORDER_QUADRATIC ) ||
-  theHelper->GetMesh()->NbFaces( ORDER_QUADRATIC ) ||
-  theHelper->GetMesh()->NbVolumes( ORDER_QUADRATIC );
+    theHelper->GetMesh()->NbEdges( ORDER_QUADRATIC ) ||
+    theHelper->GetMesh()->NbFaces( ORDER_QUADRATIC ) ||
+    theHelper->GetMesh()->NbVolumes( ORDER_QUADRATIC );
   std::cout << "isQuadMesh: " << isQuadMesh << std::endl;
   
   if (theHelper->GetSubShapeID() != 0)
@@ -1138,16 +1138,16 @@ static bool readGMFFile(const char*                     theFile,
       std::cout << nbInitialNodes << " from input mesh " << std::endl;
 
       // Remove orphan nodes from previous enforced mesh which was cleared
-      if ( nbElem < nbMeshNodes ) {
-        const SMDS_MeshNode* node;
-        SMDS_NodeIteratorPtr nodeIt = theMeshDS->nodesIterator();
-        while ( nodeIt->more() )
-        {
-          node = nodeIt->next();
-          if (theNodeToGhs3dIdMap.find(node) != theNodeToGhs3dIdMap.end())
-            theMeshDS->RemoveNode(node);
-        }
-      }
+//       if ( nbElem < nbMeshNodes ) {
+//         const SMDS_MeshNode* node;
+//         SMDS_NodeIteratorPtr nodeIt = theMeshDS->nodesIterator();
+//         while ( nodeIt->more() )
+//         {
+//           node = nodeIt->next();
+//           if (theNodeToGhs3dIdMap.find(node) != theNodeToGhs3dIdMap.end())
+//             theMeshDS->RemoveNode(node);
+//         }
+//       }
 
       
       int aGMFID;
@@ -1374,7 +1374,7 @@ static bool writeGMFFile(const char*                                     theMesh
                          GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues & theEnforcedVertices)
 {
   MESSAGE("writeGMFFile w/o geometry");
-  int idx, idxRequired = 0, idxSol;
+  int idx, idxRequired = 0, idxSol = 0;
   const int dummyint = 0;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues::const_iterator vertexIt;
   std::vector<double> enfVertexSizes;
