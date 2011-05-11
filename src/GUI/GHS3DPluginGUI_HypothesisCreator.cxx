@@ -634,9 +634,9 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   h_data.myEnforcedVertices.clear();
   for (int i=0 ; i<vertices->length() ; i++) {
     TEnfVertex* myVertex;
-    myVertex->name = vertices[i].name;
-    myVertex->geomEntry = vertices[i].geomEntry;
-    myVertex->groupName = vertices[i].groupName;
+    myVertex->name = CORBA::string_dup(vertices[i].name.in());
+    myVertex->geomEntry = CORBA::string_dup(vertices[i].geomEntry.in());
+    myVertex->groupName = CORBA::string_dup(vertices[i].groupName.in());
     myVertex->size = vertices[i].size;
     if (vertices[i].coords.length()) {
       for (int c = 0; c < vertices[i].coords.length() ; c++)
@@ -714,26 +714,28 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
     TEnfVertexList::const_iterator it;
     for(it = h_data.myEnforcedVertices.begin() ; it != h_data.myEnforcedVertices.end(); it++ ) {
       TEnfVertex* enfVertex = (*it);
-      double x = enfVertex->coords.at(0);
-      double y = enfVertex->coords.at(1);
-      double z = enfVertex->coords.at(2);
-      double size = enfVertex->size;
-      MESSAGE("(" << x   << ", "
-                       << y   << ", "
-                       << z   << ") = "
-                       << size  );
-      double mySize;
-      try {
-        mySize = h->GetEnforcedVertex(x,y,z);
-        MESSAGE("Old size: " << mySize);
-        if (mySize != size) {
-          MESSAGE("Setting new size: " << size);
-          h->SetEnforcedVertex(x,y,z,size);
+      if (enfVertex->coords.size()) {
+        double x = enfVertex->coords.at(0);
+        double y = enfVertex->coords.at(1);
+        double z = enfVertex->coords.at(2);
+        double size = enfVertex->size;
+        MESSAGE("(" << x   << ", "
+                        << y   << ", "
+                        << z   << ") = "
+                        << size  );
+        double mySize;
+        try {
+          mySize = h->GetEnforcedVertex(x,y,z);
+          MESSAGE("Old size: " << mySize);
+          if (mySize != size) {
+            MESSAGE("Setting new size: " << size);
+            h->SetEnforcedVertex(x,y,z,size);
+          }
         }
-      }
-      catch (...) {
-        MESSAGE("Setting new size: " << size);
-        h->SetEnforcedVertex( x, y, z, size);
+        catch (...) {
+          MESSAGE("Setting new size: " << size);
+          h->SetEnforcedVertex( x, y, z, size);
+        }
       }
     }
   }
@@ -765,6 +767,9 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
 
   for (int i=0 ; i<mySmpModel->rowCount() ; i++) {
     TEnfVertex *myVertex;
+    myVertex->name = "";
+    myVertex->geomEntry = "";
+    myVertex->groupName = "";
     myVertex->coords.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_X_COLUMN)).toDouble());
     myVertex->coords.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_Y_COLUMN)).toDouble());
     myVertex->coords.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_Z_COLUMN)).toDouble());
