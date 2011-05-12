@@ -1280,7 +1280,7 @@ static bool readGMFFile(const char*                     theFile,
         case GmfEdges:
           if (fullyCreatedElement) {
             aCreatedElem = theHelper->AddEdge( node[0], node[1], /*id =*/0, /*force3d =*/false );
-            if (!anEdgeGroupByGhs3dId[iElem].empty())
+            if (anEdgeGroupByGhs3dId.size() && !anEdgeGroupByGhs3dId[iElem].empty())
               updateMeshGroups(theHelper->GetMesh(), aCreatedElem, anEdgeGroupByGhs3dId[iElem]);
           }
           break;
@@ -1289,7 +1289,7 @@ static bool readGMFFile(const char*                     theFile,
             aCreatedElem = theHelper->AddFace( node[0], node[1], node[2], /*id =*/0, /*force3d =*/false );
             for ( int iRef = 0; iRef < nbRef; iRef++ )
               nodeAssigne[ nodeID[ iRef ]] = 1;
-            if (!aFaceGroupByGhs3dId[iElem].empty())
+            if (aFaceGroupByGhs3dId.size() && !aFaceGroupByGhs3dId[iElem].empty())
               updateMeshGroups(theHelper->GetMesh(), aCreatedElem, aFaceGroupByGhs3dId[iElem]);
           }
           break;
