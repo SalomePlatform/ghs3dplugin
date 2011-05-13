@@ -1147,13 +1147,11 @@ static bool readGMFFile(const char*                     theFile,
       
       int aGMFID;
 
-      float VerTab_f[nbElem][3];
-      double VerTab_d[nbElem][3];
+      float VerTab_f[3];
       double x, y, z;
-      std::vector<double> coords;
       const SMDS_MeshNode * aGMFNode;
 
-      shapeID = theMeshDS->ShapeToIndex( theSolid );
+      //shapeID = theMeshDS->ShapeToIndex( theSolid );
       for ( int iElem = 0; iElem < nbElem; iElem++ ) {
 #ifdef WITH_SMESH_CANCEL_COMPUTE
         if(theAlgo->computeCanceled()) {
@@ -1163,22 +1161,18 @@ static bool readGMFFile(const char*                     theFile,
           return false;
         }
 #endif
-        coords.clear();
         if (ver == GmfFloat) {
-          GmfGetLin(InpMsh, token, &VerTab_f[nbElem][0], &VerTab_f[nbElem][1], &VerTab_f[nbElem][2], &dummy);
-          x = (double) VerTab_f[nbElem][0];
-          y = (double) VerTab_f[nbElem][1];
-          z = (double) VerTab_f[nbElem][2];
+          GmfGetLin(InpMsh, token, &VerTab_f[0], &VerTab_f[1], &VerTab_f[2], &dummy);
+          x = VerTab_f[0];
+          y = VerTab_f[1];
+          z = VerTab_f[2];
         }
         else {
-          GmfGetLin(InpMsh, token, &VerTab_d[nbElem][0], &VerTab_d[nbElem][1], &VerTab_d[nbElem][2], &dummy);
-          x = VerTab_d[nbElem][0];
-          y = VerTab_d[nbElem][1];
-          z = VerTab_d[nbElem][2];
+          GmfGetLin(InpMsh, token, &x, &y, &z, &dummy);
         }
         if (iElem >= nbInitialNodes) {
           if ( elemSearcher &&
-                elemSearcher->FindElementsByPoint( gp_Pnt(x, y, z), SMDSAbs_Node, foundVolumes ))
+                elemSearcher->FindElementsByPoint( gp_Pnt(x,y,z), SMDSAbs_Volume, foundVolumes))
             aGMFNode = 0;
           else
             aGMFNode = theHelper->AddNode(x, y, z);
@@ -1186,9 +1180,6 @@ static bool readGMFFile(const char*                     theFile,
           aGMFID = iElem -nbInitialNodes +1;
           GMFNode[ aGMFID ] = aGMFNode;
           nodeAssigne[ aGMFID ] = 0;
-          coords.push_back(x);
-          coords.push_back(y);
-          coords.push_back(z);
           if (aGMFID-1 < aNodeGroupByGhs3dId.size() && !aNodeGroupByGhs3dId.at(aGMFID-1).empty())
             updateMeshGroups(theHelper->GetMesh(), aGMFNode, aNodeGroupByGhs3dId.at(aGMFID-1));
         }
