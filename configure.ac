@@ -353,8 +353,11 @@ echo
 
 CHECK_GHS3D
 if test "${GHS3D_ok}" = "yes"; then
-        GHS3D_VERSION=`ghs3d -u |grep "TETMESH-GHS3D SOFTWARE"|awk '{print $3}'|awk -F- '{print $1}'|awk -F. '{print $1$2}'`
-        AC_DEFINE_UNQUOTED(GHS3D_VERSION,${GHS3D_VERSION})
+  if test "x$GHS3D_VERSION" = "x"
+  then
+    GHS3D_VERSION=`ghs3d -u |grep "TETMESH-GHS3D SOFTWARE"|awk '{print $3}'|awk -F- '{print $1}'|awk -F. '{print $1$2}'`
+  fi
+  AC_DEFINE_UNQUOTED(GHS3D_VERSION,${GHS3D_VERSION})
 fi
 
 echo
