@@ -701,12 +701,14 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
 //        else {
             // iterate over vertices of hypo
             for(int i = 0 ; i <nbVertexHyp ; i++) {
+              if (vertexHyp[i].coords.length()) {
                 double x = vertexHyp[i].coords[0];
                 double y = vertexHyp[i].coords[1];
                 double z = vertexHyp[i].coords[2];
                 // vertex is removed
                 if (!smpVertexExists(x,y,z))
                     h->RemoveEnforcedVertex(x,y,z);
+              }
             }
 //        }
     }
