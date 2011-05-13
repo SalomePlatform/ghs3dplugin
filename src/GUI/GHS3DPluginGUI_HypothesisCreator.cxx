@@ -633,7 +633,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   MESSAGE("vertices->length(): " << vertices->length());
   h_data.myEnforcedVertices.clear();
   for (int i=0 ; i<vertices->length() ; i++) {
-    TEnfVertex* myVertex;
+    TEnfVertex* myVertex = new TEnfVertex();
     myVertex->name = CORBA::string_dup(vertices[i].name.in());
     myVertex->geomEntry = CORBA::string_dup(vertices[i].geomEntry.in());
     myVertex->groupName = CORBA::string_dup(vertices[i].groupName.in());
@@ -766,7 +766,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
   h_data.myEnforcedVertices.clear();
 
   for (int i=0 ; i<mySmpModel->rowCount() ; i++) {
-    TEnfVertex *myVertex;
+    TEnfVertex *myVertex = new TEnfVertex();
     myVertex->name = "";
     myVertex->geomEntry = "";
     myVertex->groupName = "";
