@@ -113,8 +113,8 @@ module GHS3DPlugin
     void SetToUseBoundaryRecoveryVersion(in boolean toUse);
     boolean GetToUseBoundaryRecoveryVersion();
     /*!
-     * Applies ﬁnite-element correction by replacing overconstrained elements where
-     * it is possible. The process is cutting ﬁrst the overconstrained edges and
+     * Applies finite-element correction by replacing overconstrained elements where
+     * it is possible. The process is cutting first the overconstrained edges and
      * second the overconstrained facets. This insure that no edges have two boundary
      * vertices and that no facets have three boundary vertices.
      */
@@ -134,6 +134,7 @@ module GHS3DPlugin
      * To set an enforced vertex
      */
     boolean SetEnforcedVertex(in double x, in double y, in double z, in double size) raises (SALOME::SALOME_Exception);
+    boolean SetEnforcedVertexWithGroup(in double x, in double y, in double z, in double size, in string groupName) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedVertexGeom(in GEOM::GEOM_Object theVertex, in double size) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedVertexGeomWithGroup(in GEOM::GEOM_Object theVertex, in double size, in string groupName) raises (SALOME::SALOME_Exception);
     double GetEnforcedVertex(in double x, in double y, in double z) raises (SALOME::SALOME_Exception);
