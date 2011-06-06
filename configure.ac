@@ -1,20 +1,20 @@
-#  Copyright (C) 2004-2010  CEA/DEN, EDF R&D
+# Copyright (C) 2004-2011  CEA/DEN, EDF R&D
 #
-#  This library is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU Lesser General Public
-#  License as published by the Free Software Foundation; either
-#  version 2.1 of the License.
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License.
 #
-#  This library is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
 #
-#  You should have received a copy of the GNU Lesser General Public
-#  License along with this library; if not, write to the Free Software
-#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #
-#  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+# See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
 #  PLEASE DO NOT MODIFY configure.in FILE
@@ -27,7 +27,7 @@
 # Modified by : Marc Tajchman (CEA)
 # Created from configure.in.base
 #
-AC_INIT([Salome2 Project GHS3DPLUGIN module],[6.2.0], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
+AC_INIT([Salome2 Project GHS3DPLUGIN module],[6.3.0], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
 AC_CONFIG_AUX_DIR(adm_local/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -352,6 +352,13 @@ echo ---------------------------------------------
 echo
 
 CHECK_GHS3D
+if test "${GHS3D_ok}" = "yes"; then
+  if test "x$GHS3D_VERSION" = "x"
+  then
+    GHS3D_VERSION=`ghs3d -u |grep "TETMESH-GHS3D SOFTWARE"|awk '{print $3}'|awk -F- '{print $1}'|awk -F. '{print $1$2}'`
+  fi
+  AC_DEFINE_UNQUOTED(GHS3D_VERSION,${GHS3D_VERSION})
+fi
 
 echo
 echo ---------------------------------------------

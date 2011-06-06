@@ -1,20 +1,20 @@
-//  Copyright (C) 2004-2010  CEA/DEN, EDF R&D
+// Copyright (C) 2004-2011  CEA/DEN, EDF R&D
 //
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
 //
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
-//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 
 //  GHS3DPlugin : C++ implementation
@@ -31,6 +31,7 @@
 #include CORBA_SERVER_HEADER(GHS3DPlugin_Algorithm)
 
 #include "SMESH_Hypothesis_i.hxx"
+#include "SMESH_Mesh_i.hxx"
 #include "GHS3DPlugin_Hypothesis.hxx"
 
 class SMESH_Gen;
@@ -124,17 +125,37 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   /*!
    * To set an enforced vertex
    */
-  void SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size);
+  bool _SetEnforcedVertex(CORBA::Double size, CORBA::Double x = 0, CORBA::Double y = 0, CORBA::Double z = 0,
+                          const char* theVertexName = "", const char* theVertexEntry = "", const char* theGroupName = "")
+      throw (SALOME::SALOME_Exception);
+  bool SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedVertexWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theGroupName) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size) throw (SALOME::SALOME_Exception); // TODO
+  bool SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size, const char* theGroupName) throw (SALOME::SALOME_Exception); // TODO
   CORBA::Double GetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
-  void RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
+  CORBA::Double GetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex) throw (SALOME::SALOME_Exception); // TODO
+  bool RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
+  bool RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex) throw (SALOME::SALOME_Exception); // TODO
   GHS3DPlugin::GHS3DEnforcedVertexList* GetEnforcedVertices();
   void ClearEnforcedVertices();
+  /*!
+   * To set an enforced mesh
+   */
+  bool SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, const char* theGroupName) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size, const char* theGroupName) throw (SALOME::SALOME_Exception);
+  void ClearEnforcedMeshes();
 
   // Get implementation
   ::GHS3DPlugin_Hypothesis* GetImpl();
   
   // Verify whether hypothesis supports given entity type 
   CORBA::Boolean IsDimSupported( SMESH::Dimension type );
+  
+  private:
+  
+  bool _SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size, const char* theGroupName="") throw (SALOME::SALOME_Exception);
 };
 
 #endif

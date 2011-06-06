@@ -1,20 +1,20 @@
-//  Copyright (C) 2004-2010  CEA/DEN, EDF R&D
+// Copyright (C) 2004-2011  CEA/DEN, EDF R&D
 //
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
 //
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
-//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 
 //  GHS3DPlugin GUI: GUI for plugged-in mesher GHS3DPlugin
@@ -41,6 +41,7 @@
 #include <QItemDelegate>
 #include <map>
 #include <vector>
+#include <set>
 #include CORBA_SERVER_HEADER(GHS3DPlugin_Algorithm)
 
 class QWidget;
@@ -55,8 +56,32 @@ class QDoubleSpinBox;
 
 class LightApp_SelectionMgr;
 
-typedef std::vector<double> GHS3DEnforcedVertex;
-typedef std::vector<GHS3DEnforcedVertex> TEnforcedVertexValues;
+// Enforced vertex
+struct TEnfVertex{
+  std::string name;
+  std::string geomEntry;
+  std::vector<double> coords;
+  std::string groupName;
+  double size;
+};
+
+struct CompareEnfVertices
+{
+  bool operator () (const TEnfVertex* e1, const TEnfVertex* e2) const {
+    if (e1 && e2) {
+      if (e1->coords.size() && e2->coords.size())
+        return (e1->coords < e2->coords);
+      else
+        return (e1->geomEntry < e2->geomEntry);
+    }
+    return false;
+  }
+};
+
+// List of enforced vertices
+typedef std::set< TEnfVertex*, CompareEnfVertices > TEnfVertexList;
+
+// typedef std::vector<GHS3DEnforcedVertex> TEnforcedVertexCoordsValues;
 
 typedef struct
 {
@@ -64,7 +89,7 @@ typedef struct
   int     myMaximumMemory,myInitialMemory,myOptimizationLevel;
   QString myName,myWorkingDir,myTextOption;
   short   myVerboseLevel;
-  TEnforcedVertexValues myEnforcedVertices;
+  TEnfVertexList myEnforcedVertices;
 } GHS3DHypothesisData;
 
 /*!

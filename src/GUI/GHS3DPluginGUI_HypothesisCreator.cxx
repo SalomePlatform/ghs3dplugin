@@ -1,20 +1,20 @@
-//  Copyright (C) 2004-2010  CEA/DEN, EDF R&D
+// Copyright (C) 2004-2011  CEA/DEN, EDF R&D
 //
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
 //
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
-//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 
 //  GHS3DPlugin GUI: GUI for plugged-in mesher GHS3DPlugin
@@ -505,32 +505,35 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   myFEMCorrectionCheck             ->setChecked    ( data.myFEMCorrection );
   myTextOption                     ->setText       ( data.myTextOption );
 
-  TEnforcedVertexValues::const_iterator it;
+  TEnfVertexList::const_iterator it;
   int row = 0;
   for(it = data.myEnforcedVertices.begin() ; it != data.myEnforcedVertices.end(); it++ )
   {
-    double x = it->at(0);
-    double y = it->at(1);
-    double z = it->at(2);
-    double size = it->at(3);
-    // ENF_VER_X_COLUMN
-    mySmpModel->setData(mySmpModel->index(row, ENF_VER_X_COLUMN),x);
-    mySmpModel->setItem( row, ENF_VER_X_COLUMN, new QStandardItem(QString::number(x)) );
-    mySmpModel->item( row, ENF_VER_X_COLUMN )->setFlags( Qt::ItemIsSelectable );
-    // ENF_VER_Y_COLUMN
-    mySmpModel->setData(mySmpModel->index(row, ENF_VER_Y_COLUMN),y);
-    mySmpModel->setItem( row, ENF_VER_Y_COLUMN, new QStandardItem(QString::number(y)) );
-    mySmpModel->item( row, ENF_VER_Y_COLUMN )->setFlags( Qt::ItemIsSelectable );
-    // ENF_VER_Z_COLUMN
-    mySmpModel->setData(mySmpModel->index(row, ENF_VER_Z_COLUMN),z);
-    mySmpModel->setItem( row, ENF_VER_Z_COLUMN, new QStandardItem(QString::number(z)) );
-    mySmpModel->item( row, ENF_VER_Z_COLUMN )->setFlags( Qt::ItemIsSelectable );
-    // ENF_VER_SIZE_COLUMN
-    mySmpModel->setData(mySmpModel->index(row, ENF_VER_SIZE_COLUMN),size);
-    mySmpModel->setItem( row, ENF_VER_SIZE_COLUMN, new QStandardItem(QString::number(size)) );
+    TEnfVertex* enfVertex = (*it);
+    if (enfVertex->coords.size()) {
+      double x = enfVertex->coords.at(0);
+      double y = enfVertex->coords.at(1);
+      double z = enfVertex->coords.at(2);
+      double size = enfVertex->size;
+      // ENF_VER_X_COLUMN
+      mySmpModel->setData(mySmpModel->index(row, ENF_VER_X_COLUMN),x);
+      mySmpModel->setItem( row, ENF_VER_X_COLUMN, new QStandardItem(QString::number(x)) );
+      mySmpModel->item( row, ENF_VER_X_COLUMN )->setFlags( Qt::ItemIsSelectable );
+      // ENF_VER_Y_COLUMN
+      mySmpModel->setData(mySmpModel->index(row, ENF_VER_Y_COLUMN),y);
+      mySmpModel->setItem( row, ENF_VER_Y_COLUMN, new QStandardItem(QString::number(y)) );
+      mySmpModel->item( row, ENF_VER_Y_COLUMN )->setFlags( Qt::ItemIsSelectable );
+      // ENF_VER_Z_COLUMN
+      mySmpModel->setData(mySmpModel->index(row, ENF_VER_Z_COLUMN),z);
+      mySmpModel->setItem( row, ENF_VER_Z_COLUMN, new QStandardItem(QString::number(z)) );
+      mySmpModel->item( row, ENF_VER_Z_COLUMN )->setFlags( Qt::ItemIsSelectable );
+      // ENF_VER_SIZE_COLUMN
+      mySmpModel->setData(mySmpModel->index(row, ENF_VER_SIZE_COLUMN),size);
+      mySmpModel->setItem( row, ENF_VER_SIZE_COLUMN, new QStandardItem(QString::number(size)) );
 
-    MESSAGE("Row " << row << ": (" << x << ","<< y << ","<< z << ") ="<< size);
-    row++;
+      MESSAGE("Row " << row << ": (" << x << ","<< y << ","<< z << ") ="<< size);
+      row++;
+    }
   }
   
   GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
@@ -630,13 +633,17 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   MESSAGE("vertices->length(): " << vertices->length());
   h_data.myEnforcedVertices.clear();
   for (int i=0 ; i<vertices->length() ; i++) {
-    GHS3DEnforcedVertex myVertex;
-    myVertex.push_back(vertices[i].x);
-    myVertex.push_back(vertices[i].y);
-    myVertex.push_back(vertices[i].z);
-    myVertex.push_back(vertices[i].size);
-    MESSAGE("Add enforced vertex ("<< myVertex[0] << ","<< myVertex[1] << ","<< myVertex[2] << ") ="<< myVertex[3]);
-    h_data.myEnforcedVertices.push_back(myVertex);
+    TEnfVertex* myVertex = new TEnfVertex();
+    myVertex->name = CORBA::string_dup(vertices[i].name.in());
+    myVertex->geomEntry = CORBA::string_dup(vertices[i].geomEntry.in());
+    myVertex->groupName = CORBA::string_dup(vertices[i].groupName.in());
+    myVertex->size = vertices[i].size;
+    if (vertices[i].coords.length()) {
+      for (int c = 0; c < vertices[i].coords.length() ; c++)
+        myVertex->coords.push_back(vertices[i].coords[c]);
+      MESSAGE("Add enforced vertex ("<< myVertex->coords.at(0) << ","<< myVertex->coords.at(1) << ","<< myVertex->coords.at(2) << ") ="<< myVertex->size);
+    }
+    h_data.myEnforcedVertices.insert(myVertex);
   }
   return true;
 }
@@ -694,38 +701,43 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
 //        else {
             // iterate over vertices of hypo
             for(int i = 0 ; i <nbVertexHyp ; i++) {
-                double x = vertexHyp[i].x;
-                double y = vertexHyp[i].y;
-                double z = vertexHyp[i].z;
+              if (vertexHyp[i].coords.length()) {
+                double x = vertexHyp[i].coords[0];
+                double y = vertexHyp[i].coords[1];
+                double z = vertexHyp[i].coords[2];
                 // vertex is removed
                 if (!smpVertexExists(x,y,z))
                     h->RemoveEnforcedVertex(x,y,z);
+              }
             }
 //        }
     }
     
-    TEnforcedVertexValues::const_iterator it;
+    TEnfVertexList::const_iterator it;
     for(it = h_data.myEnforcedVertices.begin() ; it != h_data.myEnforcedVertices.end(); it++ ) {
-      double x = it->at(0);
-      double y = it->at(1);
-      double z = it->at(2);
-      double size = it->at(3);
-      MESSAGE("(" << x   << ", "
-                       << y   << ", "
-                       << z   << ") = "
-                       << size  );
-      double mySize;
-      try {
-        mySize = h->GetEnforcedVertex(x,y,z);
-        MESSAGE("Old size: " << mySize);
-        if (mySize != size) {
-          MESSAGE("Setting new size: " << size);
-          h->SetEnforcedVertex(x,y,z,size);
+      TEnfVertex* enfVertex = (*it);
+      if (enfVertex->coords.size()) {
+        double x = enfVertex->coords.at(0);
+        double y = enfVertex->coords.at(1);
+        double z = enfVertex->coords.at(2);
+        double size = enfVertex->size;
+        MESSAGE("(" << x   << ", "
+                        << y   << ", "
+                        << z   << ") = "
+                        << size  );
+        double mySize;
+        try {
+          mySize = h->GetEnforcedVertex(x,y,z);
+          MESSAGE("Old size: " << mySize);
+          if (mySize != size) {
+            MESSAGE("Setting new size: " << size);
+            h->SetEnforcedVertex(x,y,z,size);
+          }
         }
-      }
-      catch (...) {
-        MESSAGE("Setting new size: " << size);
-        h->SetEnforcedVertex(x,y,z,size);
+        catch (...) {
+          MESSAGE("Setting new size: " << size);
+          h->SetEnforcedVertex( x, y, z, size);
+        }
       }
     }
   }
@@ -756,16 +768,19 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
   h_data.myEnforcedVertices.clear();
 
   for (int i=0 ; i<mySmpModel->rowCount() ; i++) {
-    GHS3DEnforcedVertex myVertex;
-    myVertex.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_X_COLUMN)).toDouble());
-    myVertex.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_Y_COLUMN)).toDouble());
-    myVertex.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_Z_COLUMN)).toDouble());
-    myVertex.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_SIZE_COLUMN)).toDouble());
-    MESSAGE("Add new enforced vertex (" << myVertex[0] << ", "
-                                             << myVertex[1] << ", "
-                                             << myVertex[2] << ") = "
-                                             << myVertex[3]);
-    h_data.myEnforcedVertices.push_back(myVertex);
+    TEnfVertex *myVertex = new TEnfVertex();
+    myVertex->name = "";
+    myVertex->geomEntry = "";
+    myVertex->groupName = "";
+    myVertex->coords.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_X_COLUMN)).toDouble());
+    myVertex->coords.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_Y_COLUMN)).toDouble());
+    myVertex->coords.push_back(mySmpModel->data(mySmpModel->index(i,ENF_VER_Z_COLUMN)).toDouble());
+    myVertex->size = mySmpModel->data(mySmpModel->index(i,ENF_VER_SIZE_COLUMN)).toDouble();
+    MESSAGE("Add new enforced vertex (" << myVertex->coords.at(0) << ", "
+                                             << myVertex->coords.at(1) << ", "
+                                             << myVertex->coords.at(2) << ") = "
+                                             << myVertex->size);
+    h_data.myEnforcedVertices.insert(myVertex);
   }
 
   return true;
