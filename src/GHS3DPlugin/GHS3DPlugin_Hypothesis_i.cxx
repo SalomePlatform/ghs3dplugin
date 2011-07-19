@@ -728,7 +728,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_pt
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
   SMESH_GroupOnGeom_i* theGroupOnGeom_i = SMESH::DownCast<SMESH_GroupOnGeom_i*>( theSource);
-  if (theGroup_i or theGroupOnGeom_i)
+  if (theGroup_i || theGroupOnGeom_i)
   {
     SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( " 
                           << theSource << ", " << theType << ", \"" << theGroupName << "\" )";
@@ -761,7 +761,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSour
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
   SMESH_GroupOnGeom_i* theGroupOnGeom_i = SMESH::DownCast<SMESH_GroupOnGeom_i*>( theSource);
-  if (theGroup_i or theGroupOnGeom_i)
+  if (theGroup_i || theGroupOnGeom_i)
   {
     SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMesh( " 
                           << theSource << ", " << theType << " )";
@@ -801,7 +801,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSourc
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
   SMESH_GroupOnGeom_i* theGroupOnGeom_i = SMESH::DownCast<SMESH_GroupOnGeom_i*>( theSource);
-  if (theGroup_i or theGroupOnGeom_i)
+  if (theGroup_i || theGroupOnGeom_i)
   {
     SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshSizeWithGroup( " 
                           << theSource << ", " << theType << ", " << theSize << ", \"" << theGroupName << "\" )";
@@ -833,7 +833,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr the
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);
   SMESH_GroupOnGeom_i* theGroupOnGeom_i = SMESH::DownCast<SMESH_GroupOnGeom_i*>( theSource);
-  if (theGroup_i or theGroupOnGeom_i)
+  if (theGroup_i || theGroupOnGeom_i)
   {
     SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshSize( " 
                           << theSource << ", " << theType << ", " << theSize << " )";

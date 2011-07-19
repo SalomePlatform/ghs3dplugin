@@ -62,4 +62,4 @@ libGHS3DEngine_la_LDFLAGS  = \
   $(CAS_KERNEL) -lTKBRep -lTKG2d -lTKG3d -lTKTopAlgo -lTKGeomBase -lTKGeomAlgo \
   $(MED_LDFLAGS) -lSalomeIDLMED \
   $(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lSMESHDS -lSMDS -lStdMeshers \
-  $(KERNEL_LDFLAGS) -lSalomeGenericObj -lSALOMELocalTrace -lSALOMEBasics
+  $(KERNEL_LDFLAGS) -lSalomeGenericObj -lSALOMELocalTrace -lSALOMEBasics -lSalomeNS -lOpUtil
