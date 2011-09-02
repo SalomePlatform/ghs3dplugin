@@ -685,14 +685,14 @@ void GHS3DPlugin_Hypothesis::ClearEnforcedMeshes()
     if ((*it)->groupName != "")
       _groupsToRemove.insert((*it)->groupName);
   }
-   _enfNodes.clear();
-   _enfEdges.clear();
-   _enfTriangles.clear();
-   _nodeIDToSizeMap.clear();
-   _elementIDToSizeMap.clear();
-   _enfMeshList.clear();
-   _entryEnfMeshMap.clear();
-   NotifySubMeshesHypothesisModification();
+  _enfNodes.clear();
+  _enfEdges.clear();
+  _enfTriangles.clear();
+  _nodeIDToSizeMap.clear();
+  _elementIDToSizeMap.clear();
+  _enfMeshList.clear();
+  _entryEnfMeshMap.clear();
+  NotifySubMeshesHypothesisModification();
 }
 
 

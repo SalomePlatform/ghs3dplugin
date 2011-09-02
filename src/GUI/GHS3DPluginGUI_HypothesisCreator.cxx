@@ -1750,6 +1750,8 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
       case SMESH::FACE:
         myEnfMesh->elementType = 2;
         break;
+      default:
+        break;
     }
 //     myEnfMesh->elementType = enfMeshes[i].elementType;
     h_data.myEnforcedMeshes.insert(myEnfMesh);
