@@ -1843,13 +1843,19 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       _PTR(SObject) aSObj = aStudy->FindObjectID(enfMesh->entry.c_str());
       SMESH::SMESH_IDSource_var theSource = SMESH::SObjectToInterface<SMESH::SMESH_IDSource>( aSObj );
       SMESH::ElementType elementType;
+      MESSAGE("enfMesh->elementType: " << enfMesh->elementType);
       switch(enfMesh->elementType) {
         case 0:
           elementType = SMESH::NODE;
+          break;
         case 1:
           elementType = SMESH::EDGE;
+          break;
         case 2:
           elementType = SMESH::FACE;
+          break;
+        default:
+          break;
       }
     
       ok = h->p_SetEnforcedMesh(theSource, elementType, enfMesh->size, enfMesh->groupName.c_str());
@@ -1918,6 +1924,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
   
   // Enforced meshes
   h_data.myEnforcedMeshes.clear();
+
   for (int row=0 ; row<myEnforcedMeshTableWidget->rowCount() ; row++) {
     
     TEnfMesh *myEnfMesh = new TEnfMesh();

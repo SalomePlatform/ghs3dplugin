@@ -988,7 +988,20 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
   }
   
   SMESH::array_of_ElementType_var types = theSource->GetTypes();
-  MESSAGE("Required type is "<<theType);
+  switch (theType) {
+    case SMESH::NODE:
+      MESSAGE("Required type is NODE");
+      break;
+    case SMESH::EDGE:
+      MESSAGE("Required type is EDGE");
+      break;
+    case SMESH::FACE:
+      MESSAGE("Required type is FACE");
+      break;
+    default:
+      break;
+  }
+//   MESSAGE("Required type is "<<theType);
   MESSAGE("Available types:");
   for (int i=0;i<types->length();i++){MESSAGE(types[i]);}
   if ( types->length() >= 1 && types[types->length()-1] <  theType)

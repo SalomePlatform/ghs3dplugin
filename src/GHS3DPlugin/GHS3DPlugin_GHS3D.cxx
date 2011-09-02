@@ -1016,7 +1016,7 @@ static void addElemInMeshGroup(SMESH_Mesh* theMesh,
       SMESHDS_Group* aGroupDS = static_cast<SMESHDS_Group*>( groupDS );
       aGroupDS->SMDSGroup().Add(anElem);
       groupDone = true;
-      MESSAGE("Successfully added enforced element to existing group " << groupName);
+//       MESSAGE("Successfully added enforced element to existing group " << groupName);
       break;
     }
   }
@@ -1028,7 +1028,7 @@ static void addElemInMeshGroup(SMESH_Mesh* theMesh,
     aGroup->SetName( groupName.c_str() );
     SMESHDS_Group* aGroupDS = static_cast<SMESHDS_Group*>( aGroup->GetGroupDS() );
     aGroupDS->SMDSGroup().Add(anElem);
-    MESSAGE("Successfully created enforced vertex group " << groupName);
+//     MESSAGE("Successfully created enforced vertex group " << groupName);
     groupDone = true;
   }
   if (!groupDone)
@@ -1077,6 +1077,7 @@ static bool readGMFFile(const char*                     theFile,
                         std::set<std::string> &         groupsToRemove
                        )
 {
+  std::string tmpStr;
   SMESHDS_Mesh* theMeshDS = theHelper->GetMeshDS();
 
   int nbInitialNodes = theNodeByGhs3dId.size();
@@ -1159,8 +1160,8 @@ static bool readGMFFile(const char*                     theFile,
     std::vector<int> id (nbElem*tabRef[token]); // node ids
 
     if (token == GmfVertices) {
-      std::cout << " vertices" << std::endl;
-      std::cout << nbInitialNodes << " from input mesh " << std::endl;
+      (nbElem <= 1) ? tmpStr = " vertex" : tmpStr = " vertices";
+//       std::cout << nbInitialNodes << " from input mesh " << std::endl;
 
       // Remove orphan nodes from previous enforced mesh which was cleared
 //       if ( nbElem < nbMeshNodes ) {
@@ -1216,32 +1217,32 @@ static bool readGMFFile(const char*                     theFile,
       }
     }
     else if (token == GmfCorners && nbElem > 0) {
-      std::cout << " corners" << std::endl;
+      (nbElem <= 1) ? tmpStr = " corner" : tmpStr = " corners";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]]);
     }
     else if (token == GmfRidges && nbElem > 0) {
-      std::cout << " ridges" << std::endl;
+      (nbElem <= 1) ? tmpStr = " ridge" : tmpStr = " ridges";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]]);
     }
     else if (token == GmfEdges && nbElem > 0) {
-      std::cout << " edges" << std::endl;
+      (nbElem <= 1) ? tmpStr = " edge" : tmpStr = " edges";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &dummy);
     }
     else if (token == GmfTriangles && nbElem > 0) {
-      std::cout << " triangles" << std::endl;
+      (nbElem <= 1) ? tmpStr = " triangle" : tmpStr = " triangles";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &dummy);
     }
     else if (token == GmfQuadrilaterals && nbElem > 0) {
-      std::cout << " Quadrilaterals" << std::endl;
+      (nbElem <= 1) ? tmpStr = " Quadrilateral" : tmpStr = " Quadrilaterals";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &dummy);
     }
     else if (token == GmfTetrahedra && nbElem > 0) {
-      std::cout << " Tetrahedra" << std::endl;
+      (nbElem <= 1) ? tmpStr = " Tetrahedron" : tmpStr = " Tetrahedra";
       for ( int iElem = 0; iElem < nbElem; iElem++ ) {
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &dummy);
 #ifdef _DEBUG_
@@ -1251,11 +1252,12 @@ static bool readGMFFile(const char*                     theFile,
       }
     }
     else if (token == GmfHexahedra && nbElem > 0) {
-      std::cout << " Hexahedra" << std::endl;
+      (nbElem <= 1) ? tmpStr = " Hexahedron" : tmpStr = " Hexahedra";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3],
                   &id[iElem*tabRef[token]+4], &id[iElem*tabRef[token]+5], &id[iElem*tabRef[token]+6], &id[iElem*tabRef[token]+7], &dummy);
     }
+    std::cout << tmpStr << std::endl;
     std::cout << std::endl;
 
     switch (token) {
@@ -1421,6 +1423,7 @@ static bool writeGMFFile(const char*                                     theMesh
                          GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues & theEnforcedVertices)
 {
   MESSAGE("writeGMFFile w/o geometry");
+  std::string tmpStr;
   int idx, idxRequired = 0, idxSol = 0;
   const int dummyint = 0;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues::const_iterator vertexIt;
@@ -1556,7 +1559,8 @@ static bool writeGMFFile(const char*                                     theMesh
   vector<const SMDS_MeshNode*>::const_iterator ghs3dNodeIt = theNodeByGhs3dId.begin();
   vector<const SMDS_MeshNode*>::const_iterator after  = theNodeByGhs3dId.end();
   
-  std::cout << theNodeByGhs3dId.size() << " nodes from mesh ..." << std::endl;
+  (theNodeByGhs3dId.size() <= 1) ? tmpStr = " node" : " nodes";
+  std::cout << theNodeByGhs3dId.size() << tmpStr << " from mesh ..." << std::endl;
   for ( ; ghs3dNodeIt != after; ++ghs3dNodeIt )
   {
     const SMDS_MeshNode* node = *ghs3dNodeIt;
@@ -1571,7 +1575,8 @@ static bool writeGMFFile(const char*                                     theMesh
   // Iterate over the enforced nodes given by enforced elements
   ghs3dNodeIt = theEnforcedNodeByGhs3dId.begin();
   after  = theEnforcedNodeByGhs3dId.end();
-  std::cout << theEnforcedNodeByGhs3dId.size() << " nodes from enforced elements ..." << std::endl;
+  (theEnforcedNodeByGhs3dId.size() <= 1) ? tmpStr = " node" : " nodes";
+  std::cout << theEnforcedNodeByGhs3dId.size() << tmpStr << " from enforced elements ..." << std::endl;
   for ( ; ghs3dNodeIt != after; ++ghs3dNodeIt )
   {
     const SMDS_MeshNode* node = *ghs3dNodeIt;
@@ -1596,7 +1601,8 @@ static bool writeGMFFile(const char*                                     theMesh
   
   // Iterate over the enforced nodes
   GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap::const_iterator enfNodeIt;
-  std::cout << theEnforcedNodes.size() << " nodes from enforced nodes ..." << std::endl;
+  (theEnforcedNodes.size() <= 1) ? tmpStr = " node" : " nodes";
+  std::cout << theEnforcedNodes.size() << tmpStr << " from enforced nodes ..." << std::endl;
   for(enfNodeIt = theEnforcedNodes.begin() ; enfNodeIt != theEnforcedNodes.end() ; ++enfNodeIt)
   {
     const SMDS_MeshNode* node = enfNodeIt->first;
@@ -1629,7 +1635,8 @@ static bool writeGMFFile(const char*                                     theMesh
   std::vector<std::vector<double> > ReqVerTab;
   if (nbEnforcedVertices) {
 //    ReqVerTab.clear();
-    std::cout << nbEnforcedVertices << " nodes from enforced vertices ..." << std::endl;
+    (nbEnforcedVertices <= 1) ? tmpStr = " node" : " nodes";
+    std::cout << nbEnforcedVertices << tmpStr << " from enforced vertices ..." << std::endl;
     // Iterate over the enforced vertices
     for(vertexIt = theEnforcedVertices.begin() ; vertexIt != theEnforcedVertices.end() ; ++vertexIt) {
       double x = vertexIt->first[0];
@@ -2277,19 +2284,32 @@ static bool writeFaces (ofstream &              theFile,
 
   TopTools_IndexedMapOfShape facesMap, trianglesMap;
   TopExp::MapShapes( theShape, TopAbs_FACE, facesMap );
+  
+  int nbFaces = facesMap.Extent();
 
-  for ( int i = 1; i <= facesMap.Extent(); ++i )
+  for ( int i = 1; i <= nbFaces; ++i )
     if (( theSubMesh  = theMesh.GetSubMesh( facesMap(i))))
       nbTriangles += theSubMesh->NbElements();
-
-  std::cout << "    " << facesMap.Extent() << " shapes of 2D dimension and" << std::endl;
-  if (nbEnforcedEdges+nbEnforcedTriangles)
-    std::cout << "    " << nbEnforcedEdges+nbEnforcedTriangles 
-                        << " enforced shapes:" << std::endl;
-  if (nbEnforcedEdges)
-    std::cout << "      " << nbEnforcedEdges << " enforced edges" << std::endl;
-  if (nbEnforcedTriangles)
-    std::cout << "      " << nbEnforcedTriangles << " enforced triangles" << std::endl;
+  std::string tmpStr;
+  (nbFaces == 0 || nbFaces == 1) ? tmpStr = " shape " : tmpStr = " shapes " ;
+  std::cout << "    " << nbFaces << tmpStr << "of 2D dimension";
+  int nbEnforcedElements = nbEnforcedEdges+nbEnforcedTriangles;
+  if (nbEnforcedElements > 0) {
+    (nbEnforcedElements == 1) ? tmpStr = "shape:" : tmpStr = "shapes:";
+    std::cout << " and" << std::endl;
+    std::cout << "    " << nbEnforcedElements 
+                        << " enforced " << tmpStr << std::endl;
+  }
+  else
+    std::cout << std::endl;
+  if (nbEnforcedEdges) {
+    (nbEnforcedEdges == 1) ? tmpStr = "edge" : tmpStr = "edges";
+    std::cout << "      " << nbEnforcedEdges << " enforced " << tmpStr << std::endl;
+  }
+  if (nbEnforcedTriangles) {
+    (nbEnforcedTriangles == 1) ? tmpStr = "triangle" : tmpStr = "triangles";
+    std::cout << "      " << nbEnforcedTriangles << " enforced " << tmpStr << std::endl;
+  }
   std::cout << std::endl;
 
 //   theFile << space << nbTriangles << space << dummyint << std::endl;
@@ -2509,14 +2529,20 @@ static bool writePoints (ofstream &                       theFile,
   const char* space    = "  ";
   const int   dummyint = 0;
 
+  std::string tmpStr;
+  (nbNodes == 0 || nbNodes == 1) ? tmpStr = " node" : tmpStr = " nodes";
   // NB_NODES
   std::cout << std::endl;
   std::cout << "The initial 2D mesh contains :" << std::endl;
-  std::cout << "    " << nbNodes << " nodes" << std::endl;
-  if (nbEnforcedVertices > 0)
-    std::cout << "    " << nbEnforcedVertices << " enforced vertices" << std::endl;
-  if (nbEnforcedNodes > 0)
-    std::cout << "    " << nbEnforcedNodes << " enforced nodes" << std::endl;
+  std::cout << "    " << nbNodes << tmpStr << std::endl;
+  if (nbEnforcedVertices > 0) {
+    (nbEnforcedVertices == 1) ? tmpStr = "vertex" : tmpStr = "vertices";
+    std::cout << "    " << nbEnforcedVertices << " enforced " << tmpStr << std::endl;
+  }
+  if (nbEnforcedNodes > 0) {
+    (nbEnforcedNodes == 1) ? tmpStr = "node" : tmpStr = "nodes";
+    std::cout << "    " << nbEnforcedNodes << " enforced " << tmpStr << std::endl;
+  }
   std::cout << std::endl;
   std::cout << "Start writing in 'points' file ..." << std::endl;
 
@@ -2651,6 +2677,8 @@ static bool readResultFile(const int                       fileOpen,
   Kernel_Utils::Localizer loc;
   struct stat status;
   size_t      length;
+  
+  std::string tmpStr;
 
   char *ptr, *mapPtr;
   char *tetraPtr;
@@ -2874,7 +2902,8 @@ static bool readResultFile(const int                       fileOpen,
   shapeID = compoundID;
   // Enforced edges
   if (theEnforcedEdges.size()) {
-    std::cout << "Add " << theEnforcedEdges.size() << " enforced edges" << std::endl;
+    (theEnforcedEdges.size() <= 1) ? tmpStr = " enforced edge" : " enforced edges";
+    std::cout << "Add " << theEnforcedEdges.size() << tmpStr << std::endl;
     std::vector< const SMDS_MeshNode* > node( 2 );
     // Iterate over the enforced edges
     for(elemIt = theEnforcedEdges.begin() ; elemIt != theEnforcedEdges.end() ; ++elemIt) {
@@ -2904,6 +2933,7 @@ static bool readResultFile(const int                       fileOpen,
   }
   // Enforced faces
   if (theEnforcedTriangles.size()) {
+    (theEnforcedTriangles.size() <= 1) ? tmpStr = " enforced triangle" : " enforced triangles";
     std::cout << "Add " << theEnforcedTriangles.size() << " enforced triangles" << std::endl;
     std::vector< const SMDS_MeshNode* > node( 3 );
     // Iterate over the enforced triangles
@@ -2943,8 +2973,13 @@ static bool readResultFile(const int                       fileOpen,
     }
   }
 
-  if ( nbElems )
-    cout << nbElems << " tetrahedrons have been associated to " << nbShape << " shapes" << endl;
+  
+  if ( nbElems ) {
+    (nbElems <= 1) ? tmpStr = " tetrahedra" : " tetrahedrons";
+    cout << nbElems << tmpStr << " have been associated to " << nbShape;
+    (nbShape <= 1) ? tmpStr = " shape" : " shapes";
+    cout << tmpStr << endl;
+  }
 #ifdef WNT
   UnmapViewOfFile(mapPtr);
   CloseHandle(hMapObject);
@@ -2964,7 +2999,8 @@ static bool readResultFile(const int                       fileOpen,
 #ifdef _DEBUG_
   shapeIDs.erase(-1);
   if ( shapeIDs.size() != nbShape ) {
-    std::cout << "Only " << shapeIDs.size() << " solids of " << nbShape << " found" << std::endl;
+    (shapeIDs.size() <= 1) ? tmpStr = " solid" : " solids";
+    std::cout << "Only " << shapeIDs.size() << tmpStr << " of " << nbShape << " found" << std::endl;
     for (int i=0; i<nbShape; i++) {
       shapeID = theMeshDS->ShapeToIndex( tabShape[i] );
       if ( shapeIDs.find( shapeID ) == shapeIDs.end() )
@@ -3074,8 +3110,12 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   int nbEnforcedVertices = coordsSizeMap.size();
   int nbEnforcedNodes = enforcedNodes.size();
-  std::cout << nbEnforcedNodes << " enforced nodes from hypo" << std::endl;
-  std::cout << nbEnforcedVertices << " enforced vertices from hypo" << std::endl;
+  
+  std::string tmpStr;
+  (nbEnforcedNodes <= 1) ? tmpStr = "node" : "nodes";
+  std::cout << nbEnforcedNodes << " enforced " << tmpStr << " from hypo" << std::endl;
+  (nbEnforcedVertices <= 1) ? tmpStr = "vertex" : "vertices";
+  std::cout << nbEnforcedVertices << " enforced " << tmpStr << " from hypo" << std::endl;
   
   SMESH_MesherHelper helper( theMesh );
   helper.SetSubShape( theShape );
@@ -3326,7 +3366,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList enfVertices = GHS3DPlugin_Hypothesis::GetEnforcedVertices(_hyp);
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList::const_iterator enfVerIt = enfVertices.begin();
-  MESSAGE("Populating enfVerticesWithGroup");
+
   for ( ; enfVerIt != enfVertices.end() ; ++enfVerIt)
   {
     enfVertex = (*enfVerIt);
@@ -3334,7 +3374,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     if (enfVertex->coords.size()) {
       coordsSizeMap.insert(make_pair(enfVertex->coords,enfVertex->size));
       enfVerticesWithGroup.insert(make_pair(enfVertex->coords,enfVertex->groupName));
-      MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<enfVertex->coords[0]<<","<<enfVertex->coords[1]<<","<<enfVertex->coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
+//       MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<enfVertex->coords[0]<<","<<enfVertex->coords[1]<<","<<enfVertex->coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
     }
     else {
 //     if (!enfVertex->geomEntry.empty()) {
@@ -3367,7 +3407,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
             if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
               coordsSizeMap.insert(make_pair(coords,enfVertex->size));
               enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
-              MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<coords[0]<<","<<coords[1]<<","<<coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
+//               MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<coords[0]<<","<<coords[1]<<","<<coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
             }
           }
         }
@@ -3395,10 +3435,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 //   TIDSortedElemSet enforcedQuadrangles = GHS3DPlugin_Hypothesis::GetEnforcedQuadrangles(_hyp);
   GHS3DPlugin_Hypothesis::TID2SizeMap nodeIDToSizeMap = GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(_hyp);
 
+  std::string tmpStr;
+  
   int nbEnforcedVertices = coordsSizeMap.size();
   int nbEnforcedNodes = enforcedNodes.size();
-  std::cout << nbEnforcedNodes << " enforced nodes from hypo" << std::endl;
-  std::cout << nbEnforcedVertices << " enforced vertices from hypo" << std::endl;
+  (nbEnforcedNodes <= 1) ? tmpStr = "node" : tmpStr = "nodes";
+  std::cout << nbEnforcedNodes << " enforced " << tmpStr << " from hypo" << std::endl;
+  (nbEnforcedVertices <= 1) ? tmpStr = "vertex" : tmpStr = "vertices";
+  std::cout << nbEnforcedVertices << " enforced " << tmpStr << " from hypo" << std::endl;
   
   std::vector <const SMDS_MeshNode*> aNodeByGhs3dId, anEnforcedNodeByGhs3dId;
   std::map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
