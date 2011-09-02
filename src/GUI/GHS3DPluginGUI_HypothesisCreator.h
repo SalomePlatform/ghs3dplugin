@@ -36,30 +36,63 @@
 #endif
 
 #include <SMESHGUI_Hypotheses.h>
-// #include <SalomeApp_DoubleSpinBox.h>
+#include <GeomSelectionTools.h>
+#include <TopAbs_ShapeEnum.hxx>
 
 #include <QItemDelegate>
 #include <map>
 #include <vector>
 #include <set>
+#include <GEOM_Client.hxx>
 #include CORBA_SERVER_HEADER(GHS3DPlugin_Algorithm)
+#include CORBA_SERVER_HEADER(SMESH_Gen)
+#include CORBA_SERVER_HEADER(SMESH_Mesh)
 
 class QWidget;
 class QComboBox;
 class QCheckBox;
 class QLineEdit;
 class QSpinBox;
-class QStandardItemModel;
-class QTableView;
+class QTableWidget;
+class QTableWidgetItem;
 class QHeaderView;
-class QDoubleSpinBox;
 
+class SMESHGUI_SpinBox;
+class StdMeshersGUI_ObjectReferenceParamWdg;
 class LightApp_SelectionMgr;
+class SUIT_SelectionFilter;
+
+class QTEnfVertex
+{
+
+public:
+  QTEnfVertex(double size, double x=0., double y=0., double z=0., QString name="", QString geomEntry="", QString groupName="", bool isCompound = false);
+
+private:
+  bool operator == (const QTEnfVertex* other) const {
+    if (other) {
+      if (this->coords.size() && other->coords.size())
+        return (this->coords == other->coords);
+      else
+        return (this->geomEntry == other->geomEntry);
+    }
+  }
+  
+  QString name;
+  QString geomEntry;
+  bool isCompound;
+  QString groupName;
+  double size;
+  std::vector<double> coords;
+};
+
+typedef QList< QTEnfVertex* > QEnfVertexList;
 
 // Enforced vertex
 struct TEnfVertex{
   std::string name;
   std::string geomEntry;
+  bool isCompound;
   std::vector<double> coords;
   std::string groupName;
   double size;
@@ -81,7 +114,30 @@ struct CompareEnfVertices
 // List of enforced vertices
 typedef std::set< TEnfVertex*, CompareEnfVertices > TEnfVertexList;
 
-// typedef std::vector<GHS3DEnforcedVertex> TEnforcedVertexCoordsValues;
+// Enforced mesh
+struct TEnfMesh{
+  std::string name;
+  std::string entry;
+  int elementType;
+  std::string groupName;
+  double size;
+};
+
+struct CompareEnfMeshes
+{
+  bool operator () (const TEnfMesh* e1, const TEnfMesh* e2) const {
+    if (e1 && e2) {
+      if (e1->entry == e2->entry)
+        return (e1->elementType < e2->elementType);
+      else
+        return (e1->entry < e2->entry);
+    }
+    else
+      return false;
+  }
+};
+// List of enforced meshes
+typedef std::set< TEnfMesh*, CompareEnfMeshes > TEnfMeshList;
 
 typedef struct
 {
@@ -90,6 +146,7 @@ typedef struct
   QString myName,myWorkingDir,myTextOption;
   short   myVerboseLevel;
   TEnfVertexList myEnforcedVertices;
+  TEnfMeshList myEnforcedMeshes;
 } GHS3DHypothesisData;
 
 /*!
@@ -118,18 +175,35 @@ protected:
 protected slots:
   void                onDirBtnClicked();
   void                updateWidgets();
-  void                onVertexBtnClicked();
-  void                onRemoveVertexBtnClicked();
-  bool                checkVertexIsDefined();
-
+  
+  void                addEnforcedVertex(double x=0, double y=0, double z=0, double size = 0,
+                                        std::string vertexName = "", std::string geomEntry = "", std::string groupName = "",
+                                        bool isCompound = false);
+  void                onAddEnforcedVertex();
+  void                onRemoveEnforcedVertex();
+  void                synchronizeCoords();
+  void                updateEnforcedVertexValues(QTableWidgetItem* );
+  void                onSelectEnforcedVertex();
+  void                clearEnforcedVertexWidgets();
+  void                checkVertexIsDefined();
+  void                clearEnfVertexSelection();
+  
+  void                addEnforcedMesh(std::string name, std::string entry, int elementType, double size = 0, std::string groupName = "");
+  void                onAddEnforcedMesh();
+  void                onRemoveEnforcedMesh();
+  void                synchronizeEnforcedMesh();
+  void                checkEnfMeshIsDefined();
+  
 signals:
   void                vertexDefined(bool);
-
+  void                enfMeshDefined(bool);
+  
 private:
   bool                readParamsFromHypo( GHS3DHypothesisData& ) const;
   bool                readParamsFromWidgets( GHS3DHypothesisData& ) const;
   bool                storeParamsToHypo( const GHS3DHypothesisData& ) const;
-  bool                smpVertexExists(double, double, double) const;
+  GeomSelectionTools* getGeomSelectionTool();
+  GEOM::GEOM_Gen_var  getGeomEngine();
 
 private:
   QWidget*            myStdGroup;
@@ -149,38 +223,76 @@ private:
   QCheckBox*          myRemoveInitialCentralPointCheck;
   QCheckBox*          myBoundaryRecoveryCheck;
   QCheckBox*          myFEMCorrectionCheck;
-QLineEdit*            myTextOption;
+  QLineEdit*          myTextOption;
   
   QWidget*            myEnfGroup;
-  QStandardItemModel* mySmpModel;
-  QTableView*         myEnforcedTableView;
-  QLineEdit*          myXCoord;
-  QLineEdit*          myYCoord;
-  QLineEdit*          myZCoord;
-  QLineEdit*          mySizeValue;
+  QPixmap             iconVertex, iconCompound;
+  StdMeshersGUI_ObjectReferenceParamWdg *myEnfVertexWdg;
+  GEOM::GEOM_Object_var myEnfVertex;
+  QTableWidget*       myEnforcedTableWidget;
+  SMESHGUI_SpinBox*   myXCoord;
+  SMESHGUI_SpinBox*   myYCoord;
+  SMESHGUI_SpinBox*   myZCoord;
+  SMESHGUI_SpinBox*   mySizeValue;
+  QLineEdit*          myGroupName;
+//   QGroupBox*          makeGroupsCheck;
+//   QCheckBox*          myGlobalGroupName;  
   QPushButton*        addVertexButton;
   QPushButton*        removeVertexButton;
   
-  LightApp_SelectionMgr*  mySelectionMgr;          /* User shape selection */
+  QWidget*            myEnfMeshGroup;
+  StdMeshersGUI_ObjectReferenceParamWdg *myEnfMeshWdg;
+//   SMESH::SMESH_IDSource_var myEnfMesh;
+  QComboBox*          myEnfMeshConstraint;
+  QStringList         myEnfMeshConstraintLabels;
+//   SMESH::mesh_array_var myEnfMeshArray;
+  QTableWidget*       myEnforcedMeshTableWidget;
+  SMESHGUI_SpinBox*   myMeshSizeValue;
+  QLineEdit*          myMeshGroupName;
+  QPushButton*        addEnfMeshButton;
+  QPushButton*        removeEnfMeshButton;
+  
+  GeomSelectionTools*     GeomToolSelected;
 //   SVTK_Selector*          mySelector;
+//   LightApp_SelectionMgr*  mySelectionMgr; /* User shape selection */
 };
 
-class DoubleLineEditDelegate : public QItemDelegate
+class EnforcedVertexTableWidgetDelegate : public QItemDelegate
 {
     Q_OBJECT
 
 public:
-    DoubleLineEditDelegate(QObject *parent = 0);
+  EnforcedVertexTableWidgetDelegate(QObject *parent = 0);
 
-    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
-                        const QModelIndex &index) const;
+  QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                      const QModelIndex &index) const;
 
-    void setEditorData(QWidget *editor, const QModelIndex &index) const;
-    void setModelData(QWidget *editor, QAbstractItemModel *model,
-                    const QModelIndex &index) const;
+  void setEditorData(QWidget *editor, const QModelIndex &index) const;
+  void setModelData(QWidget *editor, QAbstractItemModel *model,
+                  const QModelIndex &index) const;
 
-    void updateEditorGeometry(QWidget *editor,
-        const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  void updateEditorGeometry(QWidget *editor,
+      const QStyleOptionViewItem &option, const QModelIndex &index) const;
+
+  bool vertexExists(QAbstractItemModel *model, const QModelIndex &index, QString value) const;
+};
+
+class EnforcedMeshTableWidgetDelegate : public QItemDelegate
+{
+    Q_OBJECT
+
+public:
+  EnforcedMeshTableWidgetDelegate(QObject *parent = 0);
+
+  QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                      const QModelIndex &index) const;
+
+  void setEditorData(QWidget *editor, const QModelIndex &index) const;
+  void setModelData(QWidget *editor, QAbstractItemModel *model,
+                  const QModelIndex &index) const;
+
+  void updateEditorGeometry(QWidget *editor,
+      const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
 #endif

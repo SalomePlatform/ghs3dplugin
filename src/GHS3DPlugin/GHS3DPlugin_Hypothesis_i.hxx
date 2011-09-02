@@ -125,26 +125,31 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   /*!
    * To set an enforced vertex
    */
-  bool _SetEnforcedVertex(CORBA::Double size, CORBA::Double x = 0, CORBA::Double y = 0, CORBA::Double z = 0,
-                          const char* theVertexName = "", const char* theVertexEntry = "", const char* theGroupName = "")
-      throw (SALOME::SALOME_Exception);
+  bool p_SetEnforcedVertex(CORBA::Double size, CORBA::Double x = 0, CORBA::Double y = 0, CORBA::Double z = 0,
+                          const char* theVertexName = "", const char* theVertexEntry = "", const char* theGroupName = "",
+                          CORBA::Boolean isCompound = false) 
+    throw (SALOME::SALOME_Exception);
   bool SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedVertexNamed(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theVertexName) throw (SALOME::SALOME_Exception);
   bool SetEnforcedVertexWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theGroupName) throw (SALOME::SALOME_Exception);
-  bool SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size) throw (SALOME::SALOME_Exception); // TODO
-  bool SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size, const char* theGroupName) throw (SALOME::SALOME_Exception); // TODO
+  bool SetEnforcedVertexNamedWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theVertexName, const char* theGroupName) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size, const char* theGroupName) throw (SALOME::SALOME_Exception);
   CORBA::Double GetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
-  CORBA::Double GetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex) throw (SALOME::SALOME_Exception); // TODO
+  CORBA::Double GetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex) throw (SALOME::SALOME_Exception);
   bool RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
-  bool RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex) throw (SALOME::SALOME_Exception); // TODO
+  bool RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex) throw (SALOME::SALOME_Exception);
   GHS3DPlugin::GHS3DEnforcedVertexList* GetEnforcedVertices();
   void ClearEnforcedVertices();
   /*!
    * To set an enforced mesh
-   */
+   */  
+  bool p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size = -1, const char* theGroupName="") throw (SALOME::SALOME_Exception);
   bool SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType) throw (SALOME::SALOME_Exception);
   bool SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, const char* theGroupName) throw (SALOME::SALOME_Exception);
   bool SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size) throw (SALOME::SALOME_Exception);
   bool SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size, const char* theGroupName) throw (SALOME::SALOME_Exception);
+  GHS3DPlugin::GHS3DEnforcedMeshList* GetEnforcedMeshes();
   void ClearEnforcedMeshes();
 
   // Get implementation
@@ -153,9 +158,6 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   // Verify whether hypothesis supports given entity type 
   CORBA::Boolean IsDimSupported( SMESH::Dimension type );
   
-  private:
-  
-  bool _SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size, const char* theGroupName="") throw (SALOME::SALOME_Exception);
 };
 
 #endif

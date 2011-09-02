@@ -37,12 +37,24 @@ module GHS3DPlugin
   struct GHS3DEnforcedVertex {
     string name;
     string geomEntry;
+    boolean isCompound;
     TCoords coords;
     string groupName;
     double size;
   };
   
   typedef sequence<GHS3DEnforcedVertex> GHS3DEnforcedVertexList;
+
+  struct GHS3DEnforcedMesh {
+    string name;
+    string entry;
+    SMESH::ElementType elementType;
+    string groupName;
+    double size;
+  };
+  
+  typedef sequence<GHS3DEnforcedMesh> GHS3DEnforcedMeshList;
+
   /*!
    * GHS3DPlugin_GHS3D: interface of "Tetrahedron (GHS3D)" algorithm
    */
@@ -134,7 +146,9 @@ module GHS3DPlugin
      * To set an enforced vertex
      */
     boolean SetEnforcedVertex(in double x, in double y, in double z, in double size) raises (SALOME::SALOME_Exception);
+    boolean SetEnforcedVertexNamed(in double x, in double y, in double z, in double size, in string vertexName) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedVertexWithGroup(in double x, in double y, in double z, in double size, in string groupName) raises (SALOME::SALOME_Exception);
+    boolean SetEnforcedVertexNamedWithGroup(in double x, in double y, in double z, in double size, in string vertexName, in string groupName) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedVertexGeom(in GEOM::GEOM_Object theVertex, in double size) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedVertexGeomWithGroup(in GEOM::GEOM_Object theVertex, in double size, in string groupName) raises (SALOME::SALOME_Exception);
     double GetEnforcedVertex(in double x, in double y, in double z) raises (SALOME::SALOME_Exception);
@@ -143,12 +157,24 @@ module GHS3DPlugin
     boolean RemoveEnforcedVertexGeom(in GEOM::GEOM_Object theVertex) raises (SALOME::SALOME_Exception);
     GHS3DEnforcedVertexList GetEnforcedVertices();
     void ClearEnforcedVertices();
+   /*!
+    * Set/get/unset an enforced vertex (private method for GUI)
+    */
+    boolean p_SetEnforcedVertex(in double size, in double x, in double y, in double z,
+                             in string theVertexName, in string theVertexEntry, in string groupName,
+                             in boolean isCompound) raises (SALOME::SALOME_Exception);
     
     boolean SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedMeshWithGroup(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in string groupName) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedMeshSize(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in double size) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedMeshSizeWithGroup(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in double size, in string groupName) raises (SALOME::SALOME_Exception);
+    GHS3DEnforcedMeshList GetEnforcedMeshes();
     void ClearEnforcedMeshes();
+   /*!
+    * Set/get/unset an enforced vertex (private method for GUI)
+    */
+    boolean p_SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType,
+                             in double size,  in string groupName) raises (SALOME::SALOME_Exception);
   };
 };
 

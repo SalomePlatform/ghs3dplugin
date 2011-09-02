@@ -104,6 +104,14 @@
         <translation>Enforced vertices</translation>
     </message>
     <message>
+        <source>GHS3D_ENFORCED_MESHES</source>
+        <translation>Enforced meshes</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_NAME_COLUMN</source>
+        <translation>Name</translation>
+    </message>
+    <message>
         <source>GHS3D_ENF_VER_X_COLUMN</source>
         <translation>X</translation>
     </message>
@@ -116,8 +124,32 @@
         <translation>Z</translation>
     </message>
     <message>
-        <source>GHS3D_ENF_VER_SIZE_COLUMN</source>
+        <source>GHS3D_ENF_SIZE_COLUMN</source>
         <translation>Size</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_ENTRY_COLUMN</source>
+        <translation>Vertex Entry</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_COLUMN</source>
+        <translation>Constraint</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_VER_COMPOUND_COLUMN</source>
+        <translation>Compound</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_GROUP_COLUMN</source>
+        <translation>Group</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_SELECT_VERTEX</source>
+        <translation>Select a vertex</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_SELECT_MESH</source>
+        <translation>Select a mesh</translation>
     </message>
     <message>
         <source>GHS3D_ENF_VER_X_LABEL</source>
@@ -132,16 +164,44 @@
         <translation>Z:</translation>
     </message>
     <message>
-        <source>GHS3D_ENF_VER_SIZE_LABEL</source>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_LABEL</source>
+        <translation>Constraint:</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_NODE</source>
+        <translation>Nodes</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_EDGE</source>
+        <translation>Edges</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_FACE</source>
+        <translation>Faces</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_SIZE_LABEL</source>
         <translation>Size:</translation>
     </message>
     <message>
-        <source>GHS3D_ENF_VER_VERTEX</source>
-        <translation>Add enforced vertex</translation>
+        <source>GHS3D_ENF_GROUP_LABEL</source>
+        <translation>Group:</translation>
     </message>
     <message>
-        <source>GHS3D_ENF_VER_REMOVE</source>
-        <translation>Remove vertex</translation>
+        <source>GHS3D_ENF_ADD</source>
+        <translation>Add</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_REMOVE</source>
+        <translation>Remove</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_VER_INFO</source>
+        <translation>&lt;b&gt;Warning&lt;/b&gt;: Enforced vertices are currently only taken into account for meshes w/o associated geometry.</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_INFO</source>
+        <translation>&lt;b&gt;Warning&lt;/b&gt;: Enforced meshes are currently only taken into account for meshes w/o associated geometry.</translation>
     </message>
 </context>
 </TS>

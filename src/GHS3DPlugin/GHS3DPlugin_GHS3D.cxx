@@ -996,13 +996,14 @@ static int findShapeID(SMESH_Mesh&          mesh,
 
 
 //=======================================================================
-//function : updateMeshGroups
+//function : addElemInMeshGroup
 //purpose  : Update or create groups in mesh
 //=======================================================================
 
-static void updateMeshGroups(SMESH_Mesh* theMesh,
+static void addElemInMeshGroup(SMESH_Mesh* theMesh,
                              const SMDS_MeshElement* anElem,
-                             std::string groupName)
+                             std::string groupName,
+                             std::set<std::string> groupsToRemove)
 {
   bool groupDone = false;
   SMESH_Mesh::GroupIteratorPtr grIt = theMesh->GetGroups();
@@ -1011,7 +1012,7 @@ static void updateMeshGroups(SMESH_Mesh* theMesh,
     if ( !group ) continue;
     SMESHDS_GroupBase* groupDS = group->GetGroupDS();
     if ( !groupDS ) continue;
-    if ( groupDS->GetType()==anElem->GetType() && groupName.compare(group->GetName())==0) {
+    if ( groupDS->GetType()==anElem->GetType() &&groupName.compare(group->GetName())==0) {
       SMESHDS_Group* aGroupDS = static_cast<SMESHDS_Group*>( groupDS );
       aGroupDS->SMDSGroup().Add(anElem);
       groupDone = true;
@@ -1019,6 +1020,7 @@ static void updateMeshGroups(SMESH_Mesh* theMesh,
       break;
     }
   }
+  
   if (!groupDone)
   {
     int groupId;
@@ -1031,6 +1033,29 @@ static void updateMeshGroups(SMESH_Mesh* theMesh,
   }
   if (!groupDone)
     throw SALOME_Exception(LOCALIZED("A enforced vertex node was not added to a group"));
+}
+
+
+//=======================================================================
+//function : updateMeshGroups
+//purpose  : Update or create groups in mesh
+//=======================================================================
+
+static void updateMeshGroups(SMESH_Mesh* theMesh, std::set<std::string> groupsToRemove)
+{
+  SMESH_Mesh::GroupIteratorPtr grIt = theMesh->GetGroups();
+  while (grIt->more()) {
+    SMESH_Group * group = grIt->next();
+    if ( !group ) continue;
+    SMESHDS_GroupBase* groupDS = group->GetGroupDS();
+    if ( !groupDS ) continue;
+    std::string currentGroupName = (string)group->GetName();
+    if (groupDS->IsEmpty() && groupsToRemove.find(currentGroupName) != groupsToRemove.end()) {
+      // Previous group created by enforced elements
+      MESSAGE("Delete previous group created by removed enforced elements: " << group->GetName())
+      theMesh->RemoveGroup(groupDS->GetID());
+    }
+  }
 }
 
 //=======================================================================
@@ -1048,7 +1073,9 @@ static bool readGMFFile(const char*                     theFile,
                         map<const SMDS_MeshNode*,int> & theNodeToGhs3dIdMap,
                         std::vector<std::string> &      aNodeGroupByGhs3dId,
                         std::vector<std::string> &      anEdgeGroupByGhs3dId,
-                        std::vector<std::string> &      aFaceGroupByGhs3dId)
+                        std::vector<std::string> &      aFaceGroupByGhs3dId,
+                        std::set<std::string> &         groupsToRemove
+                       )
 {
   SMESHDS_Mesh* theMeshDS = theHelper->GetMeshDS();
 
@@ -1074,6 +1101,9 @@ static bool readGMFFile(const char*                     theFile,
   int aGMFNodeID = 0, shapeID;
   int *nodeAssigne;
   const SMDS_MeshNode** GMFNode;
+#ifdef _DEBUG_
+  std::map<int, std::set<int> > subdomainId2tetraId;
+#endif
   std::map <GmfKwdCod,int> tabRef;
 
   tabRef[GmfVertices]       = 3; // for new nodes and enforced nodes
@@ -1181,7 +1211,7 @@ static bool readGMFFile(const char*                     theFile,
           GMFNode[ aGMFID ] = aGMFNode;
           nodeAssigne[ aGMFID ] = 0;
           if (aGMFID-1 < aNodeGroupByGhs3dId.size() && !aNodeGroupByGhs3dId.at(aGMFID-1).empty())
-            updateMeshGroups(theHelper->GetMesh(), aGMFNode, aNodeGroupByGhs3dId.at(aGMFID-1));
+            addElemInMeshGroup(theHelper->GetMesh(), aGMFNode, aNodeGroupByGhs3dId.at(aGMFID-1), groupsToRemove);
         }
       }
     }
@@ -1212,8 +1242,13 @@ static bool readGMFFile(const char*                     theFile,
     }
     else if (token == GmfTetrahedra && nbElem > 0) {
       std::cout << " Tetrahedra" << std::endl;
-      for ( int iElem = 0; iElem < nbElem; iElem++ )
+      for ( int iElem = 0; iElem < nbElem; iElem++ ) {
         GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &dummy);
+#ifdef _DEBUG_
+        subdomainId2tetraId[dummy].insert(iElem+1);
+//         MESSAGE("subdomainId2tetraId["<<dummy<<"].insert("<<iElem+1<<")");
+#endif
+      }
     }
     else if (token == GmfHexahedra && nbElem > 0) {
       std::cout << " Hexahedra" << std::endl;
@@ -1272,7 +1307,7 @@ static bool readGMFFile(const char*                     theFile,
           if (fullyCreatedElement) {
             aCreatedElem = theHelper->AddEdge( node[0], node[1], /*id =*/0, /*force3d =*/false );
             if (anEdgeGroupByGhs3dId.size() && !anEdgeGroupByGhs3dId[iElem].empty())
-              updateMeshGroups(theHelper->GetMesh(), aCreatedElem, anEdgeGroupByGhs3dId[iElem]);
+              addElemInMeshGroup(theHelper->GetMesh(), aCreatedElem, anEdgeGroupByGhs3dId[iElem], groupsToRemove);
           }
           break;
         case GmfTriangles:
@@ -1281,7 +1316,7 @@ static bool readGMFFile(const char*                     theFile,
             for ( int iRef = 0; iRef < nbRef; iRef++ )
               nodeAssigne[ nodeID[ iRef ]] = 1;
             if (aFaceGroupByGhs3dId.size() && !aFaceGroupByGhs3dId[iElem].empty())
-              updateMeshGroups(theHelper->GetMesh(), aCreatedElem, aFaceGroupByGhs3dId[iElem]);
+              addElemInMeshGroup(theHelper->GetMesh(), aCreatedElem, aFaceGroupByGhs3dId[iElem], groupsToRemove);
           }
           break;
         case GmfQuadrilaterals:
@@ -1343,6 +1378,28 @@ static bool readGMFFile(const char*                     theFile,
   GmfCloseMesh(InpMsh);
   delete [] GMFNode;
   delete [] nodeAssigne;
+#ifdef _DEBUG_  
+  MESSAGE("Nb subdomains " << subdomainId2tetraId.size());
+  std::map<int, std::set<int> >::const_iterator subdomainIt = subdomainId2tetraId.begin();
+  TCollection_AsciiString aSubdomainFileName = theFile;
+  aSubdomainFileName = aSubdomainFileName + ".subdomain";
+  ofstream aSubdomainFile  ( aSubdomainFileName.ToCString()  , ios::out);
+
+  aSubdomainFile << "Nb subdomains " << subdomainId2tetraId.size() << std::endl;
+  for(;subdomainIt != subdomainId2tetraId.end() ; ++subdomainIt) {
+    int subdomainId = subdomainIt->first;
+    std::set<int> tetraIds = subdomainIt->second;
+    MESSAGE("Subdomain #"<<subdomainId<<": "<<tetraIds.size()<<" tetrahedrons");
+    std::set<int>::const_iterator tetraIdsIt = tetraIds.begin();
+    aSubdomainFile << subdomainId << std::endl;
+    for(;tetraIdsIt != tetraIds.end() ; ++tetraIdsIt) {
+      aSubdomainFile << (*tetraIdsIt) << " ";
+    }
+    aSubdomainFile << std::endl;
+  }
+  aSubdomainFile.close();
+#endif  
+  
   return true;
 }
 
@@ -1572,7 +1629,7 @@ static bool writeGMFFile(const char*                                     theMesh
   std::vector<std::vector<double> > ReqVerTab;
   if (nbEnforcedVertices) {
 //    ReqVerTab.clear();
-    std::cout << theEnforcedVertices.size() << " nodes from enforced vertices ..." << std::endl;
+    std::cout << nbEnforcedVertices << " nodes from enforced vertices ..." << std::endl;
     // Iterate over the enforced vertices
     for(vertexIt = theEnforcedVertices.begin() ; vertexIt != theEnforcedVertices.end() ; ++vertexIt) {
       double x = vertexIt->first[0];
@@ -1620,10 +1677,13 @@ static bool writeGMFFile(const char*                                     theMesh
     GmfSetKwd(idxRequired, GmfVertices, requiredNodes + solSize);
     GmfSetKwd(idxSol, GmfSolAtVertices, requiredNodes + solSize, 1, TypTab);
     int usedEnforcedNodes = 0;
+    std::string gn = "";
     for (ghs3dNodeIt = theRequiredNodes.begin();ghs3dNodeIt != theRequiredNodes.end();++ghs3dNodeIt) {
       GmfSetLin(idxRequired, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
       GmfSetLin(idxSol, GmfSolAtVertices, 0.0);
-      aNodeGroupByGhs3dId[usedEnforcedNodes] = theEnforcedNodes.find((*ghs3dNodeIt))->second;
+      if (theEnforcedNodes.find((*ghs3dNodeIt)) != theEnforcedNodes.end())
+        gn = theEnforcedNodes.find((*ghs3dNodeIt))->second;
+      aNodeGroupByGhs3dId[usedEnforcedNodes] = gn;
       usedEnforcedNodes++;
     }
 
@@ -1634,7 +1694,7 @@ static bool writeGMFFile(const char*                                     theMesh
       GmfSetLin(idxRequired, GmfVertices, ReqVerTab[i][0], ReqVerTab[i][1], ReqVerTab[i][2], dummyint);
       GmfSetLin(idxSol, GmfSolAtVertices, solTab);
       aNodeGroupByGhs3dId[usedEnforcedNodes] = enfVerticesWithGroup.find(ReqVerTab[i])->second;
-      std::cout << "aNodeGroupByGhs3dId["<<usedEnforcedNodes<<"] = \""<<enfVerticesWithGroup.find(ReqVerTab[i])->second<<"\""<<std::endl;
+      std::cout << "aNodeGroupByGhs3dId["<<usedEnforcedNodes<<"] = \""<<aNodeGroupByGhs3dId[usedEnforcedNodes]<<"\""<<std::endl;
       usedEnforcedNodes++;
     }
     std::cout << "End writting in req and sol file" << std::endl;
@@ -3259,38 +3319,44 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::map<std::vector<double>, std::string> enfVerticesWithGroup;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues coordsSizeMap;
   TopoDS_Shape GeomShape;
-  TopAbs_ShapeEnum GeomType;
+//   TopAbs_ShapeEnum GeomType;
   std::vector<double> coords;
   gp_Pnt aPnt;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* enfVertex;
   
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList enfVertices = GHS3DPlugin_Hypothesis::GetEnforcedVertices(_hyp);
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList::const_iterator enfVerIt = enfVertices.begin();
+  MESSAGE("Populating enfVerticesWithGroup");
   for ( ; enfVerIt != enfVertices.end() ; ++enfVerIt)
   {
     enfVertex = (*enfVerIt);
-    if (enfVertex->geomEntry.empty() && enfVertex->coords.size()) {
+//     if (enfVertex->geomEntry.empty() && enfVertex->coords.size()) {
+    if (enfVertex->coords.size()) {
       coordsSizeMap.insert(make_pair(enfVertex->coords,enfVertex->size));
-      enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
+      enfVerticesWithGroup.insert(make_pair(enfVertex->coords,enfVertex->groupName));
+      MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<enfVertex->coords[0]<<","<<enfVertex->coords[1]<<","<<enfVertex->coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
     }
-    if (!enfVertex->geomEntry.empty()) {
+    else {
+//     if (!enfVertex->geomEntry.empty()) {
       GeomShape = entryToShape(enfVertex->geomEntry);
-      GeomType = GeomShape.ShapeType();
+//       GeomType = GeomShape.ShapeType();
       
-      if (GeomType == TopAbs_VERTEX) {
-        coords.clear();
-        aPnt = BRep_Tool::Pnt(TopoDS::Vertex(GeomShape));
-        coords.push_back(aPnt.X());
-        coords.push_back(aPnt.Y());
-        coords.push_back(aPnt.Z());
-        if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
-          coordsSizeMap.insert(make_pair(coords,enfVertex->size));
-          enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
-        }
-      }
-      
-      // Group Management
-      if (GeomType == TopAbs_COMPOUND){
+//       if (!enfVertex->isCompound) {
+// //       if (GeomType == TopAbs_VERTEX) {
+//         coords.clear();
+//         aPnt = BRep_Tool::Pnt(TopoDS::Vertex(GeomShape));
+//         coords.push_back(aPnt.X());
+//         coords.push_back(aPnt.Y());
+//         coords.push_back(aPnt.Z());
+//         if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
+//           coordsSizeMap.insert(make_pair(coords,enfVertex->size));
+//           enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
+//         }
+//       }
+//       
+//       // Group Management
+//       else {
+//       if (GeomType == TopAbs_COMPOUND){
         for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()){
           coords.clear();
           if (it.Value().ShapeType() == TopAbs_VERTEX){
@@ -3301,10 +3367,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
             if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
               coordsSizeMap.insert(make_pair(coords,enfVertex->size));
               enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
+              MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<coords[0]<<","<<coords[1]<<","<<coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
             }
           }
         }
-      }
+//       }
     }
   }
   
@@ -3381,14 +3448,22 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // --------------
   // read a result
   // --------------
-
+  std::set<std::string> groupsToRemove = _hyp->GetGroupsToRemove();
+  
   Ok = readGMFFile(aResultFileName.ToCString(),
 #ifdef WITH_SMESH_CANCEL_COMPUTE
                    this,
 #endif
                    theHelper, theShape, aNodeByGhs3dId, aNodeToGhs3dIdMap,
-                   aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId);
+                   aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId, 
+                   groupsToRemove);
   
+  updateMeshGroups(theHelper->GetMesh(), groupsToRemove);
+  
+  if ( Ok ) {
+    GHS3DPlugin_Hypothesis* that = (GHS3DPlugin_Hypothesis*)this->_hyp;
+    that->ClearGroupsToRemove();
+  }
   // ---------------------
   // remove working files
   // ---------------------
@@ -4026,12 +4101,13 @@ bool GHS3DPlugin_GHS3D::importGMFMesh(const char* theGMFFileName, SMESH_Mesh& th
   std::map<const SMDS_MeshNode*,int> dummyNodeMap;
   std::map<std::vector<double>, std::string> dummyEnfVertGroup;
   std::vector<std::string> dummyElemGroup;
+  std::set<std::string> dummyGroupsToRemove;
   
   bool ok = readGMFFile(theGMFFileName, 
 #ifdef WITH_SMESH_CANCEL_COMPUTE
                         this,
 #endif
-                        helper, theMesh.GetShapeToMesh(), dummyNodeVector, dummyNodeMap, dummyElemGroup, dummyElemGroup, dummyElemGroup);
+                        helper, theMesh.GetShapeToMesh(), dummyNodeVector, dummyNodeMap, dummyElemGroup, dummyElemGroup, dummyElemGroup, dummyGroupsToRemove);
   theMesh.GetMeshDS()->Modified();
   return ok;
 }

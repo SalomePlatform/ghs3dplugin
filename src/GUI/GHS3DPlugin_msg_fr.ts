@@ -104,6 +104,14 @@
         <translation>Points de passage</translation>
     </message>
     <message>
+        <source>GHS3D_ENFORCED_MESHES</source>
+        <translation>Maillages de contrainte</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_NAME_COLUMN</source>
+        <translation>Nom</translation>
+    </message>
+    <message>
         <source>GHS3D_ENF_VER_X_COLUMN</source>
         <translation>X</translation>
     </message>
@@ -116,8 +124,32 @@
         <translation>Z</translation>
     </message>
     <message>
-        <source>GHS3D_ENF_VER_SIZE_COLUMN</source>
+        <source>GHS3D_ENF_SIZE_COLUMN</source>
         <translation>Taille</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_ENTRY_COLUMN</source>
+        <translation>ID de point</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_COLUMN</source>
+        <translation>Contrainte</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_VER_COMPOUND_COLUMN</source>
+        <translation>Compound</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_GROUP_COLUMN</source>
+        <translation>Groupe</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_SELECT_VERTEX</source>
+        <translation>Sélectionnez une/des point(s)</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_SELECT_MESH</source>
+        <translation>Sélectionnez une/des maillage(s)</translation>
     </message>
     <message>
         <source>GHS3D_ENF_VER_X_LABEL</source>
@@ -132,16 +164,44 @@
         <translation>Z:</translation>
     </message>
     <message>
-        <source>GHS3D_ENF_VER_SIZE_LABEL</source>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_LABEL</source>
+        <translation>Contrainte:</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_NODE</source>
+        <translation>Noeuds</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_EDGE</source>
+        <translation>Segments</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_CONSTRAINT_FACE</source>
+        <translation>Faces</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_SIZE_LABEL</source>
         <translation>Taille:</translation>
     </message>
     <message>
-        <source>GHS3D_ENF_VER_VERTEX</source>
-        <translation>Ajouter un point de passage</translation>
+        <source>GHS3D_ENF_GROUP_LABEL</source>
+        <translation>Groupe:</translation>
     </message>
     <message>
-        <source>GHS3D_ENF_VER_REMOVE</source>
-        <translation>Supprimer un point</translation>
+        <source>GHS3D_ENF_ADD</source>
+        <translation>Ajouter</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_REMOVE</source>
+        <translation>Supprimer</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_VER_INFO</source>
+        <translation>&lt;b&gt;Attention&lt;/b&gt;: Les points de passage ne sont pris en compte que pour des maillage sans géométrie associée.</translation>
+    </message>
+    <message>
+        <source>GHS3D_ENF_MESH_INFO</source>
+        <translation>&lt;b&gt;Attention&lt;/b&gt;: Les éléments de contraintes ne sont pris en compte que pour des maillage sans géométrie associée.</translation>
     </message>
 </context>
 </TS>

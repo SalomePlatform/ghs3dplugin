@@ -26,18 +26,26 @@
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
 # header files 
-salomeinclude_HEADERS = 
+salomeinclude_HEADERS =				\
+	GHS3DPluginGUI_HypothesisCreator.h	\
+	GHS3DPluginGUI_Enums.h
 
 # Libraries targets
 lib_LTLIBRARIES = libGHS3DPluginGUI.la
 
-dist_libGHS3DPluginGUI_la_SOURCES = GHS3DPluginGUI_HypothesisCreator.cxx 
+dist_libGHS3DPluginGUI_la_SOURCES =				\
+	GHS3DPluginGUI.cxx					\
+	GHS3DPluginGUI_HypothesisCreator.cxx
 
-MOC_FILES = GHS3DPluginGUI_HypothesisCreator_moc.cxx
-nodist_libGHS3DPluginGUI_la_SOURCES= $(MOC_FILES)
+MOC_FILES = \
+	GHS3DPluginGUI_HypothesisCreator_moc.cxx
+
+nodist_libGHS3DPluginGUI_la_SOURCES= \
+	$(MOC_FILES)
 
 libGHS3DPluginGUI_la_CPPFLAGS =  \
 	$(QT_INCLUDES)        \
+	$(CAS_CPPFLAGS)			\
 	$(KERNEL_CXXFLAGS)    \
 	$(GUI_CXXFLAGS)       \
 	$(GEOM_CXXFLAGS)      \
@@ -46,8 +54,7 @@ libGHS3DPluginGUI_la_CPPFLAGS =  \
 	$(BOOST_CPPFLAGS)     \
 	$(CORBA_CXXFLAGS)     \
 	$(CORBA_INCLUDES)     \
-	$(CAS_CPPFLAGS)       \
-        -I$(srcdir)/..        \
+        -I$(srcdir)/../GHS3DPlugin \
 	-I$(top_builddir)/idl
 
 libGHS3DPluginGUI_la_LDFLAGS  = \
@@ -55,7 +62,7 @@ libGHS3DPluginGUI_la_LDFLAGS  = \
 	$(QT_LIBS) \
 	$(KERNEL_LDFLAGS) -lSALOMELocalTrace \
 	$(MED_LDFLAGS) -lSalomeIDLMED \
-	$(SMESH_LDFLAGS) -lSMESH \
+	$(SMESH_LDFLAGS) -lSMESH -lGeomSelectionTools  -lStdMeshersGUI\
 	$(GUI_LDFLAGS) -lsuit -lqtx -lSalomeApp \
 	$(CAS_KERNEL)
 

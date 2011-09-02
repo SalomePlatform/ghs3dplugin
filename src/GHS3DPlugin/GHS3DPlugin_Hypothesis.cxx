@@ -57,6 +57,9 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   _enfVertexEntrySizeList(DefaultGHS3DEnforcedVertexEntryValues()),
   _coordsEnfVertexMap(DefaultCoordsGHS3DEnforcedVertexMap()),
   _geomEntryEnfVertexMap(DefaultGeomEntryGHS3DEnforcedVertexMap()),
+  
+  _enfMeshList(DefaultGHS3DEnforcedMeshList()),
+  _entryEnfMeshMap(DefaultEntryGHS3DEnforcedMeshListMap()),
   _enfNodes(TIDSortedNodeGroupMap()),
   _enfEdges(TIDSortedElemGroupMap()),
   _enfTriangles(TIDSortedElemGroupMap()),
@@ -65,6 +68,7 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
 {
   _name = "GHS3D_Parameters";
   _param_algo_dim = 3;
+  _groupsToRemove.clear();
 }
 
 //=======================================================================
@@ -331,10 +335,10 @@ std::string GHS3DPlugin_Hypothesis::GetTextOption() const
 //=======================================================================
 
 bool GHS3DPlugin_Hypothesis::SetEnforcedVertex(std::string theName, std::string theEntry, std::string theGroupName,
-                                               double size, double x, double y, double z)
+                                               double size, double x, double y, double z, bool isCompound)
 {
-  MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedVertex("<< theName << ", "<< theEntry << ", " << theGroupName << ", "
-                                                      << size << ", " << x << ", " << y << ", " << z  << ")");
+  MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedVertex(\""<< theName << "\", \""<< theEntry << "\", \"" << theGroupName << "\", "
+                                                      << size << ", " << x << ", " << y << ", " << z  << ", "<< isCompound << ")");
 
   bool toNotify = false;
   bool toCreate = true;
@@ -344,13 +348,14 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedVertex(std::string theName, std::string 
   newEnfVertex->name = theName;
   newEnfVertex->geomEntry = theEntry;
   newEnfVertex->coords.clear();
-  if (theEntry == "") {
+  if (!isCompound) {
     newEnfVertex->coords.push_back(x);
     newEnfVertex->coords.push_back(y);
     newEnfVertex->coords.push_back(z);
   }
   newEnfVertex->groupName = theGroupName;
   newEnfVertex->size = size;
+  newEnfVertex->isCompound = isCompound;
   
   
   // update _enfVertexList
@@ -415,20 +420,35 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedVertex(std::string theName, std::string 
 //=======================================================================
 //function : SetEnforcedMesh
 //=======================================================================
-bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, double size, std::string groupName)
+bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, std::string name, std::string entry, double size, std::string groupName)
 {
   TIDSortedElemSet theElemSet;
   SMDS_ElemIteratorPtr eIt = theMesh.GetMeshDS()->elementsIterator(SMDSAbs_ElementType(elementType));
   while ( eIt->more() )
     theElemSet.insert( eIt->next() );
   MESSAGE("Add "<<theElemSet.size()<<" types["<<elementType<<"] from source mesh");
-  return SetEnforcedElements( theElemSet, elementType, size, groupName);
+  bool added = SetEnforcedElements( theElemSet, elementType, size, groupName);
+  if (added) {
+    TGHS3DEnforcedMesh* newEnfMesh = new TGHS3DEnforcedMesh();
+    newEnfMesh->name = name;
+    newEnfMesh->entry = entry;
+    newEnfMesh->elementType = elementType;
+    newEnfMesh->size = size;
+    newEnfMesh->groupName = groupName;
+    
+    TGHS3DEnforcedMeshList::iterator it = _enfMeshList.find(newEnfMesh);
+    if (it == _enfMeshList.end()) {
+      _entryEnfMeshMap[entry].insert(newEnfMesh);
+      _enfMeshList.insert(newEnfMesh);
+    }
+  }
+  return added;
 }
 
 //=======================================================================
 //function : SetEnforcedGroup
 //=======================================================================
-bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::long_array_var theIDs, SMESH::ElementType elementType, double size, std::string groupName)
+bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::long_array_var theIDs, SMESH::ElementType elementType, std::string name, std::string entry, double size, std::string groupName)
 {
   MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedGroup");
   TIDSortedElemSet theElemSet;
@@ -454,7 +474,22 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SME
 //     theElemSet.insert( it->next() );
 
   MESSAGE("Add "<<theElemSet.size()<<" types["<<elementType<<"] from source group ");
-  return SetEnforcedElements( theElemSet, elementType, size, groupName);
+  bool added = SetEnforcedElements( theElemSet, elementType, size, groupName);
+  if (added) {
+    TGHS3DEnforcedMesh* newEnfMesh = new TGHS3DEnforcedMesh();
+    newEnfMesh->name = name;
+    newEnfMesh->entry = entry;
+    newEnfMesh->elementType = elementType;
+    newEnfMesh->size = size;
+    newEnfMesh->groupName = groupName;
+    
+    TGHS3DEnforcedMeshList::iterator it = _enfMeshList.find(newEnfMesh);
+    if (it == _enfMeshList.end()) {
+      _entryEnfMeshMap[entry].insert(newEnfMesh);
+      _enfMeshList.insert(newEnfMesh);
+    }
+  }
+  return added;
 }
 
 //=======================================================================
@@ -609,6 +644,8 @@ bool GHS3DPlugin_Hypothesis::RemoveEnforcedVertex(double x, double y, double z, 
   // update _enfVertexList
   TGHS3DEnforcedVertexList::iterator it = _enfVertexList.find(oldEnfVertex);
   if (it != _enfVertexList.end()) {
+    if ((*it)->groupName != "")
+      _groupsToRemove.insert((*it)->groupName);
     _enfVertexList.erase(it);
     toNotify = true;
     MESSAGE("Done");
@@ -625,12 +662,17 @@ bool GHS3DPlugin_Hypothesis::RemoveEnforcedVertex(double x, double y, double z, 
 //=======================================================================
 void GHS3DPlugin_Hypothesis::ClearEnforcedVertices()
 {
-    _enfVertexList.clear();
-    _coordsEnfVertexMap.clear();
-    _geomEntryEnfVertexMap.clear();
-    _enfVertexCoordsSizeList.clear();
-    _enfVertexEntrySizeList.clear();
-    NotifySubMeshesHypothesisModification();
+  TGHS3DEnforcedVertexList::const_iterator it = _enfVertexList.begin();
+  for(;it != _enfVertexList.end();++it) {
+    if ((*it)->groupName != "")
+      _groupsToRemove.insert((*it)->groupName);
+  }
+  _enfVertexList.clear();
+  _coordsEnfVertexMap.clear();
+  _geomEntryEnfVertexMap.clear();
+  _enfVertexCoordsSizeList.clear();
+  _enfVertexEntrySizeList.clear();
+  NotifySubMeshesHypothesisModification();
 }
 
 //=======================================================================
@@ -638,12 +680,29 @@ void GHS3DPlugin_Hypothesis::ClearEnforcedVertices()
 //=======================================================================
 void GHS3DPlugin_Hypothesis::ClearEnforcedMeshes()
 {
+  TGHS3DEnforcedMeshList::const_iterator it = _enfMeshList.begin();
+  for(;it != _enfMeshList.end();++it) {
+    if ((*it)->groupName != "")
+      _groupsToRemove.insert((*it)->groupName);
+  }
    _enfNodes.clear();
    _enfEdges.clear();
    _enfTriangles.clear();
    _nodeIDToSizeMap.clear();
    _elementIDToSizeMap.clear();
+   _enfMeshList.clear();
+   _entryEnfMeshMap.clear();
    NotifySubMeshesHypothesisModification();
+}
+
+
+//=======================================================================
+//function : SetGroupsToRemove
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::ClearGroupsToRemove()
+{
+  _groupsToRemove.clear();
 }
 
 
@@ -785,14 +844,14 @@ bool GHS3DPlugin_Hypothesis::DefaultToRemoveCentralPoint()
   return false;
 }
 
-//=======================================================================
-//function : DefaultID2SizeMap
-//=======================================================================
-
-GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::DefaultID2SizeMap()
-{
-  return GHS3DPlugin_Hypothesis::TID2SizeMap();
-}
+// //=======================================================================
+// //function : DefaultID2SizeMap
+// //=======================================================================
+// 
+// GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::DefaultID2SizeMap()
+// {
+//   return GHS3DPlugin_Hypothesis::TID2SizeMap();
+// }
 
 
 //=======================================================================
@@ -833,6 +892,7 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
       if (!enfVertex->geomEntry.empty()) {
         save << " " << "__BEGIN_ENTRY__";
         save << " " << enfVertex->geomEntry;
+        save << " " << enfVertex->isCompound;
         save << " " << "__END_ENTRY__";
       }
       if (!enfVertex->groupName.empty()) {
@@ -982,6 +1042,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
   if (hasEnforcedVertices) {
     std::string txt, name, entry, groupName;
     double size, coords[3];
+    bool isCompound;
     bool hasCoords = false;
     while (isOK) {
       isOK = (load >> txt);  // __BEGIN_VERTEX__
@@ -995,6 +1056,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
           if (txt == "__END_VERTEX__") {
             enfVertex->name = name;
             enfVertex->geomEntry = entry;
+            enfVertex->isCompound = isCompound;
             enfVertex->groupName = groupName;
             enfVertex->coords.clear();
             if (hasCoords)
@@ -1028,6 +1090,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
             
           if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
             isOK = (load >> entry);
+            isOK = (load >> isCompound);
             isOK = (load >> txt); // __END_ENTRY__
             if (txt != "__END_ENTRY__")
               throw std::exception();
