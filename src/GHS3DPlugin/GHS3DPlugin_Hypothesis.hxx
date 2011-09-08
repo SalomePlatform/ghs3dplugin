@@ -111,6 +111,7 @@ public:
   
   typedef std::map<const SMDS_MeshElement*, std::string, TIDCompare > TIDSortedElemGroupMap;
   typedef std::map<const SMDS_MeshNode*, std::string, TIDCompare > TIDSortedNodeGroupMap;
+  typedef std::set<std::string> TSetStrings;
   
   /*!
    * To mesh "holes" in a solid or not. Default is to mesh.
@@ -234,6 +235,7 @@ public:
   const TIDSortedElemGroupMap _GetEnforcedTriangles() const { return _enfTriangles; }
   const TID2SizeMap _GetNodeIDToSizeMap() const {return _nodeIDToSizeMap; }
   const TID2SizeMap _GetElementIDToSizeMap() const {return _elementIDToSizeMap; }
+  const TSetStrings _GetGroupsToRemove() const {return _groupsToRemove; }
   /*!
    * \brief Return the enforced vertices
    */
@@ -250,8 +252,7 @@ public:
   static TIDSortedElemGroupMap GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp);
   static TID2SizeMap GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp);
   static TID2SizeMap GetElementIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp);
-  
-  std::set<std::string> GetGroupsToRemove() const {return _groupsToRemove;}
+  static TSetStrings GetGroupsToRemove(const GHS3DPlugin_Hypothesis* hyp);
   void ClearGroupsToRemove();
   
   static bool   DefaultMeshHoles();
@@ -280,6 +281,7 @@ public:
   static TIDSortedNodeGroupMap      DefaultIDSortedNodeGroupMap() {return TIDSortedNodeGroupMap();}
   static TIDSortedElemGroupMap      DefaultIDSortedElemGroupMap() {return TIDSortedElemGroupMap();}
   static TID2SizeMap                DefaultID2SizeMap() {return TID2SizeMap();}
+  static TSetStrings                DefaultGroupsToRemove() {return TSetStrings();}
   
   // Persistence
   virtual std::ostream & SaveTo(std::ostream & save);
@@ -331,7 +333,7 @@ private:
   TID2SizeMap _elementIDToSizeMap;
   std::map<std::string, TIDSortedElemSet > _entryToElemsMap;
   
-  std::set<std::string> _groupsToRemove;
+  TSetStrings _groupsToRemove;
 };
 
 

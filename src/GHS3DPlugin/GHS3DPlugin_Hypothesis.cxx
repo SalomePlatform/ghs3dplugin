@@ -57,18 +57,17 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   _enfVertexEntrySizeList(DefaultGHS3DEnforcedVertexEntryValues()),
   _coordsEnfVertexMap(DefaultCoordsGHS3DEnforcedVertexMap()),
   _geomEntryEnfVertexMap(DefaultGeomEntryGHS3DEnforcedVertexMap()),
-  
   _enfMeshList(DefaultGHS3DEnforcedMeshList()),
   _entryEnfMeshMap(DefaultEntryGHS3DEnforcedMeshListMap()),
   _enfNodes(TIDSortedNodeGroupMap()),
   _enfEdges(TIDSortedElemGroupMap()),
   _enfTriangles(TIDSortedElemGroupMap()),
   _nodeIDToSizeMap(DefaultID2SizeMap()),
-  _elementIDToSizeMap(DefaultID2SizeMap())
+  _elementIDToSizeMap(DefaultID2SizeMap()),
+  _groupsToRemove(DefaultGroupsToRemove())
 {
   _name = "GHS3D_Parameters";
   _param_algo_dim = 3;
-  _groupsToRemove.clear();
 }
 
 //=======================================================================
@@ -1348,4 +1347,9 @@ GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(c
 GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetElementIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)
 {
   return hyp ? hyp->_GetElementIDToSizeMap(): DefaultID2SizeMap();
+}
+
+GHS3DPlugin_Hypothesis::TSetStrings GHS3DPlugin_Hypothesis::GetGroupsToRemove(const GHS3DPlugin_Hypothesis* hyp)
+{
+  return hyp ? hyp->_GetGroupsToRemove(): DefaultGroupsToRemove();
 }

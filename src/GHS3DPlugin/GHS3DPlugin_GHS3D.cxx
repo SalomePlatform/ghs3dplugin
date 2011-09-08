@@ -3492,7 +3492,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // --------------
   // read a result
   // --------------
-  std::set<std::string> groupsToRemove = _hyp->GetGroupsToRemove();
+  GHS3DPlugin_Hypothesis::TSetStrings groupsToRemove = GHS3DPlugin_Hypothesis::GetGroupsToRemove(_hyp);
   
   Ok = readGMFFile(aResultFileName.ToCString(),
 #ifdef WITH_SMESH_CANCEL_COMPUTE
@@ -3506,7 +3506,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   
   if ( Ok ) {
     GHS3DPlugin_Hypothesis* that = (GHS3DPlugin_Hypothesis*)this->_hyp;
-    that->ClearGroupsToRemove();
+    if (that)
+      that->ClearGroupsToRemove();
   }
   // ---------------------
   // remove working files
