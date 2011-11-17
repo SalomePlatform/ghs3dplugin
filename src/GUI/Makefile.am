@@ -62,7 +62,7 @@ libGHS3DPluginGUI_la_LDFLAGS  = \
 	$(QT_LIBS) \
 	$(KERNEL_LDFLAGS) -lSALOMELocalTrace \
 	$(MED_LDFLAGS) -lSalomeIDLMED \
-	$(SMESH_LDFLAGS) -lSMESH -lGeomSelectionTools  -lStdMeshersGUI\
+	$(SMESH_LDFLAGS) -lGEOM -lSMESH -lGeomSelectionTools  -lStdMeshersGUI -lSMESHFiltersSelection \
 	$(GUI_LDFLAGS) -lsuit -lqtx -lSalomeApp \
 	$(CAS_KERNEL)
 

@@ -22,14 +22,6 @@
 // Authors : Gilles DAVID (Euriware)
 // ---
 //
-#ifdef WNT
-// E.A. : On windows with python 2.6, there is a conflict
-// E.A. : between pymath.h and Standard_math.h which define
-// E.A. : some same symbols : acosh, asinh, ...
-#include <Standard_math.hxx>
-#include <pymath.h>
-#endif
-
 #include "GHS3DPluginGUI_HypothesisCreator.h"
 
 //=============================================================================
