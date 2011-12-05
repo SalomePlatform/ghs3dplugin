@@ -191,7 +191,7 @@ protected slots:
   void                addEnforcedMesh(std::string name, std::string entry, int elementType, double size = 0, std::string groupName = "");
   void                onAddEnforcedMesh();
   void                onRemoveEnforcedMesh();
-  void                synchronizeEnforcedMesh();
+  //void                synchronizeEnforcedMesh();
   void                checkEnfMeshIsDefined();
   
 signals:
