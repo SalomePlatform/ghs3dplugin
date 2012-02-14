@@ -907,7 +907,7 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
       }
       save << " " << "__BEGIN_SIZE__";
       save << " " << enfVertex->size;
-      save << " " << "__BEGIN_SIZE__";
+      save << " " << "__END_SIZE__";
       save << " " << "__END_VERTEX__";
     }
     save << "__ENFORCED_VERTICES_END__ ";
@@ -1120,8 +1120,9 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
           if (txt == "__BEGIN_SIZE__") {  // __BEGIN_ENTRY__
             isOK = (load >> size);
             isOK = (load >> txt); // __END_ENTRY__
-            if (txt != "__END_SIZE__")
+            if (txt != "__END_SIZE__") {
               throw std::exception();
+            }
             MESSAGE("size: " << size);
           }
         }
