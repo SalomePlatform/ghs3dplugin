@@ -140,7 +140,7 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   _onlyUnaryInput = false; // Compute() will be called on a compound of solids
   _iShape=0;
   _nbShape=0;
-  _compatibleHypothesis.push_back("GHS3D_Parameters");
+  _compatibleHypothesis.push_back( GHS3DPlugin_Hypothesis::GetHypType());
   _compatibleHypothesis.push_back( StdMeshers_ViscousLayers::GetHypType() );
   _requireShape = false; // can work without shape_studyId
 

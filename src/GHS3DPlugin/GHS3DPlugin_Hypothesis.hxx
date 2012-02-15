@@ -112,7 +112,8 @@ public:
   typedef std::map<const SMDS_MeshElement*, std::string, TIDCompare > TIDSortedElemGroupMap;
   typedef std::map<const SMDS_MeshNode*, std::string, TIDCompare > TIDSortedNodeGroupMap;
   typedef std::set<std::string> TSetStrings;
-  
+
+  static const char* GetHypType() { return "GHS3D_Parameters"; }
   /*!
    * To mesh "holes" in a solid or not. Default is to mesh.
    */
