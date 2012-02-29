@@ -3971,8 +3971,10 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
   } // end while
 
   if ( errDescription.empty() ) { // no errors found
-    char msg[] = "connection to server failed";
-    if ( search( &buf[0], bufEnd, msg, msg + strlen(msg)) != bufEnd )
+    char msgLic1[] = "connection to server failed";
+    char msgLic2[] = " Dlim ";
+    if ( search( &buf[0], bufEnd, msgLic1, msgLic1 + strlen(msgLic1)) != bufEnd ||
+         search( &buf[0], bufEnd, msgLic2, msgLic2 + strlen(msgLic2)) != bufEnd )
       errDescription << "Licence problems.";
     else
     {
