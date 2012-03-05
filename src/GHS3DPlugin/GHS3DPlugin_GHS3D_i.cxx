@@ -33,8 +33,6 @@
 #include "utilities.h"
 #include <cstring>
 
-using namespace std;
-
 //=============================================================================
 /*!
  *  GHS3DPlugin_GHS3D_i::GHS3DPlugin_GHS3D_i

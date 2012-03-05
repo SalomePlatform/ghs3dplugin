@@ -83,8 +83,6 @@
 #endif
 #include <algorithm>
 
-using namespace std;
-
 //#include <Standard_Stream.hxx>
 
 

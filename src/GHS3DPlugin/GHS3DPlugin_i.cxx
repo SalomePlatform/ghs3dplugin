@@ -30,8 +30,6 @@
 #include "GHS3DPlugin_GHS3D_i.hxx"
 #include "GHS3DPlugin_Hypothesis_i.hxx"
 
-using namespace std;
-
 template <class T> class GHS3DPlugin_Creator_i:public HypothesisCreator_i<T>
 {
   // as we have 'module GHS3DPlugin' in GHS3DPlugin_Algorithm.idl
