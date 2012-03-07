@@ -63,3 +63,6 @@ libGHS3DEngine_la_LDFLAGS  = \
   $(MED_LDFLAGS) -lSalomeIDLMED \
   $(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lSMESHDS -lSMDS -lStdMeshers \
   $(KERNEL_LDFLAGS) -lSalomeGenericObj -lSALOMELocalTrace -lSALOMEBasics -lSalomeNS -lOpUtil
+
+# Scripts to be installed.
+dist_salomescript_DATA= GHS3DPluginDC.py
