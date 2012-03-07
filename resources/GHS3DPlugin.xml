@@ -42,7 +42,14 @@
                input="TRIA,QUAD"
 	       need-geom="false"
                opt-hypos="GHS3D_Parameters, ViscousLayers"
-               dim="3"/>
+               dim="3">
+      <python-wrap>
+        <algo>GHS3D_3D=Tetrahedron(algo=smesh.GHS3D)</algo>
+        <hypo>GHS3D_Parameters=Parameters()</hypo>
+        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetIgnoreFaces())</hypo>
+      </python-wrap>
+    </algorithm>
+
   </algorithms>
 </meshers-group>
 
