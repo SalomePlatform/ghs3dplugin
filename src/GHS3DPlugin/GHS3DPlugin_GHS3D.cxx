@@ -3341,18 +3341,18 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   bool Ok;
 
   TCollection_AsciiString aGMFFileName, aRequiredVerticesFileName, aSolFileName;
-#ifdef _DEBUG_
-  aGMFFileName    = aGenericName + ".mesh"; // GMF mesh file
-  aResultFileName = aGenericName + "Vol.mesh"; // GMF mesh file
-  aRequiredVerticesFileName    = aGenericNameRequired + ".mesh"; // GMF required vertices mesh file
-  aSolFileName    = aGenericNameRequired + ".sol"; // GMF solution file
-#else
-  aGMFFileName    = aGenericName + ".meshb"; // GMF mesh file
-  aResultFileName = aGenericName + "Vol.meshb"; // GMF mesh file
-  aRequiredVerticesFileName    = aGenericNameRequired + ".meshb"; // GMF required vertices mesh file
-  aSolFileName    = aGenericNameRequired + ".solb"; // GMF solution file
-#endif
-  
+//#ifdef _DEBUG_
+  aGMFFileName              = aGenericName + ".mesh"; // GMF mesh file
+  aResultFileName           = aGenericName + "Vol.mesh"; // GMF mesh file
+  aRequiredVerticesFileName = aGenericNameRequired + ".mesh"; // GMF required vertices mesh file
+  aSolFileName              = aGenericNameRequired + ".sol"; // GMF solution file
+//#else
+//  aGMFFileName    = aGenericName + ".meshb"; // GMF mesh file
+//  aResultFileName = aGenericName + "Vol.meshb"; // GMF mesh file
+//  aRequiredVerticesFileName    = aGenericNameRequired + ".meshb"; // GMF required vertices mesh file
+//  aSolFileName    = aGenericNameRequired + ".solb"; // GMF solution file
+//#endif
+
   std::map <int, int> nodeID2nodeIndexMap;
   std::map<std::vector<double>, std::string> enfVerticesWithGroup;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues coordsSizeMap;
@@ -3361,7 +3361,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::vector<double> coords;
   gp_Pnt aPnt;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* enfVertex;
-  
+
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList enfVertices = GHS3DPlugin_Hypothesis::GetEnforcedVertices(_hyp);
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList::const_iterator enfVerIt = enfVertices.begin();
 
@@ -3378,7 +3378,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 //     if (!enfVertex->geomEntry.empty()) {
       GeomShape = entryToShape(enfVertex->geomEntry);
 //       GeomType = GeomShape.ShapeType();
-      
+
 //       if (!enfVertex->isCompound) {
 // //       if (GeomType == TopAbs_VERTEX) {
 //         coords.clear();
@@ -3391,7 +3391,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 //           enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
 //         }
 //       }
-//       
+//
 //       // Group Management
 //       else {
 //       if (GeomType == TopAbs_COMPOUND){
@@ -3412,7 +3412,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 //       }
     }
   }
-  
+
 //   const SMDS_MeshNode* enfNode;
   GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap enforcedNodes = GHS3DPlugin_Hypothesis::GetEnforcedNodes(_hyp);
 //   GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap::const_iterator enfNodeIt = enforcedNodes.begin();
@@ -3426,22 +3426,22 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 //     if (enfVerticesWithGro
 //       enfVerticesWithGroup.insert(make_pair(coords,enfNodeIt->second));
 //   }
-  
-  
+
+
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap enforcedEdges = GHS3DPlugin_Hypothesis::GetEnforcedEdges(_hyp);
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap enforcedTriangles = GHS3DPlugin_Hypothesis::GetEnforcedTriangles(_hyp);
 //   TIDSortedElemSet enforcedQuadrangles = GHS3DPlugin_Hypothesis::GetEnforcedQuadrangles(_hyp);
   GHS3DPlugin_Hypothesis::TID2SizeMap nodeIDToSizeMap = GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(_hyp);
 
   std::string tmpStr;
-  
+
   int nbEnforcedVertices = coordsSizeMap.size();
   int nbEnforcedNodes = enforcedNodes.size();
   (nbEnforcedNodes <= 1) ? tmpStr = "node" : tmpStr = "nodes";
   std::cout << nbEnforcedNodes << " enforced " << tmpStr << " from hypo" << std::endl;
   (nbEnforcedVertices <= 1) ? tmpStr = "vertex" : tmpStr = "vertices";
   std::cout << nbEnforcedVertices << " enforced " << tmpStr << " from hypo" << std::endl;
-  
+
   std::vector <const SMDS_MeshNode*> aNodeByGhs3dId, anEnforcedNodeByGhs3dId;
   std::map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
   std::vector<std::string> aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId;
@@ -3456,7 +3456,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
     Ok = writeGMFFile(aGMFFileName.ToCString(), aRequiredVerticesFileName.ToCString(), aSolFileName.ToCString(),
                       *proxyMesh, &theMesh,
-                      aNodeByGhs3dId, anEnforcedNodeByGhs3dId, aNodeToGhs3dIdMap, 
+                      aNodeByGhs3dId, anEnforcedNodeByGhs3dId, aNodeToGhs3dIdMap,
                       aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
                       enforcedNodes, enforcedEdges, enforcedTriangles,
                       enfVerticesWithGroup, coordsSizeMap);
@@ -3477,7 +3477,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::cout << std::endl;
   std::cout << "Ghs3d execution..." << std::endl;
   std::cout << cmd << std::endl;
-  
+
 #ifdef WITH_SMESH_CANCEL_COMPUTE
   _compute_canceled = false;
 #endif
@@ -3491,17 +3491,17 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // read a result
   // --------------
   GHS3DPlugin_Hypothesis::TSetStrings groupsToRemove = GHS3DPlugin_Hypothesis::GetGroupsToRemove(_hyp);
-  
+
   Ok = readGMFFile(aResultFileName.ToCString(),
 #ifdef WITH_SMESH_CANCEL_COMPUTE
                    this,
 #endif
                    theHelper, theShape, aNodeByGhs3dId, aNodeToGhs3dIdMap,
-                   aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId, 
+                   aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
                    groupsToRemove);
-  
+
   updateMeshGroups(theHelper->GetMesh(), groupsToRemove);
-  
+
   if ( Ok ) {
     GHS3DPlugin_Hypothesis* that = (GHS3DPlugin_Hypothesis*)this->_hyp;
     if (that)
@@ -3536,6 +3536,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       if(_compute_canceled)
         removeFile( aLogFileName );
 #endif
+    removeFile( aGMFFileName );
+    removeFile( aResultFileName );
+    removeFile( aRequiredVerticesFileName );
+    removeFile( aSolFileName );
   }
   return Ok;
 }
@@ -3880,8 +3884,8 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
       ptr = getIds(ptr, EDGE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
-    case 9000: // ERR  9000 
-      //  ELEMENT  261 WITH VERTICES :  7 396 -8 242 
+    case 9000: // ERR  9000
+      //  ELEMENT  261 WITH VERTICES :  7 396 -8 242
       //  VOLUME   : -1.11325045E+11 W.R.T. EPSILON   0.
       // A too small volume element is detected. Are reported the index of the element,
       // its four vertex indices, its volume and the tolerance threshold value
@@ -3902,8 +3906,8 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
       }
       break;
     case 9001: // ERR  9001
-      //  %% NUMBER OF NEGATIVE VOLUME TETS  :  1 
-      //  %% THE LARGEST NEGATIVE TET        :   1.75376581E+11 
+      //  %% NUMBER OF NEGATIVE VOLUME TETS  :  1
+      //  %% THE LARGEST NEGATIVE TET        :   1.75376581E+11
       //  %%  NUMBER OF NULL VOLUME TETS     :  0
       // There exists at least a null or negative volume element
       break;
@@ -3917,8 +3921,8 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
       // A too bad quality face is detected. This face is considered degenerated,
       // its index, its three vertex indices together with its quality value are reported
       break; // same as next
-    case 9112: // ERR  9112 
-      //  FACE   2 WITH VERTICES :  4 2 5 
+    case 9112: // ERR  9112
+      //  FACE   2 WITH VERTICES :  4 2 5
       //  SMALL INRADIUS :   0.
       // A too bad quality face is detected. This face is degenerated,
       // its index, its three vertex indices together with its inradius are reported
@@ -4060,7 +4064,7 @@ const SMDS_MeshElement* _Ghs2smdsConvertor::getElement(const vector<int>& ghsNod
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 bool GHS3DPlugin_GHS3D::Evaluate(SMESH_Mesh& aMesh,
@@ -4147,8 +4151,8 @@ bool GHS3DPlugin_GHS3D::importGMFMesh(const char* theGMFFileName, SMESH_Mesh& th
   std::map<std::vector<double>, std::string> dummyEnfVertGroup;
   std::vector<std::string> dummyElemGroup;
   std::set<std::string> dummyGroupsToRemove;
-  
-  bool ok = readGMFFile(theGMFFileName, 
+
+  bool ok = readGMFFile(theGMFFileName,
 #ifdef WITH_SMESH_CANCEL_COMPUTE
                         this,
 #endif
