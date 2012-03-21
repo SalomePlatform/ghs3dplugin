@@ -1098,7 +1098,7 @@ static bool readGMFFile(const char*                     theFile,
 
   int nbElem = 0, nbRef = 0;
   int aGMFNodeID = 0, shapeID;
-  int *nodeAssigne;
+  //int *nodeAssigne;
   const SMDS_MeshNode** GMFNode;
 #ifdef _DEBUG_
   std::map<int, std::set<int> > subdomainId2tetraId;
@@ -1130,7 +1130,7 @@ static bool readGMFFile(const char*                     theFile,
 
   int nbVertices = GmfStatKwd(InpMsh, GmfVertices) - nbInitialNodes;
   GMFNode = new const SMDS_MeshNode*[ nbVertices + 1 ];
-  nodeAssigne = new int[ nbVertices + 1 ];
+  //nodeAssigne = new int[ nbVertices + 1 ];
 
   std::map <GmfKwdCod,int>::const_iterator it = tabRef.begin();
   for ( ; it != tabRef.end() ; ++it)
@@ -1139,7 +1139,7 @@ static bool readGMFFile(const char*                     theFile,
     if(theAlgo->computeCanceled()) {
       GmfCloseMesh(InpMsh);
       delete [] GMFNode;
-      delete [] nodeAssigne;
+      //delete [] nodeAssigne;
       return false;
     }
 #endif
@@ -1186,7 +1186,7 @@ static bool readGMFFile(const char*                     theFile,
         if(theAlgo->computeCanceled()) {
           GmfCloseMesh(InpMsh);
           delete [] GMFNode;
-          delete [] nodeAssigne;
+          //delete [] nodeAssigne;
           return false;
         }
 #endif
@@ -1208,7 +1208,7 @@ static bool readGMFFile(const char*                     theFile,
           
           aGMFID = iElem -nbInitialNodes +1;
           GMFNode[ aGMFID ] = aGMFNode;
-          nodeAssigne[ aGMFID ] = 0;
+          //nodeAssigne[ aGMFID ] = 0;
           if (aGMFID-1 < aNodeGroupByGhs3dId.size() && !aNodeGroupByGhs3dId.at(aGMFID-1).empty())
             addElemInMeshGroup(theHelper->GetMesh(), aGMFNode, aNodeGroupByGhs3dId.at(aGMFID-1), groupsToRemove);
         }
@@ -1278,7 +1278,7 @@ static bool readGMFFile(const char*                     theFile,
         if(theAlgo->computeCanceled()) {
           GmfCloseMesh(InpMsh);
           delete [] GMFNode;
-          delete [] nodeAssigne;
+          //delete [] nodeAssigne;
           return false;
         }
 #endif
@@ -1313,8 +1313,8 @@ static bool readGMFFile(const char*                     theFile,
         case GmfTriangles:
           if (fullyCreatedElement) {
             aCreatedElem = theHelper->AddFace( node[0], node[1], node[2], /*id =*/0, /*force3d =*/false );
-            for ( int iRef = 0; iRef < nbRef; iRef++ )
-              nodeAssigne[ nodeID[ iRef ]] = 1;
+            // for ( int iRef = 0; iRef < nbRef; iRef++ )
+            //   nodeAssigne[ nodeID[ iRef ]] = 1;
             if (aFaceGroupByGhs3dId.size() && !aFaceGroupByGhs3dId[iElem].empty())
               addElemInMeshGroup(theHelper->GetMesh(), aCreatedElem, aFaceGroupByGhs3dId[iElem], groupsToRemove);
           }
@@ -1322,8 +1322,8 @@ static bool readGMFFile(const char*                     theFile,
         case GmfQuadrilaterals:
           if (fullyCreatedElement) {
             theHelper->AddFace( node[0], node[1], node[2], node[3], /*id =*/0, /*force3d =*/false );
-            for ( int iRef = 0; iRef < nbRef; iRef++ )
-              nodeAssigne[ nodeID[ iRef ]] = 1;
+            // for ( int iRef = 0; iRef < nbRef; iRef++ )
+            //   nodeAssigne[ nodeID[ iRef ]] = 1;
           }
         case GmfTetrahedra:
           if ( elemSearcher ) {
@@ -1370,14 +1370,14 @@ static bool readGMFFile(const char*                     theFile,
     }
   }
 
-  for ( int i = 0; i < nbVertices; ++i ) {
-    if ( !nodeAssigne[ i+1 ])
-      theMeshDS->SetNodeInVolume( GMFNode[ i+1 ], shapeID );
-  }
+  // for ( int i = 0; i < nbVertices; ++i ) {
+  //   if ( !nodeAssigne[ i+1 ])
+  //     theMeshDS->SetNodeInVolume( GMFNode[ i+1 ], shapeID );
+  // }
 
   GmfCloseMesh(InpMsh);
   delete [] GMFNode;
-  delete [] nodeAssigne;
+  //delete [] nodeAssigne;
 #ifdef _DEBUG_  
   MESSAGE("Nb subdomains " << subdomainId2tetraId.size());
   std::map<int, std::set<int> >::const_iterator subdomainIt = subdomainId2tetraId.begin();
