@@ -430,6 +430,14 @@ AC_OUTPUT([ \
   bin/VERSION \
   bin/Makefile \
   GHS3DPLUGIN_version.h \
+  doc/Makefile \
+  doc/salome/Makefile \
+  doc/salome/gui/Makefile \
+  doc/salome/gui/GHS3DPLUGIN/Makefile \
+  doc/salome/gui/GHS3DPLUGIN/doxyfile \
+  doc/salome/gui/GHS3DPLUGIN/doxyfile_py \
+  doc/salome/gui/GHS3DPLUGIN/static/header.html \
+  doc/salome/gui/GHS3DPLUGIN/static/header_py.html \
   src/Makefile \
   src/GUI/Makefile \
   src/GHS3DPlugin/Makefile \

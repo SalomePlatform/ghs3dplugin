@@ -40,9 +40,9 @@ else !GHS3DPLUGIN_ENABLE_GUI
                     -I ${SMESH_ROOT_DIR}/adm_local/unix/config_files
 endif
 
-SUBDIRS = idl adm_local resources src bin
+SUBDIRS = idl adm_local resources src bin doc
 
-DIST_SUBDIRS = idl adm_local resources src bin 
+DIST_SUBDIRS = idl adm_local resources src bin doc
 
 DISTCLEANFILES = a.out aclocal.m4 configure local-install.sh hack_libtool
 

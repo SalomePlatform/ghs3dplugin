@@ -26,4 +26,7 @@
     <!-- Default SMESH module plugins -->
     <parameter name="plugins" value="NETGENPlugin,GHS3DPlugin"/>
   </section>
+  <section name="smesh_help" >
+    <parameter name="Plug-ins/GHS3D plugin User's Guide" value="${GHS3DPLUGIN_ROOT_DIR}/share/doc/salome/gui/GHS3DPLUGIN/index.html"/>
+  </section>
 </document>

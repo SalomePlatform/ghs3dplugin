@@ -39,7 +39,6 @@ GHS3D = "GHS3D_3D"
 ## Tetrahedron GHS3D 3D algorithm
 #  It is created by calling Mesh.Tetrahedron( GHS3D, geom=0 )
 #
-#  @ingroup l3_algos_basic
 class GHS3D_Algorithm(Mesh_Algorithm):
 
     meshMethod = "Tetrahedron"
@@ -54,7 +53,6 @@ class GHS3D_Algorithm(Mesh_Algorithm):
 
     ## Defines hypothesis having several parameters
     #
-    #  @ingroup l3_hypos_ghs3dh
     def Parameters(self):
         if not self.params:
             self.params = self.Hypothesis("GHS3D_Parameters", [],
@@ -62,7 +60,7 @@ class GHS3D_Algorithm(Mesh_Algorithm):
         return self.params
 
     ## To mesh "holes" in a solid or not. Default is to mesh.
-    #  @ingroup l3_hypos_ghs3dh
+    #
     def SetToMeshHoles(self, toMesh):
         self.Parameters().SetToMeshHoles(toMesh)
 
@@ -70,28 +68,25 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     #   None_Optimization, Light_Optimization, Standard_Optimization, StandardPlus_Optimization,
     #   Strong_Optimization.
     # Default is Standard_Optimization
-    #  @ingroup l3_hypos_ghs3dh
     def SetOptimizationLevel(self, level):
         self.Parameters().SetOptimizationLevel(level)
 
     ## Maximal size of memory to be used by the algorithm (in Megabytes).
-    #  @ingroup l3_hypos_ghs3dh
+    #    
     def SetMaximumMemory(self, MB):
         self.Parameters().SetMaximumMemory(MB)
 
     ## Initial size of memory to be used by the algorithm (in Megabytes) in
     #  automatic memory adjustment mode.
-    #  @ingroup l3_hypos_ghs3dh
     def SetInitialMemory(self, MB):
         self.Parameters().SetInitialMemory(MB)
 
     ## Path to working directory.
-    #  @ingroup l3_hypos_ghs3dh
+    #    
     def SetWorkingDirectory(self, path):
         self.Parameters().SetWorkingDirectory(path)
 
     ## To keep working files or remove them. Log file remains in case of errors anyway.
-    #  @ingroup l3_hypos_ghs3dh
     def SetKeepFiles(self, toKeep):
         self.Parameters().SetKeepFiles(toKeep)
 
@@ -103,18 +98,15 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     #<li>10 - same as 2 plus the main steps in the computation, quality statistics
     #     histogram of the skin mesh, quality statistics histogram together with
     #     the characteristics of the final mesh.</ul>
-    #  @ingroup l3_hypos_ghs3dh
     def SetVerboseLevel(self, level):
         self.Parameters().SetVerboseLevel(level)
 
     ## To create new nodes.
-    #  @ingroup l3_hypos_ghs3dh
     def SetToCreateNewNodes(self, toCreate):
         self.Parameters().SetToCreateNewNodes(toCreate)
 
     ## To use boundary recovery version which tries to create mesh on a very poor
     #  quality surface mesh.
-    #  @ingroup l3_hypos_ghs3dh
     def SetToUseBoundaryRecoveryVersion(self, toUse):
         self.Parameters().SetToUseBoundaryRecoveryVersion(toUse)
 
@@ -122,12 +114,10 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     #  it is possible. The process is cutting first the overconstrained edges and
     #  second the overconstrained facets. This insure that no edges have two boundary
     #  vertices and that no facets have three boundary vertices.
-    #  @ingroup l3_hypos_ghs3dh
     def SetFEMCorrection(self, toUseFem):
         self.Parameters().SetFEMCorrection(toUseFem)
 
     ## To removes initial central point.
-    #  @ingroup l3_hypos_ghs3dh
     def SetToRemoveCentralPoint(self, toRemove):
         self.Parameters().SetToRemoveCentralPoint(toRemove)
 
@@ -138,7 +128,6 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     #  @param size         : size of 1D element around enforced vertex
     #  @param vertexName   : name of the enforced vertex
     #  @param groupName    : name of the group
-    #  @ingroup l3_hypos_ghs3dh
     def SetEnforcedVertex(self, x, y, z, size, vertexName = "", groupName = ""):
         if vertexName == "":
             if groupName == "":
@@ -155,7 +144,6 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     #  @param theVertex    : GEOM vertex (or group, compound) to be projected on theFace.
     #  @param size         : size of 1D element around enforced vertex
     #  @param groupName    : name of the group
-    #  @ingroup l3_hypos_ghs3dh
     def SetEnforcedVertexGeom(self, theVertex, size, groupName = ""):
         AssureGeomPublished( self.mesh, theVertex )
         if groupName == "":
@@ -167,13 +155,11 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     #  @param x            : x coordinate
     #  @param y            : y coordinate
     #  @param z            : z coordinate
-    #  @ingroup l3_hypos_ghs3dh
     def RemoveEnforcedVertex(self, x, y, z):
         return self.Parameters().RemoveEnforcedVertex(x, y, z)
 
     ## To remove an enforced vertex given a GEOM vertex, group or compound.
     #  @param theVertex    : GEOM vertex (or group, compound) to be projected on theFace.
-    #  @ingroup l3_hypos_ghs3dh
     def RemoveEnforcedVertexGeom(self, theVertex):
         AssureGeomPublished( self.mesh, theVertex )
         return self.Parameters().RemoveEnforcedVertexGeom(theVertex)
@@ -183,7 +169,6 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     #  @param elementType  : SMESH.ElementType (NODE, EDGE or FACE)
     #  @param size         : size of elements around enforced elements. Unused if -1.
     #  @param groupName    : group in which enforced elements will be added. Unused if "".
-    #  @ingroup l3_hypos_ghs3dh
     def SetEnforcedMesh(self, theSource, elementType, size = -1, groupName = ""):
         if size >= 0:
             if groupName != "":
@@ -197,7 +182,6 @@ class GHS3D_Algorithm(Mesh_Algorithm):
                 return self.Parameters().SetEnforcedMeshSizeWithGroup(theSource, elementType, size, groupName)
 
     ## Sets command line option as text.
-    #  @ingroup l3_hypos_ghs3dh
     def SetTextOption(self, option):
         self.Parameters().SetTextOption(option)
     

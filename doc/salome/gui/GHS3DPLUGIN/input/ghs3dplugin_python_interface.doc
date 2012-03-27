@@ -1,6 +1,6 @@
 /*!
 
-\page ghs3dplugin_python_intarface_page Python Interface
+\page ghs3dplugin_python_interface_page Python Interface
 
 Python package \ref GHS3DPluginDC "GHS3DPlugin" defines several classes, destined for creation of the 3D meshes.
 
