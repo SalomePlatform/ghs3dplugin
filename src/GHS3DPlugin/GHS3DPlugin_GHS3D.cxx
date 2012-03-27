@@ -1409,7 +1409,6 @@ static bool writeGMFFile(const char*                                     theMesh
                          const SMESH_ProxyMesh&                          theProxyMesh,
                          SMESH_Mesh *                                    theMesh,
                          std::vector <const SMDS_MeshNode*> &            theNodeByGhs3dId,
-                         std::vector <const SMDS_MeshNode*> &            theEnforcedNodeByGhs3dId,
                          std::map<const SMDS_MeshNode*,int> &            aNodeToGhs3dIdMap,
                          std::vector<std::string> &                      aNodeGroupByGhs3dId,
                          std::vector<std::string> &                      anEdgeGroupByGhs3dId,
@@ -1429,7 +1428,11 @@ static bool writeGMFFile(const char*                                     theMesh
   const SMDS_MeshElement* elem;
   TIDSortedElemSet anElemSet, theKeptEnforcedEdges, theKeptEnforcedTriangles;
   SMDS_ElemIteratorPtr nodeIt;
-  map<const SMDS_MeshNode*,int> anEnforcedNodeToGhs3dIdMap;
+  std::vector <const SMDS_MeshNode*> theEnforcedNodeByGhs3dId;
+  map<const SMDS_MeshNode*,int> anEnforcedNodeToGhs3dIdMap, anExistingEnforcedNodeToGhs3dIdMap;
+  std::vector< const SMDS_MeshElement* > foundElems;
+  map<const SMDS_MeshNode*,TopAbs_State> aNodeToTopAbs_StateMap;
+  int nbFoundElems;
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap::iterator elemIt;
   TIDSortedElemSet::iterator elemSetIt;
   bool isOK;
@@ -1440,6 +1443,10 @@ static bool writeGMFFile(const char*                                     theMesh
   // count faces
   int nbFaces = theProxyMesh.NbFaces();
   int nbNodes;
+  
+  // groups management
+  int usedEnforcedNodes = 0;
+  std::string gn = "";
 
   if ( nbFaces == 0 )
     return false;
@@ -1480,21 +1487,40 @@ static bool writeGMFFile(const char*                                     theMesh
       // Test if point is inside shape to mesh
       gp_Pnt myPoint(node->X(),node->Y(),node->Z());
       TopAbs_State result = pntCls->GetPointState( myPoint );
-      if ( result != TopAbs_IN ) {
+      if ( result == TopAbs_OUT ) {
         isOK = false;
         break;
       }
+      aNodeToTopAbs_StateMap.insert( make_pair( node, result ));
     }
     if (isOK) {
       nodeIt = elem->nodesIterator();
       nbNodes = 2;
+      int newId = -1;
       while ( nodeIt->more() && nbNodes-- ) {
         // find GHS3D ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-        int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
-        anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
+        gp_Pnt myPoint(node->X(),node->Y(),node->Z());
+        nbFoundElems = pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems);
+        std::cout << "Node at "<<node->X()<<", "<<node->Y()<<", "<<node->Z()<<std::endl;
+        std::cout << "Nb nodes found : "<<nbFoundElems<<std::endl;
+        if (nbFoundElems ==0) {
+          if ((*aNodeToTopAbs_StateMap.find(node)).second == TopAbs_IN) {
+            newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
+            anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
+          }
+        }
+        else if (nbFoundElems ==1) {
+          const SMDS_MeshNode* existingNode = (SMDS_MeshNode*) foundElems.at(0);
+          newId = (*aNodeToGhs3dIdMap.find(existingNode)).second;
+          anExistingEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
+        }
+        else
+          isOK = false;
+        std::cout << "GHS3D node ID: "<<newId<<std::endl;
       }
-      theKeptEnforcedEdges.insert(elem);
+      if (isOK)
+        theKeptEnforcedEdges.insert(elem);
     }
   }
   
@@ -1512,21 +1538,39 @@ static bool writeGMFFile(const char*                                     theMesh
       // Test if point is inside shape to mesh
       gp_Pnt myPoint(node->X(),node->Y(),node->Z());
       TopAbs_State result = pntCls->GetPointState( myPoint );
-      if ( result != TopAbs_IN ) {
+      if ( result == TopAbs_OUT ) {
         isOK = false;
         break;
       }
+      aNodeToTopAbs_StateMap.insert( make_pair( node, result ));
     }
     if (isOK) {
       nodeIt = elem->nodesIterator();
       nbNodes = 3;
+      int newId = -1;
       while ( nodeIt->more() && nbNodes--) {
         // find GHS3D ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-        int newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
-        anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
+        gp_Pnt myPoint(node->X(),node->Y(),node->Z());
+        nbFoundElems = pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems);
+        std::cout << "Nb nodes found : "<<nbFoundElems<<std::endl;
+        if (nbFoundElems ==0) {
+          if ((*aNodeToTopAbs_StateMap.find(node)).second == TopAbs_IN) {
+            newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
+            anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
+          }
+        }
+        else if (nbFoundElems ==1) {
+          const SMDS_MeshNode* existingNode = (SMDS_MeshNode*) foundElems.at(0);
+          newId = (*aNodeToGhs3dIdMap.find(existingNode)).second;
+          anExistingEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
+        }
+        else
+          isOK = false;
+        std::cout << "GHS3D node ID: "<<newId<<std::endl;
       }
-      theKeptEnforcedTriangles.insert(elem);
+      if (isOK)
+        theKeptEnforcedTriangles.insert(elem);
     }
   }
   
@@ -1542,12 +1586,13 @@ static bool writeGMFFile(const char*                                     theMesh
 
   // put nodes to anEnforcedNodeToGhs3dIdMap vector
   std::cout << "anEnforcedNodeToGhs3dIdMap.size(): "<<anEnforcedNodeToGhs3dIdMap.size()<<std::endl;
-  theEnforcedNodeByGhs3dId.resize( anEnforcedNodeToGhs3dIdMap.size() );
+  theEnforcedNodeByGhs3dId.resize( anEnforcedNodeToGhs3dIdMap.size());
   n2id = anEnforcedNodeToGhs3dIdMap.begin();
   for ( ; n2id != anEnforcedNodeToGhs3dIdMap.end(); ++ n2id)
   {
-//     std::cout << "n2id->first: "<<n2id->first<<std::endl;
-    theEnforcedNodeByGhs3dId[ n2id->second - aNodeToGhs3dIdMap.size() - 1 ] = n2id->first; // ghs3d ids count from 1
+    if (n2id->second > aNodeToGhs3dIdMap.size()) {
+      theEnforcedNodeByGhs3dId[ n2id->second - aNodeToGhs3dIdMap.size() - 1 ] = n2id->first; // ghs3d ids count from 1
+    }
   }
   
   
@@ -1582,14 +1627,37 @@ static bool writeGMFFile(const char*                                     theMesh
     coords.push_back(node->X());
     coords.push_back(node->Y());
     coords.push_back(node->Z());
+    std::cout << "Node at " << node->X()<<", " <<node->Y()<<", " <<node->Z();
     
     if (nodesCoords.find(coords) != nodesCoords.end()) {
-      std::cout << "Node at " << node->X()<<", " <<node->Y()<<", " <<node->Z() << " found" << std::endl;
+      // node already exists in original mesh
+      std::cout << " found" << std::endl;
       continue;
     }
     
-    if (theEnforcedVertices.find(coords) != theEnforcedVertices.end())
+    if (theEnforcedVertices.find(coords) != theEnforcedVertices.end()) {
+      // node already exists in enforced vertices
+      std::cout << " found" << std::endl;
       continue;
+    }
+    
+//     gp_Pnt myPoint(node->X(),node->Y(),node->Z());
+//     nbFoundElems = pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems);
+//     if (nbFoundElems ==0) {
+//       std::cout << " not found" << std::endl;
+//       if ((*aNodeToTopAbs_StateMap.find(node)).second == TopAbs_IN) {
+//         nodesCoords.insert(coords);
+//         theOrderedNodes.push_back(node);
+//       }
+//     }
+//     else {
+//       std::cout << " found in initial mesh" << std::endl;
+//       const SMDS_MeshNode* existingNode = (SMDS_MeshNode*) foundElems.at(0);
+//       nodesCoords.insert(coords);
+//       theOrderedNodes.push_back(existingNode);
+//     }
+    
+    std::cout << " not found" << std::endl;
     
     nodesCoords.insert(coords);
     theOrderedNodes.push_back(node);
@@ -1608,21 +1676,51 @@ static bool writeGMFFile(const char*                                     theMesh
     coords.push_back(node->X());
     coords.push_back(node->Y());
     coords.push_back(node->Z());
-    
-    if (nodesCoords.find(coords) != nodesCoords.end()) {
-      std::cout << "Node at " << node->X()<<", " <<node->Y()<<", " <<node->Z() << " found" << std::endl;
-      continue;
-    }
-
-    if (theEnforcedVertices.find(coords) != theEnforcedVertices.end())
-      continue;
+    std::cout << "Node at " << node->X()<<", " <<node->Y()<<", " <<node->Z();
     
     // Test if point is inside shape to mesh
     gp_Pnt myPoint(node->X(),node->Y(),node->Z());
     TopAbs_State result = pntCls->GetPointState( myPoint );
-    if ( result != TopAbs_IN )
+    if ( result == TopAbs_OUT ) {
+      std::cout << " out of volume" << std::endl;
       continue;
+    }
     
+    if (nodesCoords.find(coords) != nodesCoords.end()) {
+      std::cout << " found in nodesCoords" << std::endl;
+//       theRequiredNodes.push_back(node);
+      continue;
+    }
+
+    if (theEnforcedVertices.find(coords) != theEnforcedVertices.end()) {
+      std::cout << " found in theEnforcedVertices" << std::endl;
+      continue;
+    }
+    
+//     nbFoundElems = pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems);
+//     if (nbFoundElems ==0) {
+//       std::cout << " not found" << std::endl;
+//       if (result == TopAbs_IN) {
+//         nodesCoords.insert(coords);
+//         theRequiredNodes.push_back(node);
+//       }
+//     }
+//     else {
+//       std::cout << " found in initial mesh" << std::endl;
+//       const SMDS_MeshNode* existingNode = (SMDS_MeshNode*) foundElems.at(0);
+// //       nodesCoords.insert(coords);
+//       theRequiredNodes.push_back(existingNode);
+//     }
+//     
+//     
+//     
+//     if (pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems) == 0)
+//       continue;
+
+//     if ( result != TopAbs_IN )
+//       continue;
+    
+    std::cout << " not found" << std::endl;
     nodesCoords.insert(coords);
 //     theOrderedNodes.push_back(node);
     theRequiredNodes.push_back(node);
@@ -1643,8 +1741,13 @@ static bool writeGMFFile(const char*                                     theMesh
       // Test if point is inside shape to mesh
       gp_Pnt myPoint(x,y,z);
       TopAbs_State result = pntCls->GetPointState( myPoint );
-      if ( result != TopAbs_IN )
+      if ( result == TopAbs_OUT )
         continue;
+      if (pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems) == 0)
+        continue;
+
+//       if ( result != TopAbs_IN )
+//         continue;
       std::vector<double> coords;
       coords.push_back(x);
       coords.push_back(y);
@@ -1654,12 +1757,15 @@ static bool writeGMFFile(const char*                                     theMesh
       solSize++;
     }
   }
-
+  
+  
   // GmfVertices
   std::cout << "Begin writting required nodes in GmfVertices" << std::endl;
+  std::cout << "Nb vertices: " << theOrderedNodes.size() << std::endl;
   GmfSetKwd(idx, GmfVertices, theOrderedNodes.size()/*+solSize*/);
-  for (ghs3dNodeIt = theOrderedNodes.begin();ghs3dNodeIt != theOrderedNodes.end();++ghs3dNodeIt)
+  for (ghs3dNodeIt = theOrderedNodes.begin();ghs3dNodeIt != theOrderedNodes.end();++ghs3dNodeIt) {
     GmfSetLin(idx, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
+  }
 
   std::cout << "End writting required nodes in GmfVertices" << std::endl;
 
@@ -1681,8 +1787,8 @@ static bool writeGMFFile(const char*                                     theMesh
     int TypTab[] = {GmfSca};
     GmfSetKwd(idxRequired, GmfVertices, requiredNodes + solSize);
     GmfSetKwd(idxSol, GmfSolAtVertices, requiredNodes + solSize, 1, TypTab);
-    int usedEnforcedNodes = 0;
-    std::string gn = "";
+//     int usedEnforcedNodes = 0;
+//     std::string gn = "";
     for (ghs3dNodeIt = theRequiredNodes.begin();ghs3dNodeIt != theRequiredNodes.end();++ghs3dNodeIt) {
       GmfSetLin(idxRequired, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
       GmfSetLin(idxSol, GmfSolAtVertices, 0.0);
@@ -1724,8 +1830,11 @@ static bool writeGMFFile(const char*                                     theMesh
         // find GHS3D ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-        if (it == anEnforcedNodeToGhs3dIdMap.end())
-          throw "Node not found";
+        if (it == anEnforcedNodeToGhs3dIdMap.end()) {
+          it = anExistingEnforcedNodeToGhs3dIdMap.find(node);
+          if (it == anEnforcedNodeToGhs3dIdMap.end())
+            throw "Node not found";
+        }
         nedge[index] = it->second;
         index++;
       }
@@ -1776,8 +1885,11 @@ static bool writeGMFFile(const char*                                     theMesh
           // find GHS3D ID
           const SMDS_MeshNode* node = castToNode( nodeIt->next() );
           map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
-          if (it == anEnforcedNodeToGhs3dIdMap.end())
-            throw "Node not found";
+          if (it == anEnforcedNodeToGhs3dIdMap.end()) {
+            it = anExistingEnforcedNodeToGhs3dIdMap.find(node);
+            if (it == anEnforcedNodeToGhs3dIdMap.end())
+              throw "Node not found";
+          }
           ntri[index] = it->second;
           index++;
         }
@@ -3456,7 +3568,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
     Ok = writeGMFFile(aGMFFileName.ToCString(), aRequiredVerticesFileName.ToCString(), aSolFileName.ToCString(),
                       *proxyMesh, &theMesh,
-                      aNodeByGhs3dId, anEnforcedNodeByGhs3dId, aNodeToGhs3dIdMap,
+                      aNodeByGhs3dId, aNodeToGhs3dIdMap,
                       aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
                       enforcedNodes, enforcedEdges, enforcedTriangles,
                       enfVerticesWithGroup, coordsSizeMap);

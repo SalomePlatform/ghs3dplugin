@@ -921,7 +921,7 @@ void GHS3DPluginGUI_HypothesisCreator::synchronizeCoords() {
   that->checkVertexIsDefined();
 }
 
-/** GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh( x, y, z, vertexName, geomEntry, groupName)
+/** GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh( meshName, geomEntry, elemType, size, groupName)
 This method adds in the tree widget an enforced mesh from mesh, submesh or group with optionally size and and groupName.
 */
 void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::string entry, int elementType, double size, std::string groupName)
