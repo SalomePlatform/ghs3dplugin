@@ -1,0 +1,25 @@
+/*!
+
+\mainpage Introduction to GHS3DPLUGIN
+
+\note GHS3DPLUGIN plugin used GHS3D commercial mesher and require a
+license to be used within the Mesh module.
+
+\n \b GHS3DPLUGIN plugin is destined for:
+
+<ul>
+<li>Meshing 3D geometric entities.</li>
+    - Volumes are split into tetrahedral (pyramidal) elements.
+<li>Generating 3D meshes from 2D meshes, working without geometrical objects.</li>
+</ul>
+
+To manage parameters of the GHS3DPLUGIN use \subpage ghs3d_hypo_page and \subpage additional_hypo_page
+
+Also all GHS3DPLUGIN functionalities are accessible via
+\subpage ghs3dplugin_python_intarface_page "GHS3DPLUGIN Python interface".
+
+
+\image html image2.gif "Example of a tetrahedral 3D mesh"
+
+
+*/

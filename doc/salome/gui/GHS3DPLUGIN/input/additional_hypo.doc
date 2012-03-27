@@ -1,0 +1,18 @@
+/*!
+
+\page additional_hypo_page Additional Hypotheses
+
+\n <b>Additional Hypotheses</b> can be applied as a supplement to the
+main hypotheses, introducing additional concepts to mesh creation.
+
+One additional hypotheses can be used together with GHS3D algoritm:
+<ul>
+<li><b>Viscous Layers</b> additional hypothesis can be used together with GHS3D.
+This hypothesis allows creation of layers of highly stretched prisms near
+mesh boundary, which is beneficial for high quality viscous
+computations. The prisms constructed on the quadrangular mesh faces are
+actually the hexahedrons.</li>
+</ul>
+
+For more detailed description of the this additional hypothesis please refer SALOME Mesh User's Guide.
+*/
