@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2004-2011  CEA/DEN, EDF R&D
+# Copyright (C) 2004-2012  CEA/DEN, EDF R&D
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -21,20 +21,5 @@
 rm -rf autom4te.cache aclocal.m4 configure make_config
 find . -name "*~" -print -exec rm {} \;
 find . -name "*.pyc" -print -exec rm {} \;
-
-find bin -name Makefile.in | xargs rm -f
-find idl -name Makefile.in | xargs rm -f
-find resources -name Makefile.in | xargs rm -f
-find adm_local -name Makefile.in | xargs rm -f
-find src -name Makefile.in | xargs rm -f
-rm -f adm_local/unix/config_files/config* 
-rm -f adm_local/unix/config_files/depcomp
-rm -f adm_local/unix/config_files/install-sh 
-rm -f adm_local/unix/config_files/libtool.m4 
-rm -f adm_local/unix/config_files/ltmain.sh 
-rm -f adm_local/unix/config_files/ltoptions.m4 
-rm -f adm_local/unix/config_files/ltsugar.m4 
-rm -f adm_local/unix/config_files/ltversion.m4 
-rm -f adm_local/unix/config_files/lt~obsolete.m4 
-rm -f adm_local/unix/config_files/missing 
-rm -f Makefile.in
+find . -name Makefile.in | xargs rm -f
+( cd adm_local/unix/config_files && rm -f config.* depcomp install-sh l*.m4 ltmain.sh missing py-compile )
