@@ -7,15 +7,12 @@
 algorithm. This algorithm is a commercial software.
 \n To get a licence, visit http://www.distene.com/corp/eval-distene.html
 
-<ol>
-<li>\ref ghs3d_general_parameters "General parameters"</li>
-<li>\ref ghs3d_advanced_parameters "Advanced parameters"</li>
-<li>\ref ghs3d_enforced_vertices "Enforced vertices"</li>
-<li>\ref ghs3d_enforced_meshes "Enforced meshes"</li>
-</ol>
+-# \ref ghs3d_general_parameters
+-# \ref ghs3d_advanced_parameters
+-# \ref ghs3d_enforced_vertices
+-# \ref ghs3d_enforced_meshes
 
-\anchor ghs3d_general_parameters
-<h1>General parameters</h1>
+\section ghs3d_general_parameters General parameters
 
 \image html ghs3d_parameters_basic.png
 
@@ -44,8 +41,7 @@ optimisation provides better mesh, but can be time-consuming.
 
 \ref ghs3d_top "Back to top"
 
-\anchor ghs3d_advanced_parameters
-<h1>Advanced parameters</h1>
+\section ghs3d_advanced_parameters Advanced parameters
 
 \image html ghs3d_parameters_advanced.png
 
@@ -119,8 +115,7 @@ for ghs3d, for example, advanced options. </li>
 
 \ref ghs3d_top "Back to top"
 
-\anchor ghs3d_enforced_vertices
-<h1>Enforced vertices</h1>
+\section ghs3d_enforced_vertices Enforced vertices
 
 \note This feature is currently available only on meshes with no
 geometry attached. Such meshes can be obtained by
@@ -149,8 +144,7 @@ group. If the group does not exist, it is created.</li>
 </ul>
 \ref ghs3d_top "Back to top"
 
-\anchor ghs3d_enforced_meshes
-<h1>Enforced Meshes</h1>
+\section ghs3d_enforced_meshes Enforced Meshes
 
 \note This feature is currently only available on meshes with no
 geometry attached. Such meshes can be obtained by
@@ -173,12 +167,12 @@ entirely into the solid mesh.
 <li>FACE</li>
 </ul></li>
 <li>If a size is given, the mesh will be refined around the enforced
-elements given the size</li>
+elements given the size (not available yet)</li>
 <li>If a group name is given, the enforced elements will be added to
 the group. If the group does not exist, it is created.</li>
 </ul>
 
-<br><b>See Also</b> a sample TUI Script of the \ref tui_ghs3d "creation of a Ghs3D hypothesis", including enforced vertices.
+<br><b>See Also</b> a sample TUI Script of the \ref tui_ghs3d "creation of a Ghs3D hypothesis", including enforced vertices and meshes.
 
 \ref ghs3d_top "Back to top"
 
