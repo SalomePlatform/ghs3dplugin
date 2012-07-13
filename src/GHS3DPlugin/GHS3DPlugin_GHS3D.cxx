@@ -53,26 +53,26 @@
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepClass3d_SolidClassifier.hxx>
 #include <BRepExtrema_DistShapeShape.hxx>
+#include <BRepGProp.hxx>
 #include <BRepTools.hxx>
 #include <BRep_Tool.hxx>
 #include <Bnd_Box.hxx>
+#include <GProp_GProps.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <OSD_File.hxx>
 #include <Precision.hxx>
 #include <Quantity_Parameter.hxx>
-#include <Standard_ProgramError.hxx>
 #include <Standard_ErrorHandler.hxx>
 #include <Standard_Failure.hxx>
+#include <Standard_ProgramError.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListIteratorOfListOfShape.hxx>
+#include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Shape.hxx>
-//#include <BRepClass_FaceClassifier.hxx>
-#include <TopTools_MapOfShape.hxx>
-#include <BRepGProp.hxx>
-#include <GProp_GProps.hxx>
+#include <TopoDS_Solid.hxx>
 
 #include "utilities.h"
 
