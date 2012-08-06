@@ -128,11 +128,11 @@ GHS3D_Parameters.ClearEnforcedVertices()
 
 # It is possible to constrain GHS3D with another mesh or group.
 # The constraint can refer to the nodes, edges or faces.
-# This feature is available only on meshes without geometry.
+# This feature is available only on 2D meshes without geometry.
 # The constraining elements are called enforced elements for the mesh.
 # They can be recovered using groups if necessary.
 
-# In the following examples, a box and a cylinder are meshed.
+# In the following examples, a box and a cylinder are meshed in 2D.
 # The mesh of the cylinder will be used as a constraint for the 
 # 3D mesh of the box.
 
