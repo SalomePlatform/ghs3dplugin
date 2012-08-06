@@ -170,12 +170,12 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     #  @param groupName    : group in which enforced elements will be added. Unused if "".
     def SetEnforcedMesh(self, theSource, elementType, size = -1, groupName = ""):
         if size < 0:
-            if groupName != "":
+            if groupName == "":
                 return self.Parameters().SetEnforcedMesh(theSource, elementType)
             else:
                 return self.Parameters().SetEnforcedMeshWithGroup(theSource, elementType, groupName)
         else:
-            if groupName != "":
+            if groupName == "":
                 return self.Parameters().SetEnforcedMeshSize(theSource, elementType, size)
             else:
                 return self.Parameters().SetEnforcedMeshSizeWithGroup(theSource, elementType, size, groupName)
