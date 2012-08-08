@@ -117,13 +117,14 @@ for ghs3d, for example, advanced options. </li>
 
 \section ghs3d_enforced_vertices Enforced vertices
 
-\note This feature is currently available only on meshes with no
+\note This feature is currently partially available only on meshes with no
 geometry attached. Such meshes can be obtained by
 <ul>
 <li>Copying an existing mesh</li>
 <li>Importing a mesh from file</li>
 <li>Applying a transformation to a mesh a get result in a new mesh</li>
 </ul>
+See below for more details.
 
 \image html ghs3d_enforced_vertices.png
 
@@ -135,7 +136,8 @@ An enforced vertex is defined by:
 <ul>
 <li>A vertex</li>
 <ul>
-<li>from GEOM (Vertex, Compound)</li>
+<li>from GEOM (Vertex, Compound) - only avaible on meshes with no
+geometry attached</li>
 <li>or from (x,y,z) cartesian coordinates</li>
 </ul>
 <li>A constant physical size</li>
