@@ -1781,8 +1781,8 @@ static bool writeGMFFile(const char*                                     theMesh
       TopAbs_State result = pntCls->GetPointState( myPoint );
       if ( result == TopAbs_OUT )
         continue;
-      if (pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems) == 0)
-        continue;
+      //if (pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems) == 0)
+      //continue;
 
 //       if ( result != TopAbs_IN )
 //         continue;
