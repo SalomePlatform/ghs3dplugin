@@ -1001,11 +1001,13 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //purpose  : Update or create groups in mesh
 //=======================================================================
 
-static void addElemInMeshGroup(SMESH_Mesh* theMesh,
-                             const SMDS_MeshElement* anElem,
-                             std::string groupName,
-                             std::set<std::string> groupsToRemove)
+static void addElemInMeshGroup(SMESH_Mesh*             theMesh,
+                               const SMDS_MeshElement* anElem,
+                               std::string&            groupName,
+                               std::set<std::string>&  groupsToRemove)
 {
+  if ( !anElem ) return; // issue 0021776
+
   bool groupDone = false;
   SMESH_Mesh::GroupIteratorPtr grIt = theMesh->GetGroups();
   while (grIt->more()) {
