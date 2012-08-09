@@ -1,21 +1,22 @@
-#  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+# Copyright (C) 2004-2012  CEA/DEN, EDF R&D
 #
-#  This library is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU Lesser General Public
-#  License as published by the Free Software Foundation; either
-#  version 2.1 of the License.
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License.
 #
-#  This library is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
 #
-#  You should have received a copy of the GNU Lesser General Public
-#  License along with this library; if not, write to the Free Software
-#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #
-#  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+# See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
+
 # -* Makefile *-
 # Author : Patrick GOLDBRONN (CEA)
 # Date : 28/06/2001
@@ -39,11 +40,11 @@ else !GHS3DPLUGIN_ENABLE_GUI
                     -I ${SMESH_ROOT_DIR}/adm_local/unix/config_files
 endif
 
-SUBDIRS = idl adm_local resources src bin
+SUBDIRS = idl adm_local resources src bin doc
 
-DIST_SUBDIRS = idl adm_local resources src bin 
+DIST_SUBDIRS = idl adm_local resources src bin doc
 
-DISTCLEANFILES = a.out aclocal.m4 configure
+DISTCLEANFILES = a.out aclocal.m4 configure local-install.sh hack_libtool
 
 salomeinclude_DATA = GHS3DPLUGIN_version.h
 

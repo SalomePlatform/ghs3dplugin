@@ -1,5 +1,5 @@
 <!--
-  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+  Copyright (C) 2004-2012  CEA/DEN, EDF R&D
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -25,5 +25,8 @@
   <section name="SMESH">
     <!-- Default SMESH module plugins -->
     <parameter name="plugins" value="NETGENPlugin,GHS3DPlugin"/>
+  </section>
+  <section name="smesh_help" >
+    <parameter name="Plug-ins/GHS3D plugin User's Guide" value="${GHS3DPLUGIN_ROOT_DIR}/share/doc/salome/gui/GHS3DPLUGIN/index.html"/>
   </section>
 </document>

@@ -1,21 +1,22 @@
-#  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+# Copyright (C) 2004-2012  CEA/DEN, EDF R&D
 #
-#  This library is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU Lesser General Public
-#  License as published by the Free Software Foundation; either
-#  version 2.1 of the License.
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License.
 #
-#  This library is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
 #
-#  You should have received a copy of the GNU Lesser General Public
-#  License along with this library; if not, write to the Free Software
-#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #
-#  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+# See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
+
 # -* Makefile *- 
 # Author : Edward AGAPOV (OCC)
 # Modified by : Alexander BORODIN (OCN) - autotools usage
@@ -24,43 +25,10 @@
 #
 include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
+SUBDIRS = GHS3DPlugin 
+
 if GHS3DPLUGIN_ENABLE_GUI
-  SUBDIRS = GUI
+  SUBDIRS += GUI
 endif
 
-DIST_SUBDIRS = GUI
-
-# header files 
-salomeinclude_HEADERS = \
-       GHS3DPlugin_Defs.hxx \
-       GHS3DPlugin_GHS3D.hxx \
-       GHS3DPlugin_GHS3D_i.hxx \
-       GHS3DPlugin_Hypothesis.hxx \
-       GHS3DPlugin_Hypothesis_i.hxx
-
-# Libraries targets
-lib_LTLIBRARIES = libGHS3DEngine.la
-
-dist_libGHS3DEngine_la_SOURCES = \
-	GHS3DPlugin_GHS3D.cxx \
-	GHS3DPlugin_GHS3D_i.cxx \
-	GHS3DPlugin_i.cxx \
-	GHS3DPlugin_Hypothesis.cxx \
-	GHS3DPlugin_Hypothesis_i.cxx
-
-libGHS3DEngine_la_CPPFLAGS =  \
-	$(KERNEL_CXXFLAGS)    \
-	$(CAS_CPPFLAGS)       \
-	$(GEOM_CXXFLAGS)      \
-	$(MED_CXXFLAGS)       \
-	$(SMESH_CXXFLAGS)     \
-	$(BOOST_CPPFLAGS)     \
-	$(CORBA_CXXFLAGS)     \
-	$(CORBA_INCLUDES)     \
-	-I$(top_builddir)/idl \
-	-I$(top_builddir)/salome_adm/unix
-
-libGHS3DEngine_la_LDFLAGS  = \
-	../idl/libSalomeIDLGHS3DPLUGIN.la \
-	$(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine
-	$(KERNEL_LDFLAGS) -lSalomeGenericObj
+DIST_SUBDIRS = GHS3DPlugin GUI

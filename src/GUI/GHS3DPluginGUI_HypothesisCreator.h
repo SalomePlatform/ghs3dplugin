@@ -1,21 +1,22 @@
-//  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+// Copyright (C) 2004-2012  CEA/DEN, EDF R&D
 //
-//  This library is free software; you can redistribute it and/or
-//  modify it under the terms of the GNU Lesser General Public
-//  License as published by the Free Software Foundation; either
-//  version 2.1 of the License.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License.
 //
-//  This library is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-//  Lesser General Public License for more details.
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 //
-//  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+// See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
+
 //  GHS3DPlugin GUI: GUI for plugged-in mesher GHS3DPlugin
 //  File   : GHS3DPluginGUI_HypothesisCreator.h
 //  Author : Michael Zorin
@@ -24,35 +25,134 @@
 #ifndef GHS3DPLUGINGUI_HypothesisCreator_HeaderFile
 #define GHS3DPLUGINGUI_HypothesisCreator_HeaderFile
 
-#include "GHS3DPlugin_Defs.hxx"
+#ifdef WIN32
+  #if defined GHS3DPluginGUI_EXPORTS
+    #define GHS3DPLUGINGUI_EXPORT __declspec( dllexport )
+  #else
+    #define GHS3DPLUGINGUI_EXPORT __declspec( dllimport )
+  #endif
+#else
+  #define GHS3DPLUGINGUI_EXPORT
+#endif
+
 #include <SMESHGUI_Hypotheses.h>
+#include <GeomSelectionTools.h>
+#include <TopAbs_ShapeEnum.hxx>
+
+#include <QItemDelegate>
+#include <map>
+#include <vector>
+#include <set>
+#include <GEOM_Client.hxx>
+#include CORBA_SERVER_HEADER(GHS3DPlugin_Algorithm)
+#include CORBA_SERVER_HEADER(SMESH_Gen)
+#include CORBA_SERVER_HEADER(SMESH_Mesh)
 
 class QWidget;
 class QComboBox;
 class QCheckBox;
 class QLineEdit;
 class QSpinBox;
+class QTableWidget;
+class QTableWidgetItem;
+class QHeaderView;
+
+class SMESHGUI_SpinBox;
+class StdMeshersGUI_ObjectReferenceParamWdg;
+class LightApp_SelectionMgr;
+class SUIT_SelectionFilter;
+
+class QTEnfVertex
+{
+
+public:
+  QTEnfVertex(double size, double x=0., double y=0., double z=0., QString name="", QString geomEntry="", QString groupName="", bool isCompound = false);
+
+private:
+  bool operator == (const QTEnfVertex* other) const {
+    if (other) {
+      if (this->coords.size() && other->coords.size())
+        return (this->coords == other->coords);
+      else
+        return (this->geomEntry == other->geomEntry);
+    }
+  }
+  
+  QString name;
+  QString geomEntry;
+  bool isCompound;
+  QString groupName;
+  double size;
+  std::vector<double> coords;
+};
+
+typedef QList< QTEnfVertex* > QEnfVertexList;
+
+// Enforced vertex
+struct TEnfVertex{
+  std::string name;
+  std::string geomEntry;
+  bool isCompound;
+  std::vector<double> coords;
+  std::string groupName;
+  double size;
+};
+
+struct CompareEnfVertices
+{
+  bool operator () (const TEnfVertex* e1, const TEnfVertex* e2) const {
+    if (e1 && e2) {
+      if (e1->coords.size() && e2->coords.size())
+        return (e1->coords < e2->coords);
+      else
+        return (e1->geomEntry < e2->geomEntry);
+    }
+    return false;
+  }
+};
+
+// List of enforced vertices
+typedef std::set< TEnfVertex*, CompareEnfVertices > TEnfVertexList;
+
+// Enforced mesh
+struct TEnfMesh{
+  std::string name;
+  std::string entry;
+  int elementType;
+  std::string groupName;
+  double size;
+};
+
+struct CompareEnfMeshes
+{
+  bool operator () (const TEnfMesh* e1, const TEnfMesh* e2) const {
+    if (e1 && e2) {
+      if (e1->entry == e2->entry)
+        return (e1->elementType < e2->elementType);
+      else
+        return (e1->entry < e2->entry);
+    }
+    else
+      return false;
+  }
+};
+// List of enforced meshes
+typedef std::set< TEnfMesh*, CompareEnfMeshes > TEnfMeshList;
 
 typedef struct
 {
-  bool    myToMeshHoles;
-  int     myMaximumMemory;
-  int     myInitialMemory;
-  int     myOptimizationLevel;
-  bool    myKeepFiles;
-  QString myWorkingDir;
-  QString myName;
+  bool    myToMeshHoles,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint;
+  int     myMaximumMemory,myInitialMemory,myOptimizationLevel;
+  QString myName,myWorkingDir,myTextOption;
   short   myVerboseLevel;
-  bool    myToCreateNewNodes;
-  bool    myBoundaryRecovery;
-  QString myTextOption;
-
+  TEnfVertexList myEnforcedVertices;
+  TEnfMeshList myEnforcedMeshes;
 } GHS3DHypothesisData;
 
 /*!
   \brief Class for creation of GHS3D2D and GHS3D3D hypotheses
 */
-class GHS3DPLUGIN_EXPORT GHS3DPluginGUI_HypothesisCreator : public SMESHGUI_GenericHypothesisCreator
+class GHS3DPLUGINGUI_EXPORT GHS3DPluginGUI_HypothesisCreator : public SMESHGUI_GenericHypothesisCreator
 {
   Q_OBJECT
 
@@ -60,7 +160,7 @@ public:
   GHS3DPluginGUI_HypothesisCreator( const QString& );
   virtual ~GHS3DPluginGUI_HypothesisCreator();
 
-  virtual bool     checkParams() const;
+  virtual bool     checkParams(QString& msg) const;
   virtual QString  helpPage() const;
 
 protected:
@@ -73,31 +173,126 @@ protected:
   virtual QString  type() const;
 
 protected slots:
-  void             onDirBtnClicked();
-  void             updateWidgets();
+  void                onDirBtnClicked();
+  void                updateWidgets();
+  
+  void                addEnforcedVertex(double x=0, double y=0, double z=0, double size = 0,
+                                        std::string vertexName = "", std::string geomEntry = "", std::string groupName = "",
+                                        bool isCompound = false);
+  void                onAddEnforcedVertex();
+  void                onRemoveEnforcedVertex();
+  void                synchronizeCoords();
+  void                updateEnforcedVertexValues(QTableWidgetItem* );
+  void                onSelectEnforcedVertex();
+  void                clearEnforcedVertexWidgets();
+  void                checkVertexIsDefined();
+  void                clearEnfVertexSelection();
+  
+  void                addEnforcedMesh(std::string name, std::string entry, int elementType, double size = 0, std::string groupName = "");
+  void                onAddEnforcedMesh();
+  void                onRemoveEnforcedMesh();
+  //void                synchronizeEnforcedMesh();
+  void                checkEnfMeshIsDefined();
+  
+signals:
+  void                vertexDefined(bool);
+  void                enfMeshDefined(bool);
+  
+private:
+  bool                readParamsFromHypo( GHS3DHypothesisData& ) const;
+  bool                readParamsFromWidgets( GHS3DHypothesisData& ) const;
+  bool                storeParamsToHypo( const GHS3DHypothesisData& ) const;
+  GeomSelectionTools* getGeomSelectionTool();
+  GEOM::GEOM_Gen_var  getGeomEngine();
 
 private:
-  bool             readParamsFromHypo( GHS3DHypothesisData& ) const;
-  bool             readParamsFromWidgets( GHS3DHypothesisData& ) const;
-  bool             storeParamsToHypo( const GHS3DHypothesisData& ) const;
+  QWidget*            myStdGroup;
+  QLineEdit*          myName;
+  QCheckBox*          myToMeshHolesCheck;
+  QComboBox*          myOptimizationLevelCombo;
 
-private:
-  QWidget*         myStdGroup;
-  QLineEdit*       myName;
-  QCheckBox*       myToMeshHolesCheck;
-  QComboBox*       myOptimizationLevelCombo;
+  QWidget*            myAdvGroup;
+  QCheckBox*          myMaximumMemoryCheck;
+  QSpinBox*           myMaximumMemorySpin;
+  QCheckBox*          myInitialMemoryCheck;
+  QSpinBox*           myInitialMemorySpin;
+  QLineEdit*          myWorkingDir;
+  QCheckBox*          myKeepFiles;
+  QSpinBox*           myVerboseLevelSpin;
+  QCheckBox*          myToCreateNewNodesCheck;
+  QCheckBox*          myRemoveInitialCentralPointCheck;
+  QCheckBox*          myBoundaryRecoveryCheck;
+  QCheckBox*          myFEMCorrectionCheck;
+  QLineEdit*          myTextOption;
+  
+  QWidget*            myEnfGroup;
+  QPixmap             iconVertex, iconCompound;
+  StdMeshersGUI_ObjectReferenceParamWdg *myEnfVertexWdg;
+  GEOM::GEOM_Object_var myEnfVertex;
+  QTableWidget*       myEnforcedTableWidget;
+  SMESHGUI_SpinBox*   myXCoord;
+  SMESHGUI_SpinBox*   myYCoord;
+  SMESHGUI_SpinBox*   myZCoord;
+  SMESHGUI_SpinBox*   mySizeValue;
+  QLineEdit*          myGroupName;
+//   QGroupBox*          makeGroupsCheck;
+//   QCheckBox*          myGlobalGroupName;  
+  QPushButton*        addVertexButton;
+  QPushButton*        removeVertexButton;
+  
+  QWidget*            myEnfMeshGroup;
+  StdMeshersGUI_ObjectReferenceParamWdg *myEnfMeshWdg;
+//   SMESH::SMESH_IDSource_var myEnfMesh;
+  QComboBox*          myEnfMeshConstraint;
+  QStringList         myEnfMeshConstraintLabels;
+//   SMESH::mesh_array_var myEnfMeshArray;
+  QTableWidget*       myEnforcedMeshTableWidget;
+  SMESHGUI_SpinBox*   myMeshSizeValue;
+  QLineEdit*          myMeshGroupName;
+  QPushButton*        addEnfMeshButton;
+  QPushButton*        removeEnfMeshButton;
+  
+  GeomSelectionTools*     GeomToolSelected;
+//   SVTK_Selector*          mySelector;
+//   LightApp_SelectionMgr*  mySelectionMgr; /* User shape selection */
+};
 
-  QWidget*         myAdvGroup;
-  QCheckBox*       myMaximumMemoryCheck;
-  QSpinBox*        myMaximumMemorySpin;
-  QCheckBox*       myInitialMemoryCheck;
-  QSpinBox*        myInitialMemorySpin;
-  QLineEdit*       myWorkingDir;
-  QCheckBox*       myKeepFiles;
-  QSpinBox*        myVerboseLevelSpin;
-  QCheckBox*       myToCreateNewNodesCheck;
-  QCheckBox*       myBoundaryRecoveryCheck;
-  QLineEdit*       myTextOption;
+class EnforcedVertexTableWidgetDelegate : public QItemDelegate
+{
+    Q_OBJECT
+
+public:
+  EnforcedVertexTableWidgetDelegate(QObject *parent = 0);
+
+  QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                      const QModelIndex &index) const;
+
+  void setEditorData(QWidget *editor, const QModelIndex &index) const;
+  void setModelData(QWidget *editor, QAbstractItemModel *model,
+                  const QModelIndex &index) const;
+
+  void updateEditorGeometry(QWidget *editor,
+      const QStyleOptionViewItem &option, const QModelIndex &index) const;
+
+  bool vertexExists(QAbstractItemModel *model, const QModelIndex &index, QString value) const;
+};
+
+class EnforcedMeshTableWidgetDelegate : public QItemDelegate
+{
+    Q_OBJECT
+
+public:
+  EnforcedMeshTableWidgetDelegate(QObject *parent = 0);
+
+  QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                      const QModelIndex &index) const;
+
+  void setEditorData(QWidget *editor, const QModelIndex &index) const;
+  void setModelData(QWidget *editor, QAbstractItemModel *model,
+                  const QModelIndex &index) const;
+
+  void updateEditorGeometry(QWidget *editor,
+      const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
 #endif

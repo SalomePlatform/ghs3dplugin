@@ -1,21 +1,22 @@
-#  Copyright (C) 2004-2008  CEA/DEN, EDF R&D
+# Copyright (C) 2004-2012  CEA/DEN, EDF R&D
 #
-#  This library is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU Lesser General Public
-#  License as published by the Free Software Foundation; either
-#  version 2.1 of the License.
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License.
 #
-#  This library is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#  Lesser General Public License for more details.
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
 #
-#  You should have received a copy of the GNU Lesser General Public
-#  License along with this library; if not, write to the Free Software
-#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #
-#  See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
+# See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
+
 #  PLEASE DO NOT MODIFY configure.in FILE
 #  ALL CHANGES WILL BE DISCARDED BY THE NEXT
 #  build_configure COMMAND
@@ -26,14 +27,16 @@
 # Modified by : Marc Tajchman (CEA)
 # Created from configure.in.base
 #
-AC_INIT([Salome2 Project GHS3DPLUGIN module],[5.1.0], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
-AC_CONFIG_AUX_DIR(salome_adm/unix/config_files)
+AC_INIT([Salome2 Project GHS3DPLUGIN module],[6.5.0], [webmaster.salome@opencascade.com], [SalomeGHS3DPLUGIN])
+AC_CONFIG_AUX_DIR(adm_local/unix/config_files)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([-Wno-portability])
 
 XVERSION=`echo $VERSION | awk -F. '{printf("0x%02x%02x%02x",$1,$2,$3)}'`
 AC_SUBST(XVERSION)
+VERSION_DEV=1
+AC_SUBST(VERSION_DEV)
 
 # set up MODULE_NAME variable for dynamic construction of directories (resources, etc.)
 MODULE_NAME=ghs3dplugin
@@ -78,6 +81,7 @@ echo
 
 AC_PROG_MAKE_SET
 AC_PROG_INSTALL
+AC_LOCAL_INSTALL
 dnl 
 dnl libtool macro check for CC, LD, NM, LN_S, RANLIB, STRIP + pour les librairies dynamiques !
 
@@ -99,7 +103,7 @@ dnl Fix up the INSTALL macro if it s a relative path. We want the
 dnl full-path to the binary instead.
 case "$INSTALL" in
    *install-sh*)
-      INSTALL="${KERNEL_ROOT_DIR}/salome_adm/unix/config_files/install-sh -c"
+      INSTALL="${KERNEL_ROOT_DIR}/adm_local/unix/config_files/install-sh -c"
       ;;
 esac
 
@@ -141,7 +145,15 @@ dnl testing MPICH
 dnl ---------------------------------------------
 dnl
 
-CHECK_MPICH
+dnl CHECK_MPICH
+
+echo
+echo ---------------------------------------------
+echo testing MPI
+echo ---------------------------------------------
+echo
+
+CHECK_MPI
 
 echo
 echo ---------------------------------------------
@@ -217,11 +229,34 @@ AC_SUBST_FILE(CORBA)
 corba=make_$ORB
 CORBA=adm_local/unix/$corba
 
-GHS3DPLUGIN_WITH_GUI=yes
+echo
+echo ---------------------------------------------
+echo Testing GUI
+echo ---------------------------------------------
+echo
 
-AM_CONDITIONAL(GHS3DPLUGIN_ENABLE_GUI, [test "${GHS3DPLUGIN_WITH_GUI}" = "yes"])
+CHECK_GUI_MODULE
 
-if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
+gui_ok=no
+if test "${SalomeGUI_need}" != "no" -a "${FullGUI_ok}" = "yes" ; then 
+  gui_ok=yes
+fi
+
+AM_CONDITIONAL(GHS3DPLUGIN_ENABLE_GUI, [test "${gui_ok}" = "yes"])
+
+if test "${SalomeGUI_need}" == "yes"; then
+  if test "${FullGUI_ok}" != "yes"; then
+    AC_MSG_WARN(For configure GHS3DPLUGIN module necessary full GUI!)
+  fi
+elif test "${SalomeGUI_need}" == "auto"; then
+  if test "${FullGUI_ok}" != "yes"; then
+    AC_MSG_WARN(Full GUI not found. Build will be done without GUI!)
+  fi
+elif test "${SalomeGUI_need}" == "no"; then
+  echo Build without GUI option has been chosen
+fi
+
+if test "${gui_ok}" = "yes"; then
 
     echo
     echo ---------------------------------------------
@@ -238,35 +273,15 @@ if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
     echo
 
     CHECK_QT
-
-    echo
-    echo ---------------------------------------------
-    echo testing VTK
-    echo ---------------------------------------------
-    echo
-
-    CHECK_VTK
-
-    echo
-    echo ---------------------------------------------
-    echo Testing GUI
-    echo ---------------------------------------------
-    echo
-
-    CHECK_SALOME_GUI
-
-    echo
-    echo ---------------------------------------------
-    echo Testing full GUI
-    echo ---------------------------------------------
-    echo
-
-    CHECK_CORBA_IN_GUI
-    if test "x${CORBA_IN_GUI}" != "xyes"; then
-      echo "failed : For configure GHS3DPLUGIN module necessary full GUI !"
-      exit
-    fi
 fi
+
+echo
+echo ---------------------------------------------
+echo testing VTK
+echo ---------------------------------------------
+echo
+
+CHECK_VTK
 
 echo
 echo ---------------------------------------------
@@ -339,6 +354,13 @@ echo ---------------------------------------------
 echo
 
 CHECK_GHS3D
+if test "${GHS3D_ok}" = "yes"; then
+  if test "x$GHS3D_VERSION" = "x"
+  then
+    GHS3D_VERSION=`ghs3d -u |grep "TETMESH-GHS3D SOFTWARE"|awk '{print $3}'|awk -F- '{print $1}'|awk -F. '{print $1$2}'`
+  fi
+  AC_DEFINE_UNQUOTED(GHS3D_VERSION,${GHS3D_VERSION})
+fi
 
 echo
 echo ---------------------------------------------
@@ -347,12 +369,14 @@ echo ---------------------------------------------
 echo
 
 echo Configure
-if test "${GHS3DPLUGIN_WITH_GUI}" = "yes"; then
-variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok OpenGL_ok qt_ok vtk_ok"
+if test "${gui_ok}" = "yes"; then
+  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok gui_ok Geom_ok Med_ok SMesh_ok GHS3D_ok OpenGL_ok qt_ok vtk_ok"
+elif test "${SalomeGUI_need}" != "no"; then
+  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok gui_ok Geom_ok Med_ok SMesh_ok GHS3D_ok vtk_ok"
+else
+  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok vtk_ok"
 fi
-if test "${GHS3DPLUGIN_WITH_GUI}" = "no"; then
-variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok"
-fi
+
 for var in $variables
 do
    printf "   %10s : " `echo \$var | sed -e "s,_ok,,"`
@@ -370,6 +394,10 @@ if test "X$GMAKE" = "Xyes"; then
 else
    AC_SUBST(SETX) SETX="set -x"
 fi
+
+dnl Build with SMESH cancel compute feature
+AC_DEFINE(WITH_SMESH_CANCEL_COMPUTE)
+
 echo
 echo ---------------------------------------------
 echo generating Makefiles and configure files
@@ -380,21 +408,40 @@ AC_OUTPUT_COMMANDS([ \
       chmod +x ./bin/*; \
 ])
 
+AC_HACK_LIBTOOL
+AC_CONFIG_COMMANDS([hack_libtool],[
+sed -i "s%^CC=\"\(.*\)\"%hack_libtool (){ \n\
+  $(pwd)/hack_libtool \1 \"\$[@]\" \n\
+}\n\
+CC=\"hack_libtool\"%g" libtool
+sed -i "s%\(\s*\)for searchdir in \$newlib_search_path \$lib_search_path \$sys_lib_search_path \$shlib_search_path; do%\1searchdirs=\"\$newlib_search_path \$lib_search_path \$sys_lib_search_path \$shlib_search_path\"\n\1for searchdir in \$searchdirs; do%g" libtool
+sed -i "s%\(\s*\)searchdirs=\"\$newlib_search_path \$lib_search_path \(.*\)\"%\1searchdirs=\"\$newlib_search_path \$lib_search_path\"\n\1sss_beg=\"\"\n\1sss_end=\"\2\"%g" libtool
+sed -i "s%\(\s*\)\(for searchdir in \$searchdirs; do\)%\1for sss in \$searchdirs; do\n\1  if ! test -d \$sss; then continue; fi\n\1  ssss=\$(cd \$sss; pwd)\n\1  if test \"\$ssss\" != \"\" \&\& test -d \$ssss; then\n\1    case \$ssss in\n\1      /usr/lib | /usr/lib64 ) ;;\n\1      * ) sss_beg=\"\$sss_beg \$ssss\" ;;\n\1    esac\n\1  fi\n\1done\n\1searchdirs=\"\$sss_beg \$sss_end\"\n\1\2%g" libtool
+],[])
+
 # This list is initiated using autoscan and must be updated manually
 # when adding a new file <filename>.in to manage. When you execute
 # autoscan, the Makefile list is generated in the output file configure.scan.
 # This could be helpfull to update de configuration.
 AC_OUTPUT([ \
-  ./salome_adm/unix/SALOMEconfig.h \
-  ./adm_local/Makefile \
-  ./adm_local/unix/Makefile \
-  ./adm_local/unix/config_files/Makefile \
-  ./bin/VERSION \
-  ./bin/Makefile \
-  ./GHS3DPLUGIN_version.h \
-  ./src/Makefile \
-  ./src/GUI/Makefile \
-  ./resources/Makefile \
-  ./idl/Makefile \
+  adm_local/Makefile \
+  adm_local/unix/Makefile \
+  adm_local/unix/config_files/Makefile \
+  bin/VERSION \
+  bin/Makefile \
+  GHS3DPLUGIN_version.h \
+  doc/Makefile \
+  doc/salome/Makefile \
+  doc/salome/gui/Makefile \
+  doc/salome/gui/GHS3DPLUGIN/Makefile \
+  doc/salome/gui/GHS3DPLUGIN/doxyfile \
+  doc/salome/gui/GHS3DPLUGIN/doxyfile_py \
+  doc/salome/gui/GHS3DPLUGIN/static/header.html \
+  doc/salome/gui/GHS3DPLUGIN/static/header_py.html \
+  src/Makefile \
+  src/GUI/Makefile \
+  src/GHS3DPlugin/Makefile \
+  resources/Makefile \
+  idl/Makefile \
   Makefile \
 ])
