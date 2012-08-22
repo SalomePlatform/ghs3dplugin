@@ -96,7 +96,7 @@ EXAMPLE_RECURSIVE      = NO
 #---------------------------------------------------------------------------
 #Input related options
 #---------------------------------------------------------------------------
-INPUT             = @top_srcdir@/src/GHS3DPlugin/GHS3DPluginDC.py
+INPUT             = @top_srcdir@/src/GHS3DPlugin/GHS3DPluginDC.py smesh.py
 FILE_PATTERNS     = 
 IMAGE_PATH        = @srcdir@/images
 RECURSIVE         = NO
