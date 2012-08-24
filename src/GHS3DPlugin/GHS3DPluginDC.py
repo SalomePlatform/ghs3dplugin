@@ -21,7 +21,8 @@
 # @package GHS3DPluginDC
 # Python API for the GHS3D meshing plug-in module.
 
-from smesh import Mesh_Algorithm, AssureGeomPublished
+from smesh_algorithm import Mesh_Algorithm
+from smesh import AssureGeomPublished
 
 # import GHS3DPlugin module if possible
 noGHS3DPlugin = 0
