@@ -1823,13 +1823,14 @@ static bool writeGMFFile(const char*                                     theMesh
       return false;
     }
     int TypTab[] = {GmfSca};
+    double ValTab[] = {0.0};
     GmfSetKwd(idxRequired, GmfVertices, requiredNodes + solSize);
     GmfSetKwd(idxSol, GmfSolAtVertices, requiredNodes + solSize, 1, TypTab);
 //     int usedEnforcedNodes = 0;
 //     std::string gn = "";
     for (ghs3dNodeIt = theRequiredNodes.begin();ghs3dNodeIt != theRequiredNodes.end();++ghs3dNodeIt) {
       GmfSetLin(idxRequired, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
-      GmfSetLin(idxSol, GmfSolAtVertices, 0.0);
+      GmfSetLin(idxSol, GmfSolAtVertices, ValTab);
       if (theEnforcedNodes.find((*ghs3dNodeIt)) != theEnforcedNodes.end())
         gn = theEnforcedNodes.find((*ghs3dNodeIt))->second;
       aNodeGroupByGhs3dId[usedEnforcedNodes] = gn;
