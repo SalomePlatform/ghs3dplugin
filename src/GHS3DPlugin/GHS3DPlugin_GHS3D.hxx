@@ -26,7 +26,7 @@
 #ifndef _GHS3DPlugin_GHS3D_HXX_
 #define _GHS3DPlugin_GHS3D_HXX_
 
-#include "SMESH_3D_Algo.hxx"
+#include "SMESH_Algo.hxx"
 #include "SMESH_Gen.hxx"
 #include "SMESH_Gen_i.hxx"
 
