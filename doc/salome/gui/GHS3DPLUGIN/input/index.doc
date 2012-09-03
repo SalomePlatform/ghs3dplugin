@@ -4,7 +4,7 @@
 
 \b GHS3DPLUGIN plugin is destined for:
 - Meshing 3D geometric entities: volumes are split into tetrahedral (pyramidal) elements.
-- Generating 3D meshes from 2D meshes, working without geometrical objects.
+- Generating 3D meshes from 2D meshes (triangles and quadrangles), working without geometrical objects.
 
 \note GHS3DPLUGIN plugin used GHS3D commercial mesher and require a
 license to be used within the Mesh module.
