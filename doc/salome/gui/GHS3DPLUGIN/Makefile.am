@@ -54,7 +54,7 @@ install-data-local: usr_docs
 	    *) echo "Installing $${filen}" ; cp -rp $${filen} $(DESTDIR)$(docdir)/gui/GHS3DPLUGIN ;;	\
 	  esac ;										\
 	done ;
-	cp -rp $(srcdir)/images/head.png $(DESTDIR)$(docdir)/gui/GHS3DPLUGIN/ghs3dpluginpy_doc/ ;
+	cp -rfp $(srcdir)/images/head.png $(DESTDIR)$(docdir)/gui/GHS3DPLUGIN/ghs3dpluginpy_doc/ ;
 
 uninstall-local:
 	rm -rf $(DESTDIR)$(docdir)/gui/GHS3DPLUGIN

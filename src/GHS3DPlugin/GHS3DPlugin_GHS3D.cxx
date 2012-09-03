@@ -1035,7 +1035,7 @@ static void addElemInMeshGroup(SMESH_Mesh*             theMesh,
     groupDone = true;
   }
   if (!groupDone)
-    throw SALOME_Exception(LOCALIZED("A enforced vertex node was not added to a group"));
+    throw SALOME_Exception(LOCALIZED("A given element was not added to a group"));
 }
 
 
@@ -2748,7 +2748,7 @@ static bool writePoints (ofstream &                       theFile,
       if (theEnforcedVertices.find(coords) != theEnforcedVertices.end())
         continue;
         
-      double size = theNodeIDToSizeMap.find(nodeIt->first->GetID())->second;
+//      double size = theNodeIDToSizeMap.find(nodeIt->first->GetID())->second;
   //       theGhs3dIdToNodeMap.insert( make_pair( nbNodes + i, (*nodeIt) ));
   //       MESSAGE("Adding enforced node (" << x << "," << y <<"," << z << ")");
       // X Y Z PHY_SIZE DUMMY_INT
@@ -2756,7 +2756,7 @@ static bool writePoints (ofstream &                       theFile,
       << x << space 
       << y << space 
       << z << space
-      << size << space
+      << -1 << space
       << dummyint << space;
       theFile << std::endl;
       theEnforcedNodeIdToGhs3dIdMap.insert( make_pair( nodeIt->first->GetID(), aGhs3dID ));

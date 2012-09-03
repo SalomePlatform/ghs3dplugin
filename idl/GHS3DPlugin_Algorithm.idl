@@ -50,7 +50,6 @@ module GHS3DPlugin
     string entry;
     SMESH::ElementType elementType;
     string groupName;
-    double size;
   };
   
   typedef sequence<GHS3DEnforcedMesh> GHS3DEnforcedMeshList;
@@ -166,15 +165,18 @@ module GHS3DPlugin
     
     boolean SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedMeshWithGroup(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in string groupName) raises (SALOME::SALOME_Exception);
+    
+    /* OBSOLETE FUNCTIONS */
     boolean SetEnforcedMeshSize(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in double size) raises (SALOME::SALOME_Exception);
     boolean SetEnforcedMeshSizeWithGroup(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in double size, in string groupName) raises (SALOME::SALOME_Exception);
+    /* OBSOLETE FUNCTIONS */
+    
     GHS3DEnforcedMeshList GetEnforcedMeshes();
     void ClearEnforcedMeshes();
    /*!
     * Set/get/unset an enforced vertex (private method for GUI)
     */
-    boolean p_SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType,
-                             in double size,  in string groupName) raises (SALOME::SALOME_Exception);
+    boolean p_SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in string name, in string groupName) raises (SALOME::SALOME_Exception);
   };
 };
 

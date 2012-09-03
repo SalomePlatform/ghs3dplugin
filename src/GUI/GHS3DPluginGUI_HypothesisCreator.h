@@ -120,7 +120,6 @@ struct TEnfMesh{
   std::string entry;
   int elementType;
   std::string groupName;
-  double size;
 };
 
 struct CompareEnfMeshes
@@ -188,7 +187,7 @@ protected slots:
   void                checkVertexIsDefined();
   void                clearEnfVertexSelection();
   
-  void                addEnforcedMesh(std::string name, std::string entry, int elementType, double size = 0, std::string groupName = "");
+  void                addEnforcedMesh(std::string name, std::string entry, int elementType, std::string groupName = "");
   void                onAddEnforcedMesh();
   void                onRemoveEnforcedMesh();
   //void                synchronizeEnforcedMesh();
@@ -247,7 +246,6 @@ private:
   QStringList         myEnfMeshConstraintLabels;
 //   SMESH::mesh_array_var myEnfMeshArray;
   QTableWidget*       myEnforcedMeshTableWidget;
-  SMESHGUI_SpinBox*   myMeshSizeValue;
   QLineEdit*          myMeshGroupName;
   QPushButton*        addEnfMeshButton;
   QPushButton*        removeEnfMeshButton;

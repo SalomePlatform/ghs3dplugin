@@ -287,38 +287,20 @@ EnforcedMeshTableWidgetDelegate::EnforcedMeshTableWidgetDelegate(QObject *parent
 QWidget *EnforcedMeshTableWidgetDelegate::createEditor(QWidget *parent,
                                                   const QStyleOptionViewItem & option ,
                                                   const QModelIndex & index ) const
-{  
-  if (index.column() == ENF_MESH_SIZE_COLUMN) {
-    SMESHGUI_SpinBox *editor = new SMESHGUI_SpinBox(parent);
-    editor->RangeStepAndValidator(0, COORD_MAX, 10.0, "length_precision");
-    return editor;
-  }
+{
   return QItemDelegate::createEditor(parent, option, index);
 }
 
 void EnforcedMeshTableWidgetDelegate::setEditorData(QWidget *editor,
                                                const QModelIndex &index) const
 {
-  if (index.column() == ENF_MESH_SIZE_COLUMN) {
-    SMESHGUI_SpinBox *spinBox = qobject_cast<SMESHGUI_SpinBox*>(editor);
-    spinBox->SetValue(index.data().toDouble());
-  } 
-  else
-    QItemDelegate::setEditorData(editor, index);
+	QItemDelegate::setEditorData(editor, index);
 }
 
 void EnforcedMeshTableWidgetDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
                                               const QModelIndex &index) const
 {  
-  if (index.column() == ENF_MESH_SIZE_COLUMN)
-  {
-    SMESHGUI_SpinBox *spinBox = qobject_cast<SMESHGUI_SpinBox*>(editor);
-    const double newsize =  spinBox->GetValue();
-    if (newsize > 0)
-      model->setData(index, newsize, Qt::EditRole);
-  } 
-  else
-    QItemDelegate::setModelData(editor, model, index);
+  QItemDelegate::setModelData(editor, model, index);
 
 }
 
@@ -590,7 +572,6 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   enforcedMeshHeaders << tr( "GHS3D_ENF_NAME_COLUMN" ) 
                       << tr( "GHS3D_ENF_ENTRY_COLUMN" ) 
                       << tr( "GHS3D_ENF_MESH_CONSTRAINT_COLUMN" ) 
-                      << tr( "GHS3D_ENF_SIZE_COLUMN" ) 
                       << tr( "GHS3D_ENF_GROUP_COLUMN" );
   myEnforcedMeshTableWidget->setHorizontalHeaderLabels(enforcedMeshHeaders);
   myEnforcedMeshTableWidget->horizontalHeader()->setStretchLastSection(true);
@@ -616,10 +597,6 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myEnfMeshConstraint->insertItems(0,myEnfMeshConstraintLabels);
   myEnfMeshConstraint->setEditable(false);
   myEnfMeshConstraint->setCurrentIndex(0);
-  
-  QLabel* myMeshSizeLabel = new QLabel( tr( "GHS3D_ENF_SIZE_LABEL" ), myEnfMeshGroup );
-  myMeshSizeValue = new SMESHGUI_SpinBox(myEnfMeshGroup);
-  myMeshSizeValue->RangeStepAndValidator(0, COORD_MAX, 10.0, "length_precision");
 
   QLabel* myMeshGroupNameLabel = new QLabel( tr( "GHS3D_ENF_GROUP_LABEL" ), myEnfMeshGroup );
   myMeshGroupName = new QLineEdit(myEnfMeshGroup);
@@ -644,8 +621,6 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   anEnfMeshLayout2->addWidget(myEnfMeshWdg,             ENF_MESH_MESH, 0, 1, 2);
   anEnfMeshLayout2->addWidget(myMeshConstraintLabel,    ENF_MESH_CONSTRAINT, 0, 1, 1);
   anEnfMeshLayout2->addWidget(myEnfMeshConstraint,      ENF_MESH_CONSTRAINT, 1, 1, 1);
-  anEnfMeshLayout2->addWidget(myMeshSizeLabel,          ENF_MESH_SIZE, 0, 1, 1);
-  anEnfMeshLayout2->addWidget(myMeshSizeValue,          ENF_MESH_SIZE, 1, 1, 1);
   anEnfMeshLayout2->addWidget(myMeshGroupNameLabel,     ENF_MESH_GROUP, 0, 1, 1);
   anEnfMeshLayout2->addWidget(myMeshGroupName,          ENF_MESH_GROUP, 1, 1, 1);
   anEnfMeshLayout2->addWidget(addEnfMeshButton,         ENF_MESH_BTN, 0, 1, 1);
@@ -688,7 +663,6 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   connect( removeEnfMeshButton,     SIGNAL( clicked()),                       this, SLOT( onRemoveEnforcedMesh() ) );
 //   connect( myEnfMeshWdg,            SIGNAL( contentModified()),              this,  SLOT( checkEnfMeshIsDefined() ) );
 //   connect( myEnfMeshConstraint,     SIGNAL( currentIndexChanged(int) ),      this,  SLOT( checkEnfMeshIsDefined() ) );
-//   connect( myMeshSizeValue,         SIGNAL( textChanged(const QString&) ),   this,  SLOT( checkEnfMeshIsDefined() ) );
 //   connect( this,                    SIGNAL( enfMeshDefined(bool) ), addEnfMeshButton, SLOT( setEnabled(bool) ) );
   
   return fr;
@@ -729,7 +703,7 @@ void GHS3DPluginGUI_HypothesisCreator::checkVertexIsDefined()
 **/
 void GHS3DPluginGUI_HypothesisCreator::checkEnfMeshIsDefined()
 {
-  emit enfMeshDefined((!myMeshSizeValue->GetString().isEmpty() && !myEnfVertexWdg->NbObjects() == 0));
+  emit enfMeshDefined( myEnfVertexWdg->NbObjects() != 0);
 }
 
 /** 
@@ -924,9 +898,9 @@ void GHS3DPluginGUI_HypothesisCreator::synchronizeCoords() {
 /** GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh( meshName, geomEntry, elemType, size, groupName)
 This method adds in the tree widget an enforced mesh from mesh, submesh or group with optionally size and and groupName.
 */
-void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::string entry, int elementType, double size, std::string groupName)
+void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::string entry, int elementType, std::string groupName)
 {
-  MESSAGE("addEnforcedMesh(\"" << name << ", \"" << entry << "\", " << elementType << ", " << size << ", \"" << groupName << "\")");
+  MESSAGE("addEnforcedMesh(\"" << name << ", \"" << entry << "\", " << elementType << ", \"" << groupName << "\")");
   bool okToCreate = true;
   QString itemEntry = "";
   int itemElementType = 0;
@@ -960,11 +934,6 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::st
       break;
   
     if (itemEntry == QString(entry.c_str()) && itemElementType == elementType) { 
-//       // update size
-//       if (itemSize != size) {
-//         MESSAGE("Size is updated from \"" << itemSize << "\" to \"" << size << "\"");
-//         myEnforcedMeshTableWidget->item(row, ENF_MESH_SIZE_COLUMN)->setData( Qt::EditRole, QVariant(size));
-//       }
 //       // update group name
 //       if (itemGroupName.toStdString() != groupName) {
 //         MESSAGE("Group is updated from \"" << itemGroupName.toStdString() << "\" to \"" << groupName << "\"");
@@ -1010,11 +979,6 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::st
         case ENF_MESH_ENTRY_COLUMN:
           item->setData( 0, entry.c_str() );
           item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-          MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          myEnforcedMeshTableWidget->setItem(rowCount,col,item);
-          break;
-        case ENF_MESH_SIZE_COLUMN:
-          item->setData( 0, size );
           MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
           myEnforcedMeshTableWidget->setItem(rowCount,col,item);
           break;
@@ -1233,12 +1197,6 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
     groupName = "";
 
   
-  double size = -1;
-  if (!myMeshSizeValue->GetString().isEmpty())
-    size = myMeshSizeValue->GetValue();
-//   if (size < 0)
-//     return;
-  
   int elementType = myEnfMeshConstraint->currentIndex();
   
   
@@ -1256,7 +1214,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
     CORBA::Object_var anObj = SMESH::SObjectToObject(aSObj,aStudy);
     if (!CORBA::is_nil(anObj)) {
 //       SMESH::SMESH_IDSource_var theSource = SMESH::SObjectToInterface<SMESH::SMESH_IDSource>( aSObj );
-      addEnforcedMesh( aSObj->GetName(), aSObj->GetID(), elementType, size, groupName);
+      addEnforcedMesh( aSObj->GetName(), aSObj->GetID(), elementType, groupName);
     }
   }
   else
@@ -1269,7 +1227,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
       CORBA::Object_var anObj = SMESH::SObjectToObject(aSObj,aStudy);
       if (!CORBA::is_nil(anObj)) {
 //         SMESH::SMESH_IDSource_var theSource = SMESH::SObjectToInterface<SMESH::SMESH_IDSource>( aSObj );
-        addEnforcedMesh( aSObj->GetName(), aSObj->GetID(), elementType, size, groupName);
+        addEnforcedMesh( aSObj->GetName(), aSObj->GetID(), elementType, groupName);
       }
     }
   }
@@ -1477,6 +1435,7 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
 
   TEnfVertexList::const_iterator it;
   int rowCount = 0;
+  myEnforcedTableWidget->clear();
   myEnforcedTableWidget->setSortingEnabled(false);
   myEnforcedTableWidget->disconnect(SIGNAL( itemChanged(QTableWidgetItem *)));
   for(it = data.myEnforcedVertices.begin() ; it != data.myEnforcedVertices.end(); it++ )
@@ -1556,6 +1515,7 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   // Update Enforced meshes QTableWidget
   TEnfMeshList::const_iterator itMesh;
   rowCount = 0;
+  myEnforcedMeshTableWidget->clear();
   myEnforcedMeshTableWidget->setSortingEnabled(false);
 //   myEnforcedMeshTableWidget->disconnect(SIGNAL( itemChanged(QTableWidgetItem *)));
   for(itMesh = data.myEnforcedMeshes.begin() ; itMesh != data.myEnforcedMeshes.end(); itMesh++ )
@@ -1589,11 +1549,6 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
           case ENF_MESH_ENTRY_COLUMN:
             item->setData( 0, enfMesh->entry.c_str() );
             item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-            MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-            myEnforcedMeshTableWidget->setItem(rowCount,col,item);
-            break;
-          case ENF_MESH_SIZE_COLUMN:
-            item->setData( 0, enfMesh->size );
             MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
             myEnforcedMeshTableWidget->setItem(rowCount,col,item);
             break;
@@ -1739,7 +1694,6 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
     myEnfMesh->name = CORBA::string_dup(enfMeshes[i].name.in());
     myEnfMesh->entry = CORBA::string_dup(enfMeshes[i].entry.in());
     myEnfMesh->groupName = CORBA::string_dup(enfMeshes[i].groupName.in());
-    myEnfMesh->size = enfMeshes[i].size;
     switch (enfMeshes[i].elementType) {
       case SMESH::NODE:
         myEnfMesh->elementType = 0;
@@ -1838,14 +1792,17 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       h->ClearEnforcedMeshes();
     
     TEnfMeshList::const_iterator itEnfMesh;
+
     _PTR(Study) aStudy = SMESH::GetActiveStudyDocument();
+
     for(itEnfMesh = h_data.myEnforcedMeshes.begin() ; itEnfMesh != h_data.myEnforcedMeshes.end(); itEnfMesh++ ) {
       TEnfMesh* enfMesh = (*itEnfMesh);
-      
+
       _PTR(SObject) aSObj = aStudy->FindObjectID(enfMesh->entry.c_str());
       SMESH::SMESH_IDSource_var theSource = SMESH::SObjectToInterface<SMESH::SMESH_IDSource>( aSObj );
-      SMESH::ElementType elementType;
+
       MESSAGE("enfMesh->elementType: " << enfMesh->elementType);
+      SMESH::ElementType elementType;
       switch(enfMesh->elementType) {
         case 0:
           elementType = SMESH::NODE;
@@ -1860,7 +1817,8 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
           break;
       }
     
-      ok = h->p_SetEnforcedMesh(theSource, elementType, enfMesh->size, enfMesh->groupName.c_str());
+      std::cout << "h->p_SetEnforcedMesh(theSource, "<< elementType <<", \""<< enfMesh->name << "\", \"" << enfMesh->groupName.c_str() <<"\")"<<std::endl;
+      ok = h->p_SetEnforcedMesh(theSource, elementType, enfMesh->name.c_str(), enfMesh->groupName.c_str());
     } // for
   } // try
 //   catch(const std::exception& ex) {
@@ -1936,12 +1894,11 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
     MESSAGE("Entry is \"" << myEnfMesh->entry << "\"" );
     myEnfMesh->groupName = myEnforcedMeshTableWidget->item(row,ENF_MESH_GROUP_COLUMN)->data(Qt::EditRole).toString().toStdString();
     MESSAGE("Group name is \"" << myEnfMesh->groupName << "\"" );
-    myEnfMesh->size = myEnforcedMeshTableWidget->item(row,ENF_MESH_SIZE_COLUMN)->data(Qt::EditRole).toDouble();
-    MESSAGE("Size is " << myEnfMesh->size);
     QComboBox* combo = qobject_cast<QComboBox*>(myEnforcedMeshTableWidget->cellWidget(row,ENF_MESH_CONSTRAINT_COLUMN));
     myEnfMesh->elementType = combo->currentIndex();
     MESSAGE("Element type: " << myEnfMesh->elementType);
     h_data.myEnforcedMeshes.insert(myEnfMesh);
+    std::cout << "h_data.myEnforcedMeshes.size(): " << h_data.myEnforcedMeshes.size() << std::endl;
   }
 
   return true;
