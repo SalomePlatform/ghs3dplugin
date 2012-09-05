@@ -1333,6 +1333,7 @@ static bool readGMFFile(const char*                     theFile,
             // for ( int iRef = 0; iRef < nbRef; iRef++ )
             //   nodeAssigne[ nodeID[ iRef ]] = 1;
           }
+          break;
         case GmfTetrahedra:
           if ( elemSearcher ) {
             // Issue 0020682. Avoid creating nodes and tetras at place where
