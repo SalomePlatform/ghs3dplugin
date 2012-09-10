@@ -10,9 +10,9 @@ Below you can see an example of usage of the GHS3DPlugin Python API for mesh gen
 
 \anchor tui_ghs3d
 
--# \ref tui_ghs3d_basic "Construction of Mesh using Ghs3D algorithm"
--# \ref tui_ghs3d_enforced_vertices "Adding enforced vertices"
--# \ref tui_ghs3d_enforced_meshes "Adding enforced mesh"
+-# \ref tui_ghs3d_basic
+-# \ref tui_ghs3d_enforced_vertices
+-# \ref tui_ghs3d_enforced_meshes
 
 \section tui_ghs3d_basic Construction of Mesh using Ghs3D algorithm
 
@@ -39,7 +39,7 @@ ghs3dMesh.Compute()
 # End of script
 \endcode
 
-\image html ghs3d_screenshot.png Ghs3d mesh withtout hypothesis
+\image html ghs3d_screenshot.png Ghs3d mesh without hypothesis
 
 \ref tui_ghs3d "Back to top"
 
