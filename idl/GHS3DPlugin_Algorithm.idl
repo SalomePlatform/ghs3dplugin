@@ -142,6 +142,11 @@ module GHS3DPlugin
     void SetTextOption(in string option);
     string GetTextOption();
     /*!
+     * To define the volumic gradation
+     */
+    void SetGradation(in double gradation);
+    double GetGradation();
+    /*!
      * To set an enforced vertex
      */
     boolean SetEnforcedVertex(in double x, in double y, in double z, in double size) raises (SALOME::SALOME_Exception);

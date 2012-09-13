@@ -123,6 +123,11 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   void SetTextOption(const char* option);
   char* GetTextOption();
   /*!
+  * To define the volumic gradation
+  */
+  void SetGradation(CORBA::Double gradation);
+  CORBA::Double GetGradation();
+  /*!
    * To set an enforced vertex
    */
   bool p_SetEnforcedVertex(CORBA::Double size, CORBA::Double x = 0, CORBA::Double y = 0, CORBA::Double z = 0,

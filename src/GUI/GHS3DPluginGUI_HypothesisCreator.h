@@ -143,6 +143,7 @@ typedef struct
   bool    myToMeshHoles,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint;
   int     myMaximumMemory,myInitialMemory,myOptimizationLevel;
   QString myName,myWorkingDir,myTextOption;
+  double  myGradation;
   short   myVerboseLevel;
   TEnfVertexList myEnforcedVertices;
   TEnfMeshList myEnforcedMeshes;
@@ -222,6 +223,7 @@ private:
   QCheckBox*          myRemoveInitialCentralPointCheck;
   QCheckBox*          myBoundaryRecoveryCheck;
   QCheckBox*          myFEMCorrectionCheck;
+  SMESHGUI_SpinBox*   myGradation;
   QLineEdit*          myTextOption;
   
   QWidget*            myEnfGroup;

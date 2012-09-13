@@ -107,6 +107,9 @@ Note: when using this option, the speed of the meshing process may
 decrease, quality may change, and the smallest volume may be smaller.
 By default, the FEM correction is not used.
 
+- <b>Volumic gradation</b> - Defines the volumic ratio between 2 consecutive elements.
+WARNING: Changing the default value of this parameter may dramatically decrease the quality of the resulting mesh.
+
 - <b>Option as text</b> - allows to input in the command line any text
 for ghs3d, for example, advanced options.
 

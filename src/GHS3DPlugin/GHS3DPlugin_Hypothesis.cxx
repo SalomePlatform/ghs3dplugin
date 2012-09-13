@@ -52,6 +52,7 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   myToUseBoundaryRecoveryVersion(DefaultToUseBoundaryRecoveryVersion()),
   myToUseFemCorrection(DefaultToUseFEMCorrection()),
   myToRemoveCentralPoint(DefaultToRemoveCentralPoint()),
+  myGradation(DefaultGradation()),
   _enfVertexList(DefaultGHS3DEnforcedVertexList()),
   _enfVertexCoordsSizeList(DefaultGHS3DEnforcedVertexCoordsValues()),
   _enfVertexEntrySizeList(DefaultGHS3DEnforcedVertexEntryValues()),
@@ -326,6 +327,27 @@ void GHS3DPlugin_Hypothesis::SetTextOption(const std::string& option)
 std::string GHS3DPlugin_Hypothesis::GetTextOption() const
 {
   return myTextOption;
+}
+
+//=======================================================================
+//function : SetGradation
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetGradation(double gradation)
+{
+  if ( myGradation != gradation ) {
+    myGradation = gradation;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetGradation
+//=======================================================================
+
+double GHS3DPlugin_Hypothesis::GetGradation() const
+{
+  return myGradation;
 }
 
 //=======================================================================
@@ -839,6 +861,15 @@ bool GHS3DPlugin_Hypothesis::DefaultToRemoveCentralPoint()
   return false;
 }
 
+//=======================================================================
+//function : DefaultGradation
+//=======================================================================
+
+double GHS3DPlugin_Hypothesis::DefaultGradation()
+{
+  return 1.05;
+}
+
 // //=======================================================================
 // //function : DefaultID2SizeMap
 // //=======================================================================
@@ -866,6 +897,7 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
   save << (int)myToUseBoundaryRecoveryVersion << " ";
   save << (int)myToUseFemCorrection           << " ";
   save << (int)myToRemoveCentralPoint         << " ";
+  save << myGradation                         << " ";
   if (!myTextOption.empty()) {
     save << "__OPTIONS_BEGIN__ ";
     save << myTextOption                      << " ";
@@ -949,6 +981,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 {
 	bool isOK = true;
 	int i;
+    double d;
 
 	isOK = (load >> i);
 	if (isOK)
@@ -1025,6 +1058,12 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 		myToRemoveCentralPoint = (bool) i;
 	else
 		load.clear(ios::badbit | load.rdstate());
+
+    isOK = (load >> d);
+    if (isOK)
+        myGradation = d;
+    else
+        load.clear(ios::badbit | load.rdstate());
 
 	std::string separator;
 	bool hasOptions = false;
@@ -1271,7 +1310,7 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  /*dflts*/
 //================================================================================
 
 std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
-                                            const bool                    hasShapeToMesh)
+                                                 const bool         hasShapeToMesh)
 {
   TCollection_AsciiString cmd;
   if (hasShapeToMesh)
@@ -1288,6 +1327,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   bool v   = hyp ? ( hyp->myTextOption.find("-v")  == std::string::npos ) : true;
   bool fem = hyp ? ( hyp->myTextOption.find("-FEM")== std::string::npos ) : true;
   bool rem = hyp ? ( hyp->myTextOption.find("-no_initial_central_point")== std::string::npos ) : true;
+  bool gra = hyp ? ( hyp->myTextOption.find("-Dcpropa")== std::string::npos ) : true;
 
   // if use boundary recovery version, few options are allowed
   bool useBndRecovery = !C;
@@ -1368,6 +1408,12 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   if ( hyp && !hyp->myTextOption.empty() ) {
     cmd += " ";
     cmd += (char*) hyp->myTextOption.c_str();
+  }
+
+  // to define volumic gradation.
+  if ( gra && hyp) {
+    cmd += " -Dcpropa=";
+    cmd += hyp->myGradation;
   }
 
 #ifdef WNT

@@ -355,6 +355,31 @@ char* GHS3DPlugin_Hypothesis_i::GetTextOption()
 }
 
 //=======================================================================
+//function : SetToRemoveCentralPoint
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetGradation(CORBA::Double gradation)
+{
+  if (gradation <= 1)
+    THROW_SALOME_CORBA_EXCEPTION( "The volumic gradation must be > 1",SALOME::BAD_PARAM );
+  ASSERT(myBaseImpl);
+  if (gradation != GetGradation()) {
+    this->GetImpl()->SetGradation(gradation);
+    SMESH::TPythonDump() << _this() << ".SetGradation( " << gradation << " )";
+  }
+}
+
+//=======================================================================
+//function : GetToRemoveCentralPoint
+//=======================================================================
+
+CORBA::Double GHS3DPlugin_Hypothesis_i::GetGradation()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetGradation();
+}
+
+//=======================================================================
 //function : SetEnforcedVertex
 //=======================================================================
 

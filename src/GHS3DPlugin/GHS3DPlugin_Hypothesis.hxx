@@ -191,6 +191,11 @@ public:
    */
   void SetTextOption(const std::string& option);
   std::string GetTextOption() const;
+  /*!
+  * To define the volumic gradation
+  */
+  void SetGradation(double gradation);
+  double GetGradation() const ;
     
   
 //   struct TEnforcedEdge {
@@ -269,6 +274,7 @@ public:
   static bool   DefaultToUseBoundaryRecoveryVersion();
   static bool   DefaultToUseFEMCorrection();
   static bool   DefaultToRemoveCentralPoint();
+  static double DefaultGradation();
   
   static TGHS3DEnforcedVertex DefaultGHS3DEnforcedVertex() {return TGHS3DEnforcedVertex();}
   static TGHS3DEnforcedVertexList DefaultGHS3DEnforcedVertexList() {return TGHS3DEnforcedVertexList();}
@@ -316,6 +322,7 @@ private:
   bool   myToUseFemCorrection;
   bool   myToRemoveCentralPoint;
   std::string myTextOption;
+  double myGradation;
   
   TGHS3DEnforcedVertexList _enfVertexList;
   TGHS3DEnforcedVertexCoordsValues _enfVertexCoordsSizeList;

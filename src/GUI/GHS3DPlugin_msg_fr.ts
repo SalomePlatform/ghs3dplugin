@@ -80,6 +80,10 @@
         <translation>Utiliser correction FEM</translation>
     </message>
     <message>
+        <source>GHS3D_GRADATION</source>
+        <translation>Gradation volumique</translation>
+    </message>
+    <message>
         <source>SELECT_DIR</source>
         <translation>...</translation>
     </message>

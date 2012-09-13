@@ -445,28 +445,35 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myBoundaryRecoveryCheck = new QCheckBox( tr( "RECOVERY_VERSION" ), myAdvGroup );
   
   myFEMCorrectionCheck = new QCheckBox( tr( "FEM_CORRECTION" ), myAdvGroup );
+  
+  QLabel* myGradationLabel = new QLabel( tr( "GHS3D_GRADATION" ), myAdvGroup );
+  myGradation = new SMESHGUI_SpinBox(myAdvGroup);
+  myGradation->RangeStepAndValidator(1.05, 5.0, 0.05, "length_precision");
 
   QLabel* aTextOptionLabel = new QLabel( tr( "TEXT_OPTION" ), myAdvGroup );
   myTextOption = new QLineEdit( myAdvGroup );
 
-  anAdvLayout->addWidget( myMaximumMemoryCheck,             0, 0, 1, 1 );
-  anAdvLayout->addWidget( myMaximumMemorySpin,              0, 1, 1, 1 );
-  anAdvLayout->addWidget( aMegabyteLabel,                   0, 2, 1, 1 );
-  anAdvLayout->addWidget( myInitialMemoryCheck,             1, 0, 1, 1 );
-  anAdvLayout->addWidget( myInitialMemorySpin,              1, 1, 1, 1 );
-  anAdvLayout->addWidget( aMegabyteLabel2,                  1, 2, 1, 1 );
-  anAdvLayout->addWidget( aWorkinDirLabel,                  2, 0, 1, 1 );
-  anAdvLayout->addWidget( myWorkingDir,                     2, 1, 1, 2 );
-  anAdvLayout->addWidget( dirBtn,                           2, 3, 1, 1 );
-  anAdvLayout->addWidget( myKeepFiles,                      3, 0, 1, 4 );
-  anAdvLayout->addWidget( aVerboseLevelLabel,               4, 0, 1, 1 );
-  anAdvLayout->addWidget( myVerboseLevelSpin,               4, 1, 1, 1 );
-  anAdvLayout->addWidget( myToCreateNewNodesCheck,          5, 0, 1, 4 );
-  anAdvLayout->addWidget( myRemoveInitialCentralPointCheck, 6, 0, 1, 4 );
-  anAdvLayout->addWidget( myBoundaryRecoveryCheck,          7, 0, 1, 4 );
-  anAdvLayout->addWidget( myFEMCorrectionCheck,             8, 0, 1, 4 );
-  anAdvLayout->addWidget( aTextOptionLabel,                 9, 0, 1, 1 );
-  anAdvLayout->addWidget( myTextOption,                     9, 1, 1, 2 );
+  row = 0;
+  anAdvLayout->addWidget( myMaximumMemoryCheck,             row, 0, 1, 1 );
+  anAdvLayout->addWidget( myMaximumMemorySpin,              row, 1, 1, 1 );
+  anAdvLayout->addWidget( aMegabyteLabel,                   row++, 2, 1, 1 );
+  anAdvLayout->addWidget( myInitialMemoryCheck,             row, 0, 1, 1 );
+  anAdvLayout->addWidget( myInitialMemorySpin,              row, 1, 1, 1 );
+  anAdvLayout->addWidget( aMegabyteLabel2,                  row++, 2, 1, 1 );
+  anAdvLayout->addWidget( aWorkinDirLabel,                  row, 0, 1, 1 );
+  anAdvLayout->addWidget( myWorkingDir,                     row, 1, 1, 2 );
+  anAdvLayout->addWidget( dirBtn,                           row++, 3, 1, 1 );
+  anAdvLayout->addWidget( myKeepFiles,                      row++, 0, 1, 4 );
+  anAdvLayout->addWidget( aVerboseLevelLabel,               row, 0, 1, 1 );
+  anAdvLayout->addWidget( myVerboseLevelSpin,               row++, 1, 1, 2 );
+  anAdvLayout->addWidget( myToCreateNewNodesCheck,          row++, 0, 1, 4 );
+  anAdvLayout->addWidget( myRemoveInitialCentralPointCheck, row++, 0, 1, 4 );
+  anAdvLayout->addWidget( myBoundaryRecoveryCheck,          row++, 0, 1, 4 );
+  anAdvLayout->addWidget( myFEMCorrectionCheck,             row++, 0, 1, 4 );
+  anAdvLayout->addWidget( myGradationLabel,                 row, 0, 1, 1 );
+  anAdvLayout->addWidget( myGradation,                      row++, 1, 1, 2 );
+  anAdvLayout->addWidget( aTextOptionLabel,                 row, 0, 1, 1 );
+  anAdvLayout->addWidget( myTextOption,                     row++, 1, 1, 2 );
 
   // Enforced vertices parameters
   myEnfGroup = new QWidget();
@@ -478,10 +485,10 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myEnforcedTableWidget->setColumnCount( ENF_VER_NB_COLUMNS );
   myEnforcedTableWidget->setSortingEnabled(true);
   QStringList enforcedHeaders;
-  enforcedHeaders << tr( "GHS3D_ENF_NAME_COLUMN" ) 
-                  << tr( "GHS3D_ENF_VER_X_COLUMN" )<< tr( "GHS3D_ENF_VER_Y_COLUMN" ) << tr( "GHS3D_ENF_VER_Z_COLUMN" ) 
+  enforcedHeaders << tr( "GHS3D_ENF_NAME_COLUMN" )
+                  << tr( "GHS3D_ENF_VER_X_COLUMN" )<< tr( "GHS3D_ENF_VER_Y_COLUMN" ) << tr( "GHS3D_ENF_VER_Z_COLUMN" )
                   << tr( "GHS3D_ENF_SIZE_COLUMN" ) << tr("GHS3D_ENF_ENTRY_COLUMN") << tr("GHS3D_ENF_VER_COMPOUND_COLUMN") << tr( "GHS3D_ENF_GROUP_COLUMN" );
-  
+
   myEnforcedTableWidget->setHorizontalHeaderLabels(enforcedHeaders);
   myEnforcedTableWidget->verticalHeader()->hide();
   myEnforcedTableWidget->horizontalHeader()->setStretchLastSection(true);
@@ -1431,11 +1438,12 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   myRemoveInitialCentralPointCheck ->setChecked    ( data.myRemoveInitialCentralPoint );
   myBoundaryRecoveryCheck          ->setChecked    ( data.myBoundaryRecovery );
   myFEMCorrectionCheck             ->setChecked    ( data.myFEMCorrection );
+  myGradation                      ->setValue      ( data.myGradation );
   myTextOption                     ->setText       ( data.myTextOption );
 
   TEnfVertexList::const_iterator it;
   int rowCount = 0;
-  myEnforcedTableWidget->clear();
+  myEnforcedTableWidget->clearContents();
   myEnforcedTableWidget->setSortingEnabled(false);
   myEnforcedTableWidget->disconnect(SIGNAL( itemChanged(QTableWidgetItem *)));
   for(it = data.myEnforcedVertices.begin() ; it != data.myEnforcedVertices.end(); it++ )
@@ -1515,7 +1523,7 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   // Update Enforced meshes QTableWidget
   TEnfMeshList::const_iterator itMesh;
   rowCount = 0;
-  myEnforcedMeshTableWidget->clear();
+  myEnforcedMeshTableWidget->clearContents();
   myEnforcedMeshTableWidget->setSortingEnabled(false);
 //   myEnforcedMeshTableWidget->disconnect(SIGNAL( itemChanged(QTableWidgetItem *)));
   for(itMesh = data.myEnforcedMeshes.begin() ; itMesh != data.myEnforcedMeshes.end(); itMesh++ )
@@ -1619,6 +1627,11 @@ QString GHS3DPluginGUI_HypothesisCreator::storeParams() const
     if ( data.myFEMCorrection )
         valStr += " -FEM";
     
+    if ( data.myGradation != 1.05 ) {
+      valStr += " -Dcpropa=";
+      valStr += QString::number( data.myGradation );
+    }
+    
     valStr += " ";
     valStr += data.myTextOption;
     
@@ -1666,6 +1679,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   h_data.myRemoveInitialCentralPoint  = h->GetToRemoveCentralPoint();
   h_data.myBoundaryRecovery           = h->GetToUseBoundaryRecoveryVersion();
   h_data.myFEMCorrection              = h->GetFEMCorrection();
+  h_data.myGradation                  = h->GetGradation();
   h_data.myTextOption                 = h->GetTextOption();
   
   GHS3DPlugin::GHS3DEnforcedVertexList_var vertices = h->GetEnforcedVertices();
@@ -1749,6 +1763,8 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       h->SetToUseBoundaryRecoveryVersion( h_data.myBoundaryRecovery );
     if ( h->GetFEMCorrection() != h_data.myFEMCorrection )
       h->SetFEMCorrection( h_data.myFEMCorrection );
+    if ( h->GetGradation() != h_data.myGradation )
+      h->SetGradation     ( h_data.myGradation );
     if ( h->GetTextOption() != h_data.myTextOption )
       h->SetTextOption       ( h_data.myTextOption.toLatin1().constData() );
     
@@ -1848,6 +1864,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
   h_data.myRemoveInitialCentralPoint  = myRemoveInitialCentralPointCheck->isChecked();
   h_data.myBoundaryRecovery           = myBoundaryRecoveryCheck->isChecked();
   h_data.myFEMCorrection              = myFEMCorrectionCheck->isChecked();
+  h_data.myGradation                  = myGradation->value();
   h_data.myTextOption                 = myTextOption->text();
   
   // Enforced vertices
