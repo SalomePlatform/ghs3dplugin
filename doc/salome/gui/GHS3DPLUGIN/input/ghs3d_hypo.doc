@@ -3,41 +3,38 @@
 \page ghs3d_hypo_page GHS3D Parameters hypothesis
 
 \anchor ghs3d_top
-\n GHS3D Parameters hypothesis works only with <b>Tetrahedron (GHS3D)</b> 
+GHS3D Parameters hypothesis works only with <b>Tetrahedron (GHS3D)</b> 
 algorithm. This algorithm is a commercial software.
-\n To get a licence, visit http://www.distene.com/corp/eval-distene.html
 
--# \ref ghs3d_general_parameters
--# \ref ghs3d_advanced_parameters
--# \ref ghs3d_enforced_vertices
--# \ref ghs3d_enforced_meshes
+To get a licence, visit http://www.distene.com/en/corp/eval-distene.html
+
+\tableofcontents
 
 \section ghs3d_general_parameters General parameters
 
 \image html ghs3d_parameters_basic.png
 
-<ul>
-<li><b>Name</b> - allows to define the name of the hypothesis (GHS3D 
-Parameters by default).</li>
+- <b>Name</b> - allows to define the name of the hypothesis (GHS3D 
+Parameters by default).
 
-<li><b>To mesh holes</b> - if checked, the algorithm will 
+- <b>To mesh holes</b> - if checked, the algorithm will 
 create mesh in the holes inside a solid shape, else only the outermost
 shape will be meshed. Volumic elements created within holes are bound
-to the solid.</li>
+to the solid.
 
-<li><b>Optimization level</b> - allows choosing the required
-optimization level: 
-<ul>
-<li>none,</li>
-<li>light,</li>
-<li>medium (standard),</li>
-<li>standard+,</li>
-<li>strong.</li>
-</ul>
-Higher level of
-optimisation provides better mesh, but can be time-consuming.
-</li>
-</ul>
+- <b>Optimization level</b> - allows choosing the required
+optimization level (higher level of optimisation provides better mesh,
+but can be time-consuming):
+
+  - none
+
+  - light
+
+  - medium (standard)
+
+  - standard+
+
+  - strong
 
 \ref ghs3d_top "Back to top"
 
@@ -45,36 +42,38 @@ optimisation provides better mesh, but can be time-consuming.
 
 \image html ghs3d_parameters_advanced.png
 
-<li><b>Maximum memory size</b> - launches ghs3d software with
+- <b>Maximum memory size</b> - launches ghs3d software with
 work space limited to the specified amount of RAM, in Mbytes. If this option is
-checked off, the software will be launched with 7O% of the total RAM space. </li>
+checked off, the software will be launched with 7O% of the total RAM space.
 
-<li><b>Initial memory size</b> - starts ghs3d software with
+- <b>Initial memory size</b> - starts ghs3d software with
 the specified amount of work space, in Mbytes. If this option is checked off, the
-software will be started with 100 Megabytes of working space. </li>
+software will be started with 100 Megabytes of working space.
 
-<li><b>Working directory</b> - allows defining the folder for input and output
-files of ghs3d software, which are the files starting with "GHS3D_" prefix. </li>
+- <b>Working directory</b> - allows defining the folder for input and output
+files of ghs3d software, which are the files starting with "GHS3D_" prefix.
 
-<li><b>Keep working files</b> - allows checking input and output files
+- <b>Keep working files</b> - allows checking input and output files
 of ghs3d software, while usually these files are removed after the
-launch of the mesher.</li>
+launch of the mesher.
 
-<li><b>Verbose level</b> - to choose verbosity level in the range from
+- <b>Verbose level</b> - to choose verbosity level in the range from
 0 to 10.
-<ul> <li>0, no standard output,
-</li><li>2, prints the data, quality statistics of the skin and final
-meshes and indicates when the final mesh is being saved. In addition
-the software gives indication regarding the CPU time.
-</li><li>10, same as 2 plus the main steps in the computation, quality
-statistics histogram of the skin mesh, quality statistics histogram
-together with the characteristics of the final mesh.
-</li></ul></li>
 
-<li><b>To create new nodes</b> - if this option is checked off, ghs3d
-tries to create tetrahedrons using only the nodes of the 2D mesh.</li>
+  - 0, no standard output,
 
-<li><b>To remove the initial central point</b> TetMesh-GHS3D adds an internal point 
+  - 2, prints the data, quality statistics of the skin and final
+  meshes and indicates when the final mesh is being saved. In addition
+  the software gives indication regarding the CPU time.
+
+  - 10, same as 2 plus the main steps in the computation, quality
+  statistics histogram of the skin mesh, quality statistics histogram
+  together with the characteristics of the final mesh.
+
+- <b>To create new nodes</b> - if this option is checked off, ghs3d
+tries to create tetrahedrons using only the nodes of the 2D mesh.
+
+- <b>To remove the initial central point</b> TetMesh-GHS3D adds an internal point 
 at the gravity centre of the bounding box to speed up and to simplify 
 the meshing process. However, it is possible to refrain from creating 
 this point by using the command line option -no initial central point. This can be
@@ -86,18 +85,18 @@ Use this option if the boundary regeneration has failed with the standard parame
 the recovery version (command line option -C).
 Note: when using this option, the speed of the meshing process may
 decrease, and the quality may change.
-Note: the boundary regeneration may fail with this option, in some rare cases.</li>
+Note: the boundary regeneration may fail with this option, in some rare cases.
 
-<li><b>To use boundary recovery version</b> - enables using a
+- <b>To use boundary recovery version</b> - enables using a
 boundary recovery module which tries to
 create volume meshes starting from very poor quality surface meshes
 (almost flat triangles on the surface, high density propagation,
 extreme aspect ratios, etc.) which fails with the standard version. The
 resulting volume mesh will however most likely have a very poor
 quality (poor aspect ratio of elements, tetrahedra with a very small
-positive volume).</li>
+positive volume).
 
-<li><b>To use FEM correction</b> - Applies finite-element correction by 
+- <b>To use FEM correction</b> - Applies finite-element correction by 
 replacing overconstrained elements where it is possible. At first the process 
 slices the overconstrained edges and at second the overconstrained 
 facets. This ensures that there are no edges with two boundary
@@ -106,24 +105,25 @@ and final overconstrained edges and facets. It also gives the facets
 which have three edges on the boundary.
 Note: when using this option, the speed of the meshing process may 
 decrease, quality may change, and the smallest volume may be smaller.
-By default, the FEM correction is not used.</li>
+By default, the FEM correction is not used.
 
-<li><b>Option as text</b> - allows to input in the command line any text
-for ghs3d, for example, advanced options. </li>
+- <b>Volumic gradation</b> - Defines the volumic ratio between 2 consecutive elements.
+WARNING: Changing the default value of this parameter may dramatically decrease the quality of the resulting mesh.
 
-</ul>
+- <b>Option as text</b> - allows to input in the command line any text
+for ghs3d, for example, advanced options.
 
 \ref ghs3d_top "Back to top"
 
 \section ghs3d_enforced_vertices Enforced vertices
 
-\note This feature is currently available only on meshes with no
+\note This feature is currently partially available only on meshes with no
 geometry attached. Such meshes can be obtained by
-<ul>
-<li>Copying an existing mesh</li>
-<li>Importing a mesh from file</li>
-<li>Applying a transformation to a mesh a get result in a new mesh</li>
-</ul>
+- Copying an existing mesh
+- Importing a mesh from file
+- Applying a transformation to a mesh a get result in a new mesh
+.
+See below for more details.
 
 \image html ghs3d_enforced_vertices.png
 
@@ -132,49 +132,38 @@ define enforced vertices in the volume where the mesh will be detailed.
 A node will be created at the enforced vertex coordinates.
 
 An enforced vertex is defined by:
-<ul>
-<li>A vertex</li>
-<ul>
-<li>from GEOM (Vertex, Compound)</li>
-<li>or from (x,y,z) cartesian coordinates</li>
-</ul>
-<li>A constant physical size</li>
-<li>If a group name is given, the created node will be added to the
-group. If the group does not exist, it is created.</li>
-</ul>
+- A vertex
+  - from GEOM (Vertex, Compound) - only avaible on meshes with no
+  geometry attached
+  - or from (x,y,z) cartesian coordinates
+- A constant physical size
+- If a group name is given, the created node will be added to the
+group. If the group does not exist, it is created.
+
 \ref ghs3d_top "Back to top"
 
 \section ghs3d_enforced_meshes Enforced Meshes
 
 \note This feature is currently only available on 2D meshes with no
 geometry attached. Such meshes can be obtained by
-<ul>
-<li>Copying an existing 2D mesh</li>
-<li>Importing a 2D mesh from file</li>
-<li>Applying a transformation to a 2D mesh a get result in a new mesh</li>
-</ul>
+- Copying an existing 2D mesh
+- Importing a 2D mesh from file
+- Applying a transformation to a 2D mesh a get result in a new mesh
 
 \image html ghs3d_enforced_meshes.png
 
 GHS3D algorithm can be forced by other meshes, sub-meshes or
 groups. The constraint elements should be contained
 entirely into the solid mesh.
-<ul>
-<li>The constraint element types are:
-<ul>
-<li>NODE</li>
-<li>EDGE</li>
-<li>FACE</li>
-</ul></li>
-<li>If a size is given, the mesh will be refined around the enforced
-elements given the size (not available yet)</li>
-<li>If a group name is given, the enforced elements will be added to
-the group. If the group does not exist, it is created.</li>
-</ul>
+- The constraint element types are:
+  - NODE
+  - EDGE
+  - FACE
+- If a group name is given, the enforced elements will be added to
+the group. If the group does not exist, it is created.
 
 <br><b>See Also</b> a sample TUI Script of the \ref tui_ghs3d "creation of a Ghs3D hypothesis", including enforced vertices and meshes.
 
 \ref ghs3d_top "Back to top"
-
 
 */

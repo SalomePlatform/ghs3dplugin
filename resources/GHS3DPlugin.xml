@@ -33,8 +33,25 @@
     <hypothesis type="GHS3D_Parameters"
 		label-id="GHS3D Parameters"
 		icon-id="mesh_hypo_ghs3d.png"
-		dim="3"/>
+		dim="3">
+      <python-wrap>
+        <accumulative-methods>
+          SetEnforcedVertex,
+          SetEnforcedVertexNamed,
+          SetEnforcedVertexWithGroup,
+          SetEnforcedVertexNamedWithGroup,
+          SetEnforcedVertexGeom,
+          SetEnforcedVertexGeomWithGroup,
+          RemoveEnforcedVertex,
+          RemoveEnforcedVertexGeom,
+          SetEnforcedMeshWithGroup,
+          SetEnforcedMeshSize,
+          SetEnforcedMeshSizeWithGroup
+        </accumulative-methods>
+      </python-wrap>
+    </hypothesis>
   </hypotheses>
+
   <algorithms>
     <algorithm type="GHS3D_3D"
                label-id="Tetrahedron (GHS3D)"

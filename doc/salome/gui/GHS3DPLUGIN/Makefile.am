@@ -23,16 +23,15 @@ EXTRA_DIST += images input static/footer.html static/doxygen.css
 guidocdir = $(docdir)/gui/GHS3DPLUGIN
 guidoc_DATA = images/head.png
 
+DOC_PYTHONPATH=$(prefix)/bin/salome:$(SMESH_ROOT_DIR)/bin/salome:$(SMESH_ROOT_DIR)/lib/python$(PYTHON_VERSION)/site-packages/salome:$(MED_ROOT_DIR)/lib/python$(PYTHON_VERSION)/site-packages/salome:$(GEOM_ROOT_DIR)/bin/salome:$(GEOM_ROOT_DIR)/lib/python$(PYTHON_VERSION)/site-packages/salome:$(KERNEL_ROOT_DIR)/bin/salome:$(KERNEL_ROOT_DIR)/lib/python$(PYTHON_VERSION)/site-packages/salome:$(OMNIORB_ROOT)/lib/python$(PYTHON_VERSION)/site-packages:$(OMNIORB_ROOT)/lib64/python$(PYTHON_VERSION)/site-packages
+DOC_SMESH_MeshersList=GHS3DPlugin
 
-usr_docs: doxyfile
-	echo "===========================================" ;                    \
-	echo "Generating Python interface documentation";                       \
-	echo "===========================================" ;                    \
-	$(DOXYGEN) doxyfile_py                                                  \
-	echo "===========================================" ;                    \
-	echo "Generating GUI documentation" ;                                   \
-	echo "===========================================" ;                    \
-	$(DOXYGEN) doxyfile ;
+smesh.py: $(top_srcdir)/src/GHS3DPlugin/GHS3DPluginDC.py
+	@PYTHONPATH=$(DOC_PYTHONPATH):${PYTHONPATH} SMESH_MeshersList=$(DOC_SMESH_MeshersList) $(PYTHON) $(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py -d -o $@ GHS3DPlugin
+
+usr_docs: doxyfile_py doxyfile smesh.py
+	@$(DOXYGEN) doxyfile_py ; \
+	$(DOXYGEN) doxyfile
 
 docs: usr_docs
 
@@ -55,7 +54,7 @@ install-data-local: usr_docs
 	    *) echo "Installing $${filen}" ; cp -rp $${filen} $(DESTDIR)$(docdir)/gui/GHS3DPLUGIN ;;	\
 	  esac ;										\
 	done ;
-	cp -rp $(srcdir)/images/head.png $(DESTDIR)$(docdir)/gui/GHS3DPLUGIN/ghs3dpluginpy_doc/ ;
+	cp -rfp $(srcdir)/images/head.png $(DESTDIR)$(docdir)/gui/GHS3DPLUGIN/ghs3dpluginpy_doc/ ;
 
 uninstall-local:
 	rm -rf $(DESTDIR)$(docdir)/gui/GHS3DPLUGIN

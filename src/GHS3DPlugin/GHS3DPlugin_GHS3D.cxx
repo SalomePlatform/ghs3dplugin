@@ -1001,11 +1001,13 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //purpose  : Update or create groups in mesh
 //=======================================================================
 
-static void addElemInMeshGroup(SMESH_Mesh* theMesh,
-                             const SMDS_MeshElement* anElem,
-                             std::string groupName,
-                             std::set<std::string> groupsToRemove)
+static void addElemInMeshGroup(SMESH_Mesh*             theMesh,
+                               const SMDS_MeshElement* anElem,
+                               std::string&            groupName,
+                               std::set<std::string>&  groupsToRemove)
 {
+  if ( !anElem ) return; // issue 0021776
+
   bool groupDone = false;
   SMESH_Mesh::GroupIteratorPtr grIt = theMesh->GetGroups();
   while (grIt->more()) {
@@ -1033,7 +1035,7 @@ static void addElemInMeshGroup(SMESH_Mesh* theMesh,
     groupDone = true;
   }
   if (!groupDone)
-    throw SALOME_Exception(LOCALIZED("A enforced vertex node was not added to a group"));
+    throw SALOME_Exception(LOCALIZED("A given element was not added to a group"));
 }
 
 
@@ -1331,6 +1333,7 @@ static bool readGMFFile(const char*                     theFile,
             // for ( int iRef = 0; iRef < nbRef; iRef++ )
             //   nodeAssigne[ nodeID[ iRef ]] = 1;
           }
+          break;
         case GmfTetrahedra:
           if ( elemSearcher ) {
             // Issue 0020682. Avoid creating nodes and tetras at place where
@@ -1779,8 +1782,8 @@ static bool writeGMFFile(const char*                                     theMesh
       TopAbs_State result = pntCls->GetPointState( myPoint );
       if ( result == TopAbs_OUT )
         continue;
-      if (pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems) == 0)
-        continue;
+      //if (pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems) == 0)
+      //continue;
 
 //       if ( result != TopAbs_IN )
 //         continue;
@@ -1821,13 +1824,14 @@ static bool writeGMFFile(const char*                                     theMesh
       return false;
     }
     int TypTab[] = {GmfSca};
+    double ValTab[] = {0.0};
     GmfSetKwd(idxRequired, GmfVertices, requiredNodes + solSize);
     GmfSetKwd(idxSol, GmfSolAtVertices, requiredNodes + solSize, 1, TypTab);
 //     int usedEnforcedNodes = 0;
 //     std::string gn = "";
     for (ghs3dNodeIt = theRequiredNodes.begin();ghs3dNodeIt != theRequiredNodes.end();++ghs3dNodeIt) {
       GmfSetLin(idxRequired, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
-      GmfSetLin(idxSol, GmfSolAtVertices, 0.0);
+      GmfSetLin(idxSol, GmfSolAtVertices, ValTab);
       if (theEnforcedNodes.find((*ghs3dNodeIt)) != theEnforcedNodes.end())
         gn = theEnforcedNodes.find((*ghs3dNodeIt))->second;
       aNodeGroupByGhs3dId[usedEnforcedNodes] = gn;
@@ -2745,7 +2749,7 @@ static bool writePoints (ofstream &                       theFile,
       if (theEnforcedVertices.find(coords) != theEnforcedVertices.end())
         continue;
         
-      double size = theNodeIDToSizeMap.find(nodeIt->first->GetID())->second;
+//      double size = theNodeIDToSizeMap.find(nodeIt->first->GetID())->second;
   //       theGhs3dIdToNodeMap.insert( make_pair( nbNodes + i, (*nodeIt) ));
   //       MESSAGE("Adding enforced node (" << x << "," << y <<"," << z << ")");
       // X Y Z PHY_SIZE DUMMY_INT
@@ -2753,7 +2757,7 @@ static bool writePoints (ofstream &                       theFile,
       << x << space 
       << y << space 
       << z << space
-      << size << space
+      << -1 << space
       << dummyint << space;
       theFile << std::endl;
       theEnforcedNodeIdToGhs3dIdMap.insert( make_pair( nodeIt->first->GetID(), aGhs3dID ));

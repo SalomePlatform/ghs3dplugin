@@ -2,22 +2,19 @@
 
 \page ghs3dplugin_python_interface_page Python Interface
 
-Python package \ref GHS3DPluginDC "GHS3DPlugin" defines several classes, destined for creation of the 3D meshes.
+Python package GHS3DPluginDC defines several classes, destined for creation of the 3D meshes.
 
-Documentation for GHS3DPlugin package is available in linear form grouped by classes, declared in the GHS3DPluginDC.py file.
+GHS3D meshing plugin dynamically adds several methods to the smesh.Mesh class to create meshing algorithms.
 
-Below you can see an example of usage of the GHS3DPlugin package for mesh generation:
+Below you can see an example of usage of the GHS3DPlugin Python API for mesh generation:
 
 \anchor tui_ghs3d
 
-<ol>
-<li>\ref tui_ghs3d_basic "Construction of Mesh using Ghs3D algorithm"</li>
-<li>\ref tui_ghs3d_enforced_vertices "Adding enforced vertices"</li>
-<li>\ref tui_ghs3d_enforced_meshes "Adding enforced mesh"</li>
-</ol>
+-# \ref tui_ghs3d_basic
+-# \ref tui_ghs3d_enforced_vertices
+-# \ref tui_ghs3d_enforced_meshes
 
-\anchor tui_ghs3d_basic
-<h2>Construction of Mesh using Ghs3D algorithm</h2>
+\section tui_ghs3d_basic Construction of Mesh using Ghs3D algorithm
 
 \code
 import geompy
@@ -42,12 +39,11 @@ ghs3dMesh.Compute()
 # End of script
 \endcode
 
-\image html ghs3d_screenshot.png Ghs3d mesh withtout hypothesis
+\image html ghs3d_screenshot.png Ghs3d mesh without hypothesis
 
 \ref tui_ghs3d "Back to top"
 
-\anchor tui_ghs3d_enforced_vertices
-<h2>Adding enforced vertices</h2>
+\section tui_ghs3d_enforced_vertices Adding enforced vertices
 
 \code
 
@@ -121,8 +117,7 @@ GHS3D_Parameters.ClearEnforcedVertices()
 
 \ref tui_ghs3d "Back to top"
 
-\anchor tui_ghs3d_enforced_meshes
-<h2>Adding enforced mesh</h2>
+\section tui_ghs3d_enforced_meshes Adding enforced mesh
 
 \code
 

@@ -120,7 +120,6 @@ struct TEnfMesh{
   std::string entry;
   int elementType;
   std::string groupName;
-  double size;
 };
 
 struct CompareEnfMeshes
@@ -144,6 +143,7 @@ typedef struct
   bool    myToMeshHoles,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint;
   int     myMaximumMemory,myInitialMemory,myOptimizationLevel;
   QString myName,myWorkingDir,myTextOption;
+  double  myGradation;
   short   myVerboseLevel;
   TEnfVertexList myEnforcedVertices;
   TEnfMeshList myEnforcedMeshes;
@@ -188,7 +188,7 @@ protected slots:
   void                checkVertexIsDefined();
   void                clearEnfVertexSelection();
   
-  void                addEnforcedMesh(std::string name, std::string entry, int elementType, double size = 0, std::string groupName = "");
+  void                addEnforcedMesh(std::string name, std::string entry, int elementType, std::string groupName = "");
   void                onAddEnforcedMesh();
   void                onRemoveEnforcedMesh();
   //void                synchronizeEnforcedMesh();
@@ -223,6 +223,7 @@ private:
   QCheckBox*          myRemoveInitialCentralPointCheck;
   QCheckBox*          myBoundaryRecoveryCheck;
   QCheckBox*          myFEMCorrectionCheck;
+  SMESHGUI_SpinBox*   myGradation;
   QLineEdit*          myTextOption;
   
   QWidget*            myEnfGroup;
@@ -247,7 +248,6 @@ private:
   QStringList         myEnfMeshConstraintLabels;
 //   SMESH::mesh_array_var myEnfMeshArray;
   QTableWidget*       myEnforcedMeshTableWidget;
-  SMESHGUI_SpinBox*   myMeshSizeValue;
   QLineEdit*          myMeshGroupName;
   QPushButton*        addEnfMeshButton;
   QPushButton*        removeEnfMeshButton;

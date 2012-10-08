@@ -52,6 +52,7 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   myToUseBoundaryRecoveryVersion(DefaultToUseBoundaryRecoveryVersion()),
   myToUseFemCorrection(DefaultToUseFEMCorrection()),
   myToRemoveCentralPoint(DefaultToRemoveCentralPoint()),
+  myGradation(DefaultGradation()),
   _enfVertexList(DefaultGHS3DEnforcedVertexList()),
   _enfVertexCoordsSizeList(DefaultGHS3DEnforcedVertexCoordsValues()),
   _enfVertexEntrySizeList(DefaultGHS3DEnforcedVertexEntryValues()),
@@ -63,7 +64,6 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   _enfEdges(TIDSortedElemGroupMap()),
   _enfTriangles(TIDSortedElemGroupMap()),
   _nodeIDToSizeMap(DefaultID2SizeMap()),
-  _elementIDToSizeMap(DefaultID2SizeMap()),
   _groupsToRemove(DefaultGroupsToRemove())
 {
   _name = "GHS3D_Parameters";
@@ -330,6 +330,27 @@ std::string GHS3DPlugin_Hypothesis::GetTextOption() const
 }
 
 //=======================================================================
+//function : SetGradation
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetGradation(double gradation)
+{
+  if ( myGradation != gradation ) {
+    myGradation = gradation;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetGradation
+//=======================================================================
+
+double GHS3DPlugin_Hypothesis::GetGradation() const
+{
+  return myGradation;
+}
+
+//=======================================================================
 //function : SetEnforcedVertex
 //=======================================================================
 
@@ -419,20 +440,19 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedVertex(std::string theName, std::string 
 //=======================================================================
 //function : SetEnforcedMesh
 //=======================================================================
-bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, std::string name, std::string entry, double size, std::string groupName)
+bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, std::string name, std::string entry, std::string groupName)
 {
   TIDSortedElemSet theElemSet;
   SMDS_ElemIteratorPtr eIt = theMesh.GetMeshDS()->elementsIterator(SMDSAbs_ElementType(elementType));
   while ( eIt->more() )
     theElemSet.insert( eIt->next() );
   MESSAGE("Add "<<theElemSet.size()<<" types["<<elementType<<"] from source mesh");
-  bool added = SetEnforcedElements( theElemSet, elementType, size, groupName);
+  bool added = SetEnforcedElements( theElemSet, elementType, groupName);
   if (added) {
     TGHS3DEnforcedMesh* newEnfMesh = new TGHS3DEnforcedMesh();
     newEnfMesh->name = name;
     newEnfMesh->entry = entry;
     newEnfMesh->elementType = elementType;
-    newEnfMesh->size = size;
     newEnfMesh->groupName = groupName;
     
     TGHS3DEnforcedMeshList::iterator it = _enfMeshList.find(newEnfMesh);
@@ -447,7 +467,7 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::Element
 //=======================================================================
 //function : SetEnforcedGroup
 //=======================================================================
-bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::long_array_var theIDs, SMESH::ElementType elementType, std::string name, std::string entry, double size, std::string groupName)
+bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::long_array_var theIDs, SMESH::ElementType elementType, std::string name, std::string entry, std::string groupName)
 {
   MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedGroup");
   TIDSortedElemSet theElemSet;
@@ -473,13 +493,12 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SME
 //     theElemSet.insert( it->next() );
 
   MESSAGE("Add "<<theElemSet.size()<<" types["<<elementType<<"] from source group ");
-  bool added = SetEnforcedElements( theElemSet, elementType, size, groupName);
+  bool added = SetEnforcedElements( theElemSet, elementType, groupName);
   if (added) {
     TGHS3DEnforcedMesh* newEnfMesh = new TGHS3DEnforcedMesh();
     newEnfMesh->name = name;
     newEnfMesh->entry = entry;
     newEnfMesh->elementType = elementType;
-    newEnfMesh->size = size;
     newEnfMesh->groupName = groupName;
     
     TGHS3DEnforcedMeshList::iterator it = _enfMeshList.find(newEnfMesh);
@@ -494,13 +513,16 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SME
 //=======================================================================
 //function : SetEnforcedElements
 //=======================================================================
-bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, double size, std::string groupName)
+bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, std::string groupName)
 {
   MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedElements");
   TIDSortedElemSet::const_iterator it = theElemSet.begin();
   const SMDS_MeshElement* elem;
   const SMDS_MeshNode* node;
-  bool added = false;
+  bool added = true;
+  pair<TIDSortedNodeGroupMap::iterator,bool> nodeRet;
+  pair<TIDSortedElemGroupMap::iterator,bool> elemRet;
+
   for (;it != theElemSet.end();++it)
   {
     elem = (*it);
@@ -508,43 +530,41 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
       case SMESH::NODE:
         node = dynamic_cast<const SMDS_MeshNode*>(elem);
         if (node) {
-          _enfNodes.insert(make_pair(node,groupName));
-          _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
-          added = true;
+          nodeRet = _enfNodes.insert(make_pair(node,groupName));
+          added = added && nodeRet.second;
+          string msg = added ? "yes":"no";
+          MESSAGE( "Node (" <<node->X()<<","<<node->Y()<<","<<node->Z()<< ") with ID " << node->GetID() <<" added ? " << msg);
         }
         else {
           SMDS_ElemIteratorPtr nodeIt = elem->nodesIterator();
           for (;nodeIt->more();) {
             node = dynamic_cast<const SMDS_MeshNode*>(nodeIt->next());
-            _enfNodes.insert(make_pair(node,groupName));
-            _nodeIDToSizeMap.insert(make_pair(node->GetID(), size));
+            nodeRet = _enfNodes.insert(make_pair(node,groupName));
+            added = added && nodeRet.second;
           }
-          added = true;
+//          added = true;s
         }
         break;
       case SMESH::EDGE:
         if (elem->GetType() == SMDSAbs_Edge) {
-          _enfEdges.insert(make_pair(elem,groupName));
-          _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
-          added = true;
+          elemRet = _enfEdges.insert(make_pair(elem,groupName));
+          added = added && elemRet.second;
         }
         else if (elem->GetType() > SMDSAbs_Edge) {
           SMDS_ElemIteratorPtr it = elem->edgesIterator();
           for (;it->more();) {
             const SMDS_MeshElement* anEdge = it->next();
-            _enfEdges.insert(make_pair(anEdge,groupName));
-            _elementIDToSizeMap.insert(make_pair(anEdge->GetID(), size));
+            elemRet = _enfEdges.insert(make_pair(anEdge,groupName));
+            added = added && elemRet.second;
           }
-          added = true;
         }
         break;
       case SMESH::FACE:
         if (elem->GetType() == SMDSAbs_Face)
         {
           if (elem->NbCornerNodes() == 3) {
-            _enfTriangles.insert(make_pair(elem,groupName));
-            _elementIDToSizeMap.insert(make_pair(elem->GetID(), size));
-            added = true;
+            elemRet = _enfTriangles.insert(make_pair(elem,groupName));
+            added = added && elemRet.second;
           }
         }
         else if (elem->GetType() > SMDSAbs_Face) { // Group of faces
@@ -552,9 +572,8 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
           for (;it->more();) {
             const SMDS_MeshElement* aFace = it->next();
             if (aFace->NbCornerNodes() == 3) {
-              _enfTriangles.insert(make_pair(aFace,groupName));
-              _elementIDToSizeMap.insert(make_pair(aFace->GetID(), size));
-              added = true;
+              elemRet = _enfTriangles.insert(make_pair(aFace,groupName));
+              added = added && elemRet.second;
             }
           }
         }
@@ -688,7 +707,6 @@ void GHS3DPlugin_Hypothesis::ClearEnforcedMeshes()
   _enfEdges.clear();
   _enfTriangles.clear();
   _nodeIDToSizeMap.clear();
-  _elementIDToSizeMap.clear();
   _enfMeshList.clear();
   _entryEnfMeshMap.clear();
   NotifySubMeshesHypothesisModification();
@@ -843,6 +861,15 @@ bool GHS3DPlugin_Hypothesis::DefaultToRemoveCentralPoint()
   return false;
 }
 
+//=======================================================================
+//function : DefaultGradation
+//=======================================================================
+
+double GHS3DPlugin_Hypothesis::DefaultGradation()
+{
+  return 1.05;
+}
+
 // //=======================================================================
 // //function : DefaultID2SizeMap
 // //=======================================================================
@@ -870,6 +897,7 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
   save << (int)myToUseBoundaryRecoveryVersion << " ";
   save << (int)myToUseFemCorrection           << " ";
   save << (int)myToRemoveCentralPoint         << " ";
+  save << myGradation                         << " ";
   if (!myTextOption.empty()) {
     save << "__OPTIONS_BEGIN__ ";
     save << myTextOption                      << " ";
@@ -879,7 +907,7 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
 
   TGHS3DEnforcedVertexList::iterator it  = _enfVertexList.begin();
   if (it != _enfVertexList.end()) {
-    save << "__ENFORCED_VERTICES_BEGIN__ ";
+    save << " " << "__ENFORCED_VERTICES_BEGIN__ ";
     for ( ; it != _enfVertexList.end(); ++it ) {
       TGHS3DEnforcedVertex *enfVertex = (*it);
       save << " " << "__BEGIN_VERTEX__";
@@ -910,9 +938,38 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
       save << " " << "__END_SIZE__";
       save << " " << "__END_VERTEX__";
     }
-    save << "__ENFORCED_VERTICES_END__ ";
+    save << " " << "__ENFORCED_VERTICES_END__ ";
   }
 
+  TGHS3DEnforcedMeshList::iterator it_mesh  = _enfMeshList.begin();
+  if (it_mesh != _enfMeshList.end()) {
+    save << " " << "__ENFORCED_MESHES_BEGIN__ ";
+    for ( ; it_mesh != _enfMeshList.end(); ++it_mesh ) {
+      TGHS3DEnforcedMesh *enfMesh = (*it_mesh);
+      save << " " << "__BEGIN_ENF_MESH__";
+
+      save << " " << "__BEGIN_NAME__";
+      save << " " << enfMesh->name;
+      save << " " << "__END_NAME__";
+
+      save << " " << "__BEGIN_ENTRY__";
+      save << " " << enfMesh->entry;
+      save << " " << "__END_ENTRY__";
+
+      save << " " << "__BEGIN_ELEM_TYPE__";
+      save << " " << (int)enfMesh->elementType;
+      save << " " << "__END_ELEM_TYPE__";
+
+      if (!enfMesh->groupName.empty()) {
+        save << " " << "__BEGIN_GROUP__";
+        save << " " << enfMesh->groupName;
+        save << " " << "__END_GROUP__";
+      }
+      save << " " << "__END_ENF_MESH__";
+      std::cout << "Saving of enforced mesh " << enfMesh->name.c_str() << " done" << std::endl;
+    }
+    save << " "  << "__ENFORCED_MESHES_END__ ";
+  }
   return save;
 }
 
@@ -922,213 +979,304 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
 
 std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 {
-  bool isOK = true;
-  int i;
-  
-  isOK = (load >> i);
-  if (isOK)
-    myToMeshHoles = i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  isOK = (load >> i);
-  if (isOK)
-    myMaximumMemory = i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  isOK = (load >> i);
-  if (isOK)
-    myInitialMemory = i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  isOK = (load >> i);
-  if (isOK)
-    myOptimizationLevel = i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  isOK = (load >> myWorkingDirectory);
-  if (isOK) {
-    if ( myWorkingDirectory == "0") { // myWorkingDirectory was empty
-      myKeepFiles = false;
-      myWorkingDirectory.clear();
-    }
-    else if ( myWorkingDirectory == "1" ) {
-      myKeepFiles = true;
-      myWorkingDirectory.clear();
-    }
-  }
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  if ( !myWorkingDirectory.empty() ) {
-    isOK = (load >> i);
+	bool isOK = true;
+	int i;
+    double d;
+
+	isOK = (load >> i);
+	if (isOK)
+		myToMeshHoles = i;
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+	isOK = (load >> i);
+	if (isOK)
+		myMaximumMemory = i;
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+	isOK = (load >> i);
+	if (isOK)
+		myInitialMemory = i;
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+	isOK = (load >> i);
+	if (isOK)
+		myOptimizationLevel = i;
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+	isOK = (load >> myWorkingDirectory);
+	if (isOK) {
+		if ( myWorkingDirectory == "0") { // myWorkingDirectory was empty
+			myKeepFiles = false;
+			myWorkingDirectory.clear();
+		}
+		else if ( myWorkingDirectory == "1" ) {
+			myKeepFiles = true;
+			myWorkingDirectory.clear();
+		}
+	}
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+	if ( !myWorkingDirectory.empty() ) {
+		isOK = (load >> i);
+		if (isOK)
+			myKeepFiles = i;
+		else
+			load.clear(ios::badbit | load.rdstate());
+	}
+
+	isOK = (load >> i);
+	if (isOK)
+		myVerboseLevel = (short) i;
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+	isOK = (load >> i);
+	if (isOK)
+		myToCreateNewNodes = (bool) i;
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+	isOK = (load >> i);
+	if (isOK)
+		myToUseBoundaryRecoveryVersion = (bool) i;
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+	isOK = (load >> i);
+	if (isOK)
+		myToUseFemCorrection = (bool) i;
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+	isOK = (load >> i);
+	if (isOK)
+		myToRemoveCentralPoint = (bool) i;
+	else
+		load.clear(ios::badbit | load.rdstate());
+
+    isOK = (load >> d);
     if (isOK)
-      myKeepFiles = i;
+        myGradation = d;
     else
-      load.clear(ios::badbit | load.rdstate());
-  }
-  
-  isOK = (load >> i);
-  if (isOK)
-    myVerboseLevel = (short) i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  isOK = (load >> i);
-  if (isOK)
-    myToCreateNewNodes = (bool) i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  isOK = (load >> i);
-  if (isOK)
-    myToUseBoundaryRecoveryVersion = (bool) i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  isOK = (load >> i);
-  if (isOK)
-    myToUseFemCorrection = (bool) i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  isOK = (load >> i);
-  if (isOK)
-    myToRemoveCentralPoint = (bool) i;
-  else
-    load.clear(ios::badbit | load.rdstate());
-  
-  std::string separator;
-  bool hasOptions = false;
-  bool hasEnforcedVertices = false;
-  isOK = (load >> separator);
+        load.clear(ios::badbit | load.rdstate());
 
-  if (isOK) {
-    if (separator == "__OPTIONS_BEGIN__")
-      hasOptions = true;
-    else if (separator == "__ENFORCED_VERTICES_BEGIN__")
-      hasEnforcedVertices = true;
-  }
+	std::string separator;
+	bool hasOptions = false;
+	bool hasEnforcedVertices = false;
+	bool hasEnforcedMeshes = false;
+	isOK = (load >> separator);
 
-  if (hasOptions) {
-    std::string txt;
-    while (isOK) {
-      isOK = (load >> txt);
-      if (isOK) {
-        if (txt == "__OPTIONS_END__") {
-          if (!myTextOption.empty()) {
-            // Remove last space
-            myTextOption.erase(myTextOption.end()-1);
-          }
-          isOK = false;
-          break;
-        }
-        myTextOption += txt;
-        myTextOption += " ";
-      }
-    }
-  }
+	if (isOK) {
+		if (separator == "__OPTIONS_BEGIN__")
+			hasOptions = true;
+		else if (separator == "__ENFORCED_VERTICES_BEGIN__")
+			hasEnforcedVertices = true;
+		else if (separator == "__ENFORCED_MESHES_BEGIN__")
+			hasEnforcedMeshes = true;
+	}
 
-  if (hasOptions) {
-    isOK = (load >> separator);
-    if (isOK && separator == "__ENFORCED_VERTICES_BEGIN__")
-      hasEnforcedVertices = true;
+	if (hasOptions) {
+		std::string txt;
+		while (isOK) {
+			isOK = (load >> txt);
+			if (isOK) {
+				if (txt == "__OPTIONS_END__") {
+					if (!myTextOption.empty()) {
+						// Remove last space
+						myTextOption.erase(myTextOption.end()-1);
+					}
+					isOK = false;
+					break;
+				}
+				myTextOption += txt;
+				myTextOption += " ";
+			}
+		}
+	}
+
+	if (hasOptions) {
+		isOK = (load >> separator);
+		if (isOK && separator == "__ENFORCED_VERTICES_BEGIN__")
+			hasEnforcedVertices = true;
+		if (isOK && separator == "__ENFORCED_MESHES_BEGIN__")
+			hasEnforcedMeshes = true;
+	}
+
+  if (hasEnforcedVertices) {
+	  std::string txt, name, entry, groupName;
+	  double size, coords[3];
+	  bool isCompound;
+	  bool hasCoords = false;
+	  isOK = (load >> txt);  // __BEGIN_VERTEX__
+	  while (isOK) {
+	    if (txt == "__ENFORCED_VERTICES_END__")
+	      isOK = false;
+
+	    TGHS3DEnforcedVertex *enfVertex = new TGHS3DEnforcedVertex();
+	    while (isOK) {
+	      isOK = (load >> txt);
+	      if (txt == "__END_VERTEX__") {
+	        enfVertex->name = name;
+	        enfVertex->geomEntry = entry;
+	        enfVertex->isCompound = isCompound;
+	        enfVertex->groupName = groupName;
+	        enfVertex->coords.clear();
+	        if (hasCoords)
+	          enfVertex->coords.assign(coords,coords+3);
+
+	        _enfVertexList.insert(enfVertex);
+
+	        if (enfVertex->coords.size())
+	          _coordsEnfVertexMap[enfVertex->coords] = enfVertex;
+	        if (!enfVertex->geomEntry.empty())
+	          _geomEntryEnfVertexMap[enfVertex->geomEntry] = enfVertex;
+
+	        name.clear();
+	        entry.clear();
+	        groupName.clear();
+	        hasCoords = false;
+	        isOK = false;
+	      }
+
+	      if (txt == "__BEGIN_NAME__") {  // __BEGIN_NAME__
+	        while (isOK && (txt != "__END_NAME__")) {
+	          isOK = (load >> txt);
+	          if (txt != "__END_NAME__") {
+	            if (!name.empty())
+	              name += " ";
+	            name += txt;
+	          }
+	        }
+	        MESSAGE("name: " <<name);
+	      }
+
+	      if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
+	        isOK = (load >> entry);
+	        isOK = (load >> isCompound);
+	        isOK = (load >> txt); // __END_ENTRY__
+	        if (txt != "__END_ENTRY__")
+	          throw std::exception();
+	        MESSAGE("entry: " << entry);
+	      }
+
+	      if (txt == "__BEGIN_GROUP__") {  // __BEGIN_GROUP__
+	        while (isOK && (txt != "__END_GROUP__")) {
+	          isOK = (load >> txt);
+	          if (txt != "__END_GROUP__") {
+	            if (!groupName.empty())
+	              groupName += " ";
+	            groupName += txt;
+	          }
+	        }
+	        MESSAGE("groupName: " << groupName);
+	      }
+
+	      if (txt == "__BEGIN_COORDS__") {  // __BEGIN_COORDS__
+	        hasCoords = true;
+	        isOK = (load >> coords[0] >> coords[1] >> coords[2]);
+	        isOK = (load >> txt); // __END_COORDS__
+	        if (txt != "__END_COORDS__")
+	          throw std::exception();
+	        MESSAGE("coords: " << coords[0] <<","<< coords[1] <<","<< coords[2]);
+	      }
+
+	      if (txt == "__BEGIN_SIZE__") {  // __BEGIN_ENTRY__
+	        isOK = (load >> size);
+	        isOK = (load >> txt); // __END_ENTRY__
+	        if (txt != "__END_SIZE__") {
+	          throw std::exception();
+	        }
+	        MESSAGE("size: " << size);
+	      }
+	    }
+	    isOK = (load >> txt);  // __BEGIN_VERTEX__
+	  }
   }
 
   if (hasEnforcedVertices) {
-    std::string txt, name, entry, groupName;
-    double size, coords[3];
-    bool isCompound;
-    bool hasCoords = false;
-    while (isOK) {
-      isOK = (load >> txt);  // __BEGIN_VERTEX__
-      if (isOK) {
-        if (txt == "__ENFORCED_VERTICES_END__")
-          isOK = false;
-
-        TGHS3DEnforcedVertex *enfVertex = new TGHS3DEnforcedVertex();
-        while (isOK) {
-          isOK = (load >> txt);
-          if (txt == "__END_VERTEX__") {
-            enfVertex->name = name;
-            enfVertex->geomEntry = entry;
-            enfVertex->isCompound = isCompound;
-            enfVertex->groupName = groupName;
-            enfVertex->coords.clear();
-            if (hasCoords)
-              enfVertex->coords.assign(coords,coords+3);
-            
-            _enfVertexList.insert(enfVertex);
-            
-            if (enfVertex->coords.size())
-              _coordsEnfVertexMap[enfVertex->coords] = enfVertex;
-            if (!enfVertex->geomEntry.empty())
-              _geomEntryEnfVertexMap[enfVertex->geomEntry] = enfVertex;
-            
-            name.clear();
-            entry.clear();
-            groupName.clear();
-            hasCoords = false;
-            isOK = false;
-          }
-          
-          if (txt == "__BEGIN_NAME__") {  // __BEGIN_NAME__
-            while (isOK && (txt != "__END_NAME__")) {
-              isOK = (load >> txt);
-              if (txt != "__END_NAME__") {
-                if (!name.empty())
-                  name += " ";
-                name += txt;
-              }
-            }
-            MESSAGE("name: " <<name);
-          }
-            
-          if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
-            isOK = (load >> entry);
-            isOK = (load >> isCompound);
-            isOK = (load >> txt); // __END_ENTRY__
-            if (txt != "__END_ENTRY__")
-              throw std::exception();
-            MESSAGE("entry: " << entry);
-          }
-            
-          if (txt == "__BEGIN_GROUP__") {  // __BEGIN_GROUP__
-            while (isOK && (txt != "__END_GROUP__")) {
-              isOK = (load >> txt);
-              if (txt != "__END_GROUP__") {
-                if (!groupName.empty())
-                  groupName += " ";
-                groupName += txt;
-              }
-            }
-            MESSAGE("groupName: " << groupName);
-          }
-            
-          if (txt == "__BEGIN_COORDS__") {  // __BEGIN_COORDS__
-            hasCoords = true;
-            isOK = (load >> coords[0] >> coords[1] >> coords[2]);
-            isOK = (load >> txt); // __END_COORDS__
-            if (txt != "__END_COORDS__")
-              throw std::exception();
-            MESSAGE("coords: " << coords[0] <<","<< coords[1] <<","<< coords[2]);
-          } 
-            
-          if (txt == "__BEGIN_SIZE__") {  // __BEGIN_ENTRY__
-            isOK = (load >> size);
-            isOK = (load >> txt); // __END_ENTRY__
-            if (txt != "__END_SIZE__") {
-              throw std::exception();
-            }
-            MESSAGE("size: " << size);
-          }
-        }
-      }
-    }
+	  isOK = (load >> separator);
+	  if (isOK && separator == "__ENFORCED_MESHES_BEGIN__")
+		  hasEnforcedMeshes = true;
   }
+
+  if (hasEnforcedMeshes) {
+	  std::string txt, name, entry, groupName;
+	  int elementType = -1;
+	  isOK = (load >> txt);  // __BEGIN_ENF_MESH__
+	  while (isOK) {
+//		  if (isOK) {
+			  if (txt == "__ENFORCED_MESHES_END__")
+				  isOK = false;
+
+			  TGHS3DEnforcedMesh *enfMesh = new TGHS3DEnforcedMesh();
+			  while (isOK) {
+				  isOK = (load >> txt);
+				  if (txt == "__END_ENF_MESH__") {
+					  enfMesh->name = name;
+					  enfMesh->entry = entry;
+					  enfMesh->elementType = (SMESH::ElementType)elementType;
+					  enfMesh->groupName = groupName;
+
+					  _enfMeshList.insert(enfMesh);
+					  std::cout << "Restoring of enforced mesh " <<name  << " done" << std::endl;
+
+					  name.clear();
+					  entry.clear();
+					  elementType = -1;
+					  groupName.clear();
+					  isOK = false;
+				  }
+
+				  if (txt == "__BEGIN_NAME__") {  // __BEGIN_NAME__
+					  while (isOK && (txt != "__END_NAME__")) {
+						  isOK = (load >> txt);
+						  if (txt != "__END_NAME__") {
+							  if (!name.empty())
+								  name += " ";
+							  name += txt;
+						  }
+					  }
+					  MESSAGE("name: " <<name);
+				  }
+
+				  if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
+					  isOK = (load >> entry);
+					  isOK = (load >> txt); // __END_ENTRY__
+					  if (txt != "__END_ENTRY__")
+						  throw std::exception();
+					  MESSAGE("entry: " << entry);
+				  }
+
+				  if (txt == "__BEGIN_ELEM_TYPE__") {  // __BEGIN_ELEM_TYPE__
+					  isOK = (load >> elementType);
+					  isOK = (load >> txt); // __END_ELEM_TYPE__
+					  if (txt != "__END_ELEM_TYPE__")
+						  throw std::exception();
+					  MESSAGE("elementType: " << elementType);
+				  }
+
+				  if (txt == "__BEGIN_GROUP__") {  // __BEGIN_GROUP__
+					  while (isOK && (txt != "__END_GROUP__")) {
+						  isOK = (load >> txt);
+						  if (txt != "__END_GROUP__") {
+							  if (!groupName.empty())
+								  groupName += " ";
+							  groupName += txt;
+						  }
+					  } // while
+					  MESSAGE("groupName: " << groupName);
+				  } // if
+				  std::cout << "isOK: " << isOK << std::endl;
+			  } // while
+//		  } // if
+		  isOK = (load >> txt);  // __BEGIN_ENF_MESH__
+	  } // while
+  } // if
 
   return load;
 }
@@ -1162,7 +1310,7 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  /*dflts*/
 //================================================================================
 
 std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
-                                            const bool                    hasShapeToMesh)
+                                                 const bool         hasShapeToMesh)
 {
   TCollection_AsciiString cmd;
   if (hasShapeToMesh)
@@ -1179,6 +1327,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   bool v   = hyp ? ( hyp->myTextOption.find("-v")  == std::string::npos ) : true;
   bool fem = hyp ? ( hyp->myTextOption.find("-FEM")== std::string::npos ) : true;
   bool rem = hyp ? ( hyp->myTextOption.find("-no_initial_central_point")== std::string::npos ) : true;
+  bool gra = hyp ? ( hyp->myTextOption.find("-Dcpropa")== std::string::npos ) : true;
 
   // if use boundary recovery version, few options are allowed
   bool useBndRecovery = !C;
@@ -1259,6 +1408,12 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   if ( hyp && !hyp->myTextOption.empty() ) {
     cmd += " ";
     cmd += (char*) hyp->myTextOption.c_str();
+  }
+
+  // to define volumic gradation.
+  if ( gra && hyp) {
+    cmd += " -Dcpropa=";
+    cmd += hyp->myGradation;
   }
 
 #ifdef WNT
@@ -1343,11 +1498,6 @@ GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap GHS3DPlugin_Hypothesis::GetEnforce
 GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)
 {
   return hyp ? hyp->_GetNodeIDToSizeMap(): DefaultID2SizeMap();
-}
-
-GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetElementIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)
-{
-  return hyp ? hyp->_GetElementIDToSizeMap(): DefaultID2SizeMap();
 }
 
 GHS3DPlugin_Hypothesis::TSetStrings GHS3DPlugin_Hypothesis::GetGroupsToRemove(const GHS3DPlugin_Hypothesis* hyp)
