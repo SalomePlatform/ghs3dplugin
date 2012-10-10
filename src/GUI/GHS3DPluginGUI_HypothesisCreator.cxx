@@ -594,7 +594,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
 //   myEnfMesh = SMESH::SMESH_Mesh::_nil();
 //   myEnfMeshArray = new SMESH::mesh_array();
 
-  myEnfMeshWdg = new StdMeshersGUI_ObjectReferenceParamWdg( IDSOURCE, myEnfMeshGroup, /*multiSel=*/true);
+  myEnfMeshWdg = new StdMeshersGUI_ObjectReferenceParamWdg( SMESH::IDSOURCE, myEnfMeshGroup, /*multiSel=*/true);
   myEnfMeshWdg->SetDefaultText(tr("GHS3D_ENF_SELECT_MESH"), "QLineEdit { color: grey }");
   
   myEnfMeshWdg->AvoidSimultaneousSelection(myEnfVertexWdg);
