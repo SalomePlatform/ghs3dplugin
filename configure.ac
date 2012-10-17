@@ -349,18 +349,11 @@ CHECK_SMESH
 
 echo
 echo ---------------------------------------------
-echo Testing GHS3D
+echo Testing MeshGems-Tetra
 echo ---------------------------------------------
 echo
 
-CHECK_GHS3D
-if test "${GHS3D_ok}" = "yes"; then
-  if test "x$GHS3D_VERSION" = "x"
-  then
-    GHS3D_VERSION=`ghs3d -u |grep "TETMESH-GHS3D SOFTWARE"|awk '{print $3}'|awk -F- '{print $1}'|awk -F. '{print $1$2}'`
-  fi
-  AC_DEFINE_UNQUOTED(GHS3D_VERSION,${GHS3D_VERSION})
-fi
+CHECK_MESHGEMS_TETRA
 
 echo
 echo ---------------------------------------------
@@ -370,11 +363,11 @@ echo
 
 echo Configure
 if test "${gui_ok}" = "yes"; then
-  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok gui_ok Geom_ok Med_ok SMesh_ok GHS3D_ok OpenGL_ok qt_ok vtk_ok"
+  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok gui_ok Geom_ok Med_ok SMesh_ok MeshGems_Tetra_ok OpenGL_ok qt_ok vtk_ok"
 elif test "${SalomeGUI_need}" != "no"; then
-  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok gui_ok Geom_ok Med_ok SMesh_ok GHS3D_ok vtk_ok"
+  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok gui_ok Geom_ok Med_ok SMesh_ok MeshGems_Tetra_ok vtk_ok"
 else
-  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok GHS3D_ok vtk_ok"
+  variables="cc_ok boost_ok threads_ok omniORB_ok occ_ok doxygen_ok Kernel_ok Geom_ok Med_ok SMesh_ok MeshGems_Tetra_ok vtk_ok"
 fi
 
 for var in $variables

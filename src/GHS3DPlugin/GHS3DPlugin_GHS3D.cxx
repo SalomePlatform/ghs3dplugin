@@ -107,10 +107,6 @@ extern "C"
 
 #define HOLE_ID -1
 
-#ifndef GHS3D_VERSION
-#define GHS3D_VERSION 41
-#endif
-
 typedef const list<const SMDS_MeshFace*> TTriaList;
 
 static void removeFile( const TCollection_AsciiString& fileName )
@@ -479,11 +475,11 @@ static int findShapeID(SMESH_Mesh&          mesh,
     return meshDS->ShapeToIndex( solids(2) );
 }
 
-//=======================================================================
-//function : countShape
-//purpose  :
-//=======================================================================
-
+// //=======================================================================
+// //function : countShape
+// //purpose  :
+// //=======================================================================
+// 
 // template < class Mesh, class Shape >
 // static int countShape( Mesh* mesh, Shape shape ) {
 //   TopExp_Explorer expShape ( mesh->ShapeToMesh(), shape );
@@ -496,12 +492,12 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //   }
 //   return nbShape;
 // }
-
-//=======================================================================
-//function : getShape
-//purpose  :
-//=======================================================================
-
+// 
+// //=======================================================================
+// //function : getShape
+// //purpose  :
+// //=======================================================================
+// 
 // template < class Mesh, class Shape, class Tab >
 // void getShape(Mesh* mesh, Shape shape, Tab *t_Shape) {
 //   TopExp_Explorer expShape ( mesh->ShapeToMesh(), shape );
@@ -514,11 +510,11 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //   }
 //   return;
 // }
-
-// //=======================================================================
-// //function : findEdgeID
-// //purpose  :
-// //=======================================================================
+// 
+// // //=======================================================================
+// // //function : findEdgeID
+// // //purpose  :
+// // //=======================================================================
 // 
 // static int findEdgeID(const SMDS_MeshNode* aNode,
 //                       const SMESHDS_Mesh*  theMesh,
@@ -552,16 +548,14 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //   delete [] t_Dist;
 //   return theMesh->ShapeToIndex( foundEdge );
 // }
-
-
-//=======================================================================
-//function : readGMFFile
-//purpose  : read GMF file with geometry associated to mesh
-// TODO
-//=======================================================================
-
-// static bool readGMFFile(
-//                         const int                       fileOpen,
+// 
+// 
+// // =======================================================================
+// // function : readGMFFile
+// // purpose  : read GMF file with geometry associated to mesh
+// // =======================================================================
+// 
+// static bool readGMFFile(const int                       fileOpen,
 //                         const char*                     theFileName, 
 //                         SMESH_Mesh&                     theMesh,
 //                         const int                       nbShape,
@@ -644,7 +638,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
 // 
 //   
 //   // The keyword does not exist yet => to update when it is created
-// //   int nbTriangle = GmfStatKwd(InpMsh, GmfSubdomain);
+// //   int nbSubdomains = GmfStatKwd(InpMsh, GmfSubdomain);
 // //   int id_tri[3];
 // 
 // 
@@ -828,11 +822,11 @@ static int findShapeID(SMESH_Mesh&          mesh,
 // //     case GmfHexahedra:
 //     {
 //       int nodeDim, shapeID, *nodeID;
-//       SMDS_MeshNode** node;
+//       const SMDS_MeshNode** node;
 // //       std::vector< SMDS_MeshNode* > enfNode( nbRef );
 //       SMDS_MeshElement * aGMFElement;
 //       
-//       node    = new SMDS_MeshNode*[nbRef];
+//       node    = new const SMDS_MeshNode*[nbRef];
 //       nodeID  = new int[ nbRef ];
 // 
 //       for ( int iElem = 0; iElem < nbElem; iElem++ )

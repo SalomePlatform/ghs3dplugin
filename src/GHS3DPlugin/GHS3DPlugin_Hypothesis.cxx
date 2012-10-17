@@ -1313,10 +1313,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
                                                  const bool         hasShapeToMesh)
 {
   TCollection_AsciiString cmd;
-  if (hasShapeToMesh)
-    cmd = "ghs3d-41"; // to use old mesh2 format
-  else
-    cmd = "ghs3d"; // to use new mesh format
+  cmd = "mg-tetra.exe";
   // check if any option is overridden by hyp->myTextOption
   bool m   = hyp ? ( hyp->myTextOption.find("-m")  == std::string::npos ) : true;
   bool M   = hyp ? ( hyp->myTextOption.find("-M")  == std::string::npos ) : true;
