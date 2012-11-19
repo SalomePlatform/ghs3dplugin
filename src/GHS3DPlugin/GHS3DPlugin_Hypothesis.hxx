@@ -82,6 +82,7 @@ public:
   ////////////////////
   
   struct TGHS3DEnforcedMesh {
+    int         persistID;
     std::string name;
     std::string entry;
     std::string groupName;
@@ -245,6 +246,7 @@ public:
   const TIDSortedElemGroupMap _GetEnforcedTriangles() const { return _enfTriangles; }
   const TID2SizeMap _GetNodeIDToSizeMap() const {return _nodeIDToSizeMap; }
   const TSetStrings _GetGroupsToRemove() const {return _groupsToRemove; }
+  void RestoreEnfElemsByMeshes(); // persistence
   /*!
    * \brief Return the enforced vertices
    */

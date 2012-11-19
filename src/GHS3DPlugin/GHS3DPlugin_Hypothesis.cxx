@@ -450,15 +450,19 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::Element
   bool added = SetEnforcedElements( theElemSet, elementType, groupName);
   if (added) {
     TGHS3DEnforcedMesh* newEnfMesh = new TGHS3DEnforcedMesh();
-    newEnfMesh->name = name;
-    newEnfMesh->entry = entry;
+    newEnfMesh->persistID   = theMesh.GetMeshDS()->GetPersistentId();
+    newEnfMesh->name        = name;
+    newEnfMesh->entry       = entry;
     newEnfMesh->elementType = elementType;
-    newEnfMesh->groupName = groupName;
+    newEnfMesh->groupName   = groupName;
     
     TGHS3DEnforcedMeshList::iterator it = _enfMeshList.find(newEnfMesh);
     if (it == _enfMeshList.end()) {
       _entryEnfMeshMap[entry].insert(newEnfMesh);
       _enfMeshList.insert(newEnfMesh);
+    }
+    else {
+      delete newEnfMesh;
     }
   }
   return added;
@@ -712,6 +716,26 @@ void GHS3DPlugin_Hypothesis::ClearEnforcedMeshes()
   NotifySubMeshesHypothesisModification();
 }
 
+//================================================================================
+/*!
+ * \brief At mesh loading, restore enforced elements by just loaded enforced meshes
+ */
+//================================================================================
+
+void GHS3DPlugin_Hypothesis::RestoreEnfElemsByMeshes()
+{
+  TGHS3DEnforcedMeshList::const_iterator it = _enfMeshList.begin();
+  for(;it != _enfMeshList.end();++it) {
+    TGHS3DEnforcedMesh* enfMesh = *it;
+    if ( SMESH_Mesh* mesh = GetMeshByPersistentID( enfMesh->persistID ))
+      SetEnforcedMesh( *mesh,
+                       enfMesh->elementType,
+                       enfMesh->name,
+                       enfMesh->entry,
+                       enfMesh->groupName );
+    enfMesh->persistID = -1; // not to restore again
+  }
+}
 
 //=======================================================================
 //function : SetGroupsToRemove
@@ -965,6 +989,8 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
         save << " " << enfMesh->groupName;
         save << " " << "__END_GROUP__";
       }
+      save << " " << "__PERSIST_ID__";
+      save << " " << enfMesh->persistID;
       save << " " << "__END_ENF_MESH__";
       std::cout << "Saving of enforced mesh " << enfMesh->name.c_str() << " done" << std::endl;
     }
@@ -979,303 +1005,310 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
 
 std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 {
-	bool isOK = true;
-	int i;
-    double d;
+  bool isOK = true;
+  int i;
+  double d;
 
-	isOK = (load >> i);
-	if (isOK)
-		myToMeshHoles = i;
-	else
-		load.clear(ios::badbit | load.rdstate());
+  isOK = (load >> i);
+  if (isOK)
+    myToMeshHoles = i;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	isOK = (load >> i);
-	if (isOK)
-		myMaximumMemory = i;
-	else
-		load.clear(ios::badbit | load.rdstate());
+  isOK = (load >> i);
+  if (isOK)
+    myMaximumMemory = i;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	isOK = (load >> i);
-	if (isOK)
-		myInitialMemory = i;
-	else
-		load.clear(ios::badbit | load.rdstate());
+  isOK = (load >> i);
+  if (isOK)
+    myInitialMemory = i;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	isOK = (load >> i);
-	if (isOK)
-		myOptimizationLevel = i;
-	else
-		load.clear(ios::badbit | load.rdstate());
+  isOK = (load >> i);
+  if (isOK)
+    myOptimizationLevel = i;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	isOK = (load >> myWorkingDirectory);
-	if (isOK) {
-		if ( myWorkingDirectory == "0") { // myWorkingDirectory was empty
-			myKeepFiles = false;
-			myWorkingDirectory.clear();
-		}
-		else if ( myWorkingDirectory == "1" ) {
-			myKeepFiles = true;
-			myWorkingDirectory.clear();
-		}
-	}
-	else
-		load.clear(ios::badbit | load.rdstate());
+  isOK = (load >> myWorkingDirectory);
+  if (isOK) {
+    if ( myWorkingDirectory == "0") { // myWorkingDirectory was empty
+      myKeepFiles = false;
+      myWorkingDirectory.clear();
+    }
+    else if ( myWorkingDirectory == "1" ) {
+      myKeepFiles = true;
+      myWorkingDirectory.clear();
+    }
+  }
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	if ( !myWorkingDirectory.empty() ) {
-		isOK = (load >> i);
-		if (isOK)
-			myKeepFiles = i;
-		else
-			load.clear(ios::badbit | load.rdstate());
-	}
-
-	isOK = (load >> i);
-	if (isOK)
-		myVerboseLevel = (short) i;
-	else
-		load.clear(ios::badbit | load.rdstate());
-
-	isOK = (load >> i);
-	if (isOK)
-		myToCreateNewNodes = (bool) i;
-	else
-		load.clear(ios::badbit | load.rdstate());
-
-	isOK = (load >> i);
-	if (isOK)
-		myToUseBoundaryRecoveryVersion = (bool) i;
-	else
-		load.clear(ios::badbit | load.rdstate());
-
-	isOK = (load >> i);
-	if (isOK)
-		myToUseFemCorrection = (bool) i;
-	else
-		load.clear(ios::badbit | load.rdstate());
-
-	isOK = (load >> i);
-	if (isOK)
-		myToRemoveCentralPoint = (bool) i;
-	else
-		load.clear(ios::badbit | load.rdstate());
-
-    isOK = (load >> d);
+  if ( !myWorkingDirectory.empty() ) {
+    isOK = (load >> i);
     if (isOK)
-        myGradation = d;
+      myKeepFiles = i;
     else
-        load.clear(ios::badbit | load.rdstate());
+      load.clear(ios::badbit | load.rdstate());
+  }
 
-	std::string separator;
-	bool hasOptions = false;
-	bool hasEnforcedVertices = false;
-	bool hasEnforcedMeshes = false;
-	isOK = (load >> separator);
+  isOK = (load >> i);
+  if (isOK)
+    myVerboseLevel = (short) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	if (isOK) {
-		if (separator == "__OPTIONS_BEGIN__")
-			hasOptions = true;
-		else if (separator == "__ENFORCED_VERTICES_BEGIN__")
-			hasEnforcedVertices = true;
-		else if (separator == "__ENFORCED_MESHES_BEGIN__")
-			hasEnforcedMeshes = true;
-	}
+  isOK = (load >> i);
+  if (isOK)
+    myToCreateNewNodes = (bool) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	if (hasOptions) {
-		std::string txt;
-		while (isOK) {
-			isOK = (load >> txt);
-			if (isOK) {
-				if (txt == "__OPTIONS_END__") {
-					if (!myTextOption.empty()) {
-						// Remove last space
-						myTextOption.erase(myTextOption.end()-1);
-					}
-					isOK = false;
-					break;
-				}
-				myTextOption += txt;
-				myTextOption += " ";
-			}
-		}
-	}
+  isOK = (load >> i);
+  if (isOK)
+    myToUseBoundaryRecoveryVersion = (bool) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	if (hasOptions) {
-		isOK = (load >> separator);
-		if (isOK && separator == "__ENFORCED_VERTICES_BEGIN__")
-			hasEnforcedVertices = true;
-		if (isOK && separator == "__ENFORCED_MESHES_BEGIN__")
-			hasEnforcedMeshes = true;
-	}
+  isOK = (load >> i);
+  if (isOK)
+    myToUseFemCorrection = (bool) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-  if (hasEnforcedVertices) {
-	  std::string txt, name, entry, groupName;
-	  double size, coords[3];
-	  bool isCompound;
-	  bool hasCoords = false;
-	  isOK = (load >> txt);  // __BEGIN_VERTEX__
-	  while (isOK) {
-	    if (txt == "__ENFORCED_VERTICES_END__")
-	      isOK = false;
+  isOK = (load >> i);
+  if (isOK)
+    myToRemoveCentralPoint = (bool) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	    TGHS3DEnforcedVertex *enfVertex = new TGHS3DEnforcedVertex();
-	    while (isOK) {
-	      isOK = (load >> txt);
-	      if (txt == "__END_VERTEX__") {
-	        enfVertex->name = name;
-	        enfVertex->geomEntry = entry;
-	        enfVertex->isCompound = isCompound;
-	        enfVertex->groupName = groupName;
-	        enfVertex->coords.clear();
-	        if (hasCoords)
-	          enfVertex->coords.assign(coords,coords+3);
+  isOK = (load >> d);
+  if (isOK)
+    myGradation = d;
+  else
+    load.clear(ios::badbit | load.rdstate());
 
-	        _enfVertexList.insert(enfVertex);
+  std::string separator;
+  bool hasOptions = false;
+  bool hasEnforcedVertices = false;
+  bool hasEnforcedMeshes = false;
+  isOK = (load >> separator);
 
-	        if (enfVertex->coords.size())
-	          _coordsEnfVertexMap[enfVertex->coords] = enfVertex;
-	        if (!enfVertex->geomEntry.empty())
-	          _geomEntryEnfVertexMap[enfVertex->geomEntry] = enfVertex;
+  if (isOK) {
+    if (separator == "__OPTIONS_BEGIN__")
+      hasOptions = true;
+    else if (separator == "__ENFORCED_VERTICES_BEGIN__")
+      hasEnforcedVertices = true;
+    else if (separator == "__ENFORCED_MESHES_BEGIN__")
+      hasEnforcedMeshes = true;
+  }
 
-	        name.clear();
-	        entry.clear();
-	        groupName.clear();
-	        hasCoords = false;
-	        isOK = false;
-	      }
+  if (hasOptions) {
+    std::string txt;
+    while (isOK) {
+      isOK = (load >> txt);
+      if (isOK) {
+        if (txt == "__OPTIONS_END__") {
+          if (!myTextOption.empty()) {
+            // Remove last space
+            myTextOption.erase(myTextOption.end()-1);
+          }
+          isOK = false;
+          break;
+        }
+        myTextOption += txt;
+        myTextOption += " ";
+      }
+    }
+  }
 
-	      if (txt == "__BEGIN_NAME__") {  // __BEGIN_NAME__
-	        while (isOK && (txt != "__END_NAME__")) {
-	          isOK = (load >> txt);
-	          if (txt != "__END_NAME__") {
-	            if (!name.empty())
-	              name += " ";
-	            name += txt;
-	          }
-	        }
-	        MESSAGE("name: " <<name);
-	      }
-
-	      if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
-	        isOK = (load >> entry);
-	        isOK = (load >> isCompound);
-	        isOK = (load >> txt); // __END_ENTRY__
-	        if (txt != "__END_ENTRY__")
-	          throw std::exception();
-	        MESSAGE("entry: " << entry);
-	      }
-
-	      if (txt == "__BEGIN_GROUP__") {  // __BEGIN_GROUP__
-	        while (isOK && (txt != "__END_GROUP__")) {
-	          isOK = (load >> txt);
-	          if (txt != "__END_GROUP__") {
-	            if (!groupName.empty())
-	              groupName += " ";
-	            groupName += txt;
-	          }
-	        }
-	        MESSAGE("groupName: " << groupName);
-	      }
-
-	      if (txt == "__BEGIN_COORDS__") {  // __BEGIN_COORDS__
-	        hasCoords = true;
-	        isOK = (load >> coords[0] >> coords[1] >> coords[2]);
-	        isOK = (load >> txt); // __END_COORDS__
-	        if (txt != "__END_COORDS__")
-	          throw std::exception();
-	        MESSAGE("coords: " << coords[0] <<","<< coords[1] <<","<< coords[2]);
-	      }
-
-	      if (txt == "__BEGIN_SIZE__") {  // __BEGIN_ENTRY__
-	        isOK = (load >> size);
-	        isOK = (load >> txt); // __END_ENTRY__
-	        if (txt != "__END_SIZE__") {
-	          throw std::exception();
-	        }
-	        MESSAGE("size: " << size);
-	      }
-	    }
-	    isOK = (load >> txt);  // __BEGIN_VERTEX__
-	  }
+  if (hasOptions) {
+    isOK = (load >> separator);
+    if (isOK && separator == "__ENFORCED_VERTICES_BEGIN__")
+      hasEnforcedVertices = true;
+    if (isOK && separator == "__ENFORCED_MESHES_BEGIN__")
+      hasEnforcedMeshes = true;
   }
 
   if (hasEnforcedVertices) {
-	  isOK = (load >> separator);
-	  if (isOK && separator == "__ENFORCED_MESHES_BEGIN__")
-		  hasEnforcedMeshes = true;
+    std::string txt, name, entry, groupName;
+    double size, coords[3];
+    bool isCompound;
+    bool hasCoords = false;
+    isOK = (load >> txt);  // __BEGIN_VERTEX__
+    while (isOK) {
+      if (txt == "__ENFORCED_VERTICES_END__")
+        isOK = false;
+
+      TGHS3DEnforcedVertex *enfVertex = new TGHS3DEnforcedVertex();
+      while (isOK) {
+        isOK = (load >> txt);
+        if (txt == "__END_VERTEX__") {
+          enfVertex->name = name;
+          enfVertex->geomEntry = entry;
+          enfVertex->isCompound = isCompound;
+          enfVertex->groupName = groupName;
+          enfVertex->coords.clear();
+          if (hasCoords)
+            enfVertex->coords.assign(coords,coords+3);
+
+          _enfVertexList.insert(enfVertex);
+
+          if (enfVertex->coords.size())
+            _coordsEnfVertexMap[enfVertex->coords] = enfVertex;
+          if (!enfVertex->geomEntry.empty())
+            _geomEntryEnfVertexMap[enfVertex->geomEntry] = enfVertex;
+
+          name.clear();
+          entry.clear();
+          groupName.clear();
+          hasCoords = false;
+          isOK = false;
+        }
+
+        if (txt == "__BEGIN_NAME__") {  // __BEGIN_NAME__
+          while (isOK && (txt != "__END_NAME__")) {
+            isOK = (load >> txt);
+            if (txt != "__END_NAME__") {
+              if (!name.empty())
+                name += " ";
+              name += txt;
+            }
+          }
+          MESSAGE("name: " <<name);
+        }
+
+        if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
+          isOK = (load >> entry);
+          isOK = (load >> isCompound);
+          isOK = (load >> txt); // __END_ENTRY__
+          if (txt != "__END_ENTRY__")
+            throw std::exception();
+          MESSAGE("entry: " << entry);
+        }
+
+        if (txt == "__BEGIN_GROUP__") {  // __BEGIN_GROUP__
+          while (isOK && (txt != "__END_GROUP__")) {
+            isOK = (load >> txt);
+            if (txt != "__END_GROUP__") {
+              if (!groupName.empty())
+                groupName += " ";
+              groupName += txt;
+            }
+          }
+          MESSAGE("groupName: " << groupName);
+        }
+
+        if (txt == "__BEGIN_COORDS__") {  // __BEGIN_COORDS__
+          hasCoords = true;
+          isOK = (load >> coords[0] >> coords[1] >> coords[2]);
+          isOK = (load >> txt); // __END_COORDS__
+          if (txt != "__END_COORDS__")
+            throw std::exception();
+          MESSAGE("coords: " << coords[0] <<","<< coords[1] <<","<< coords[2]);
+        }
+
+        if (txt == "__BEGIN_SIZE__") {  // __BEGIN_ENTRY__
+          isOK = (load >> size);
+          isOK = (load >> txt); // __END_ENTRY__
+          if (txt != "__END_SIZE__") {
+            throw std::exception();
+          }
+          MESSAGE("size: " << size);
+        }
+      }
+      isOK = (load >> txt);  // __BEGIN_VERTEX__
+    }
+  }
+
+  if (hasEnforcedVertices) {
+    isOK = (load >> separator);
+    if (isOK && separator == "__ENFORCED_MESHES_BEGIN__")
+      hasEnforcedMeshes = true;
   }
 
   if (hasEnforcedMeshes) {
-	  std::string txt, name, entry, groupName;
-	  int elementType = -1;
-	  isOK = (load >> txt);  // __BEGIN_ENF_MESH__
-	  while (isOK) {
-//		  if (isOK) {
-			  if (txt == "__ENFORCED_MESHES_END__")
-				  isOK = false;
+    std::string txt, name, entry, groupName;
+    int elementType = -1, persistID = -1;
+    isOK = (load >> txt);  // __BEGIN_ENF_MESH__
+    while (isOK) {
+      //                if (isOK) {
+      if (txt == "__ENFORCED_MESHES_END__")
+        isOK = false;
 
-			  TGHS3DEnforcedMesh *enfMesh = new TGHS3DEnforcedMesh();
-			  while (isOK) {
-				  isOK = (load >> txt);
-				  if (txt == "__END_ENF_MESH__") {
-					  enfMesh->name = name;
-					  enfMesh->entry = entry;
-					  enfMesh->elementType = (SMESH::ElementType)elementType;
-					  enfMesh->groupName = groupName;
+      TGHS3DEnforcedMesh *enfMesh = new TGHS3DEnforcedMesh();
+      while (isOK) {
+        isOK = (load >> txt);
+        if (txt == "__END_ENF_MESH__") {
+          enfMesh->name = name;
+          enfMesh->entry = entry;
+          enfMesh->elementType = (SMESH::ElementType)elementType;
+          enfMesh->groupName = groupName;
+          enfMesh->persistID = persistID;
 
-					  _enfMeshList.insert(enfMesh);
-					  std::cout << "Restoring of enforced mesh " <<name  << " done" << std::endl;
+          _enfMeshList.insert(enfMesh);
+          std::cout << "Restoring of enforced mesh " <<name  << " done" << std::endl;
 
-					  name.clear();
-					  entry.clear();
-					  elementType = -1;
-					  groupName.clear();
-					  isOK = false;
-				  }
+          name.clear();
+          entry.clear();
+          elementType = -1;
+          groupName.clear();
+          persistID = -1;
+          isOK = false;
+        }
 
-				  if (txt == "__BEGIN_NAME__") {  // __BEGIN_NAME__
-					  while (isOK && (txt != "__END_NAME__")) {
-						  isOK = (load >> txt);
-						  if (txt != "__END_NAME__") {
-							  if (!name.empty())
-								  name += " ";
-							  name += txt;
-						  }
-					  }
-					  MESSAGE("name: " <<name);
-				  }
+        if (txt == "__BEGIN_NAME__") {  // __BEGIN_NAME__
+          while (isOK && (txt != "__END_NAME__")) {
+            isOK = (load >> txt);
+            if (txt != "__END_NAME__") {
+              if (!name.empty())
+                name += " ";
+              name += txt;
+            }
+          }
+          MESSAGE("name: " <<name);
+        }
 
-				  if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
-					  isOK = (load >> entry);
-					  isOK = (load >> txt); // __END_ENTRY__
-					  if (txt != "__END_ENTRY__")
-						  throw std::exception();
-					  MESSAGE("entry: " << entry);
-				  }
+        if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
+          isOK = (load >> entry);
+          isOK = (load >> txt); // __END_ENTRY__
+          if (txt != "__END_ENTRY__")
+            throw std::exception();
+          MESSAGE("entry: " << entry);
+        }
 
-				  if (txt == "__BEGIN_ELEM_TYPE__") {  // __BEGIN_ELEM_TYPE__
-					  isOK = (load >> elementType);
-					  isOK = (load >> txt); // __END_ELEM_TYPE__
-					  if (txt != "__END_ELEM_TYPE__")
-						  throw std::exception();
-					  MESSAGE("elementType: " << elementType);
-				  }
+        if (txt == "__BEGIN_ELEM_TYPE__") {  // __BEGIN_ELEM_TYPE__
+          isOK = (load >> elementType);
+          isOK = (load >> txt); // __END_ELEM_TYPE__
+          if (txt != "__END_ELEM_TYPE__")
+            throw std::exception();
+          MESSAGE("elementType: " << elementType);
+        }
 
-				  if (txt == "__BEGIN_GROUP__") {  // __BEGIN_GROUP__
-					  while (isOK && (txt != "__END_GROUP__")) {
-						  isOK = (load >> txt);
-						  if (txt != "__END_GROUP__") {
-							  if (!groupName.empty())
-								  groupName += " ";
-							  groupName += txt;
-						  }
-					  } // while
-					  MESSAGE("groupName: " << groupName);
-				  } // if
-				  std::cout << "isOK: " << isOK << std::endl;
-			  } // while
-//		  } // if
-		  isOK = (load >> txt);  // __BEGIN_ENF_MESH__
-	  } // while
+        if (txt == "__BEGIN_GROUP__") {  // __BEGIN_GROUP__
+          while (isOK && (txt != "__END_GROUP__")) {
+            isOK = (load >> txt);
+            if (txt != "__END_GROUP__") {
+              if (!groupName.empty())
+                groupName += " ";
+              groupName += txt;
+            }
+          } // while
+          MESSAGE("groupName: " << groupName);
+        } // if
+
+        if (txt == "__PERSIST_ID__") {
+          isOK = (load >> persistID);
+          MESSAGE("persistID: " << persistID);
+        }
+        std::cout << "isOK: " << isOK << std::endl;
+      } // while
+      //                } // if
+      isOK = (load >> txt);  // __BEGIN_ENF_MESH__
+    } // while
   } // if
 
   return load;
