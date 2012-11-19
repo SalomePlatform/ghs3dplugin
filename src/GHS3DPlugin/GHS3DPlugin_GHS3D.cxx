@@ -37,6 +37,8 @@
 #include "SMESH_MeshEditor.hxx"
 #include "SMESH_OctreeNode.hxx"
 #include "SMESH_Group.hxx"
+#include <SMESH_subMeshEventListener.hxx>
+#include <SMESH_HypoFilter.hxx>
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
@@ -4309,4 +4311,85 @@ bool GHS3DPlugin_GHS3D::importGMFMesh(const char* theGMFFileName, SMESH_Mesh& th
                         helper, theMesh.GetShapeToMesh(), dummyNodeVector, dummyNodeMap, dummyElemGroup, dummyElemGroup, dummyElemGroup, dummyGroupsToRemove);
   theMesh.GetMeshDS()->Modified();
   return ok;
+}
+
+namespace
+{
+  //================================================================================
+  /*!
+   * \brief Sub-mesh event listener setting enforced elements as soon as an enforced
+   *        mesh is loaded
+   */
+  struct _EnforcedMeshRestorer : public SMESH_subMeshEventListener
+  {
+    _EnforcedMeshRestorer():
+      SMESH_subMeshEventListener( /*isDeletable = */true, Name() )
+    {}
+
+    //================================================================================
+    /*!
+     * \brief Returns an ID of listener
+     */
+    static const char* Name() { return "GHS3DPlugin_GHS3D::_EnforcedMeshRestorer"; }
+
+    //================================================================================
+    /*!
+     * \brief Treat events of the subMesh
+     */
+    void ProcessEvent(const int                       event,
+                      const int                       eventType,
+                      SMESH_subMesh*                  subMesh,
+                      SMESH_subMeshEventListenerData* data,
+                      const SMESH_Hypothesis*         hyp)
+    {
+      if ( SMESH_subMesh::SUBMESH_LOADED == event &&
+           SMESH_subMesh::COMPUTE_EVENT  == eventType &&
+           data &&
+           !data->mySubMeshes.empty() )
+      {
+        // An enforced mesh (subMesh->_father) has been loaded from hdf file
+        if ( GHS3DPlugin_Hypothesis* hyp = GetGHSHypothesis( data->mySubMeshes.front() ))
+          hyp->RestoreEnfElemsByMeshes();
+      }
+    }
+    //================================================================================
+    /*!
+     * \brief Returns GHS3DPlugin_Hypothesis used to compute a subMesh
+     */
+    static GHS3DPlugin_Hypothesis* GetGHSHypothesis( SMESH_subMesh* subMesh )
+    {
+      SMESH_HypoFilter ghsHypFilter( SMESH_HypoFilter::HasName( "GHS3D_Parameters" ));
+      return (GHS3DPlugin_Hypothesis* )
+        subMesh->GetFather()->GetHypothesis( subMesh->GetSubShape(),
+                                             ghsHypFilter,
+                                             /*visitAncestors=*/true);
+    }
+  };
+}
+
+//================================================================================
+/*!
+ * \brief Set an event listener to set enforced elements as soon as an enforced
+ *        mesh is loaded
+ */
+//================================================================================
+
+void GHS3DPlugin_GHS3D::SubmeshRestored(SMESH_subMesh* subMesh)
+{
+  if ( GHS3DPlugin_Hypothesis* hyp = _EnforcedMeshRestorer::GetGHSHypothesis( subMesh ))
+  {
+    GHS3DPlugin_Hypothesis::TGHS3DEnforcedMeshList enfMeshes = hyp->_GetEnforcedMeshes();
+    GHS3DPlugin_Hypothesis::TGHS3DEnforcedMeshList::iterator it = enfMeshes.begin();
+    for(;it != enfMeshes.end();++it) {
+      GHS3DPlugin_Hypothesis::TGHS3DEnforcedMesh* enfMesh = *it;
+      if ( SMESH_Mesh* mesh = GetMeshByPersistentID( enfMesh->persistID ))
+      {
+        SMESH_subMesh* smToListen = mesh->GetSubMesh( mesh->GetShapeToMesh() );
+        // a listener set to smToListen will care of hypothesis stored in SMESH_EventListenerData
+        subMesh->SetEventListener( new _EnforcedMeshRestorer(),
+                                   SMESH_subMeshEventListenerData::MakeData( subMesh ),
+                                   smToListen);
+      }
+    }
+  }
 }
