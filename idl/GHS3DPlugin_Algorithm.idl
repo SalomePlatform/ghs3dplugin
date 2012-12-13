@@ -178,6 +178,7 @@ module GHS3DPlugin
     
     GHS3DEnforcedMeshList GetEnforcedMeshes();
     void ClearEnforcedMeshes();
+
    /*!
     * Set/get/unset an enforced vertex (private method for GUI)
     */

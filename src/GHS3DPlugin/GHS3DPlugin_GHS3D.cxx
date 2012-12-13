@@ -37,6 +37,8 @@
 #include "SMESH_MeshEditor.hxx"
 #include "SMESH_OctreeNode.hxx"
 #include "SMESH_Group.hxx"
+#include <SMESH_subMeshEventListener.hxx>
+#include <SMESH_HypoFilter.hxx>
 
 #include "SMDS_MeshElement.hxx"
 #include "SMDS_MeshNode.hxx"
@@ -106,10 +108,6 @@ extern "C"
 }
 
 #define HOLE_ID -1
-
-#ifndef GHS3D_VERSION
-#define GHS3D_VERSION 41
-#endif
 
 typedef const list<const SMDS_MeshFace*> TTriaList;
 
@@ -479,11 +477,11 @@ static int findShapeID(SMESH_Mesh&          mesh,
     return meshDS->ShapeToIndex( solids(2) );
 }
 
-//=======================================================================
-//function : countShape
-//purpose  :
-//=======================================================================
-
+// //=======================================================================
+// //function : countShape
+// //purpose  :
+// //=======================================================================
+// 
 // template < class Mesh, class Shape >
 // static int countShape( Mesh* mesh, Shape shape ) {
 //   TopExp_Explorer expShape ( mesh->ShapeToMesh(), shape );
@@ -496,12 +494,12 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //   }
 //   return nbShape;
 // }
-
-//=======================================================================
-//function : getShape
-//purpose  :
-//=======================================================================
-
+// 
+// //=======================================================================
+// //function : getShape
+// //purpose  :
+// //=======================================================================
+// 
 // template < class Mesh, class Shape, class Tab >
 // void getShape(Mesh* mesh, Shape shape, Tab *t_Shape) {
 //   TopExp_Explorer expShape ( mesh->ShapeToMesh(), shape );
@@ -514,11 +512,11 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //   }
 //   return;
 // }
-
-// //=======================================================================
-// //function : findEdgeID
-// //purpose  :
-// //=======================================================================
+// 
+// // //=======================================================================
+// // //function : findEdgeID
+// // //purpose  :
+// // //=======================================================================
 // 
 // static int findEdgeID(const SMDS_MeshNode* aNode,
 //                       const SMESHDS_Mesh*  theMesh,
@@ -552,16 +550,14 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //   delete [] t_Dist;
 //   return theMesh->ShapeToIndex( foundEdge );
 // }
-
-
-//=======================================================================
-//function : readGMFFile
-//purpose  : read GMF file with geometry associated to mesh
-// TODO
-//=======================================================================
-
-// static bool readGMFFile(
-//                         const int                       fileOpen,
+// 
+// 
+// // =======================================================================
+// // function : readGMFFile
+// // purpose  : read GMF file with geometry associated to mesh
+// // =======================================================================
+// 
+// static bool readGMFFile(const int                       fileOpen,
 //                         const char*                     theFileName, 
 //                         SMESH_Mesh&                     theMesh,
 //                         const int                       nbShape,
@@ -644,7 +640,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
 // 
 //   
 //   // The keyword does not exist yet => to update when it is created
-// //   int nbTriangle = GmfStatKwd(InpMsh, GmfSubdomain);
+// //   int nbSubdomains = GmfStatKwd(InpMsh, GmfSubdomain);
 // //   int id_tri[3];
 // 
 // 
@@ -828,11 +824,11 @@ static int findShapeID(SMESH_Mesh&          mesh,
 // //     case GmfHexahedra:
 //     {
 //       int nodeDim, shapeID, *nodeID;
-//       SMDS_MeshNode** node;
+//       const SMDS_MeshNode** node;
 // //       std::vector< SMDS_MeshNode* > enfNode( nbRef );
 //       SMDS_MeshElement * aGMFElement;
 //       
-//       node    = new SMDS_MeshNode*[nbRef];
+//       node    = new const SMDS_MeshNode*[nbRef];
 //       nodeID  = new int[ nbRef ];
 // 
 //       for ( int iElem = 0; iElem < nbElem; iElem++ )
@@ -4315,4 +4311,85 @@ bool GHS3DPlugin_GHS3D::importGMFMesh(const char* theGMFFileName, SMESH_Mesh& th
                         helper, theMesh.GetShapeToMesh(), dummyNodeVector, dummyNodeMap, dummyElemGroup, dummyElemGroup, dummyElemGroup, dummyGroupsToRemove);
   theMesh.GetMeshDS()->Modified();
   return ok;
+}
+
+namespace
+{
+  //================================================================================
+  /*!
+   * \brief Sub-mesh event listener setting enforced elements as soon as an enforced
+   *        mesh is loaded
+   */
+  struct _EnforcedMeshRestorer : public SMESH_subMeshEventListener
+  {
+    _EnforcedMeshRestorer():
+      SMESH_subMeshEventListener( /*isDeletable = */true, Name() )
+    {}
+
+    //================================================================================
+    /*!
+     * \brief Returns an ID of listener
+     */
+    static const char* Name() { return "GHS3DPlugin_GHS3D::_EnforcedMeshRestorer"; }
+
+    //================================================================================
+    /*!
+     * \brief Treat events of the subMesh
+     */
+    void ProcessEvent(const int                       event,
+                      const int                       eventType,
+                      SMESH_subMesh*                  subMesh,
+                      SMESH_subMeshEventListenerData* data,
+                      const SMESH_Hypothesis*         hyp)
+    {
+      if ( SMESH_subMesh::SUBMESH_LOADED == event &&
+           SMESH_subMesh::COMPUTE_EVENT  == eventType &&
+           data &&
+           !data->mySubMeshes.empty() )
+      {
+        // An enforced mesh (subMesh->_father) has been loaded from hdf file
+        if ( GHS3DPlugin_Hypothesis* hyp = GetGHSHypothesis( data->mySubMeshes.front() ))
+          hyp->RestoreEnfElemsByMeshes();
+      }
+    }
+    //================================================================================
+    /*!
+     * \brief Returns GHS3DPlugin_Hypothesis used to compute a subMesh
+     */
+    static GHS3DPlugin_Hypothesis* GetGHSHypothesis( SMESH_subMesh* subMesh )
+    {
+      SMESH_HypoFilter ghsHypFilter( SMESH_HypoFilter::HasName( "GHS3D_Parameters" ));
+      return (GHS3DPlugin_Hypothesis* )
+        subMesh->GetFather()->GetHypothesis( subMesh->GetSubShape(),
+                                             ghsHypFilter,
+                                             /*visitAncestors=*/true);
+    }
+  };
+}
+
+//================================================================================
+/*!
+ * \brief Set an event listener to set enforced elements as soon as an enforced
+ *        mesh is loaded
+ */
+//================================================================================
+
+void GHS3DPlugin_GHS3D::SubmeshRestored(SMESH_subMesh* subMesh)
+{
+  if ( GHS3DPlugin_Hypothesis* hyp = _EnforcedMeshRestorer::GetGHSHypothesis( subMesh ))
+  {
+    GHS3DPlugin_Hypothesis::TGHS3DEnforcedMeshList enfMeshes = hyp->_GetEnforcedMeshes();
+    GHS3DPlugin_Hypothesis::TGHS3DEnforcedMeshList::iterator it = enfMeshes.begin();
+    for(;it != enfMeshes.end();++it) {
+      GHS3DPlugin_Hypothesis::TGHS3DEnforcedMesh* enfMesh = *it;
+      if ( SMESH_Mesh* mesh = GetMeshByPersistentID( enfMesh->persistID ))
+      {
+        SMESH_subMesh* smToListen = mesh->GetSubMesh( mesh->GetShapeToMesh() );
+        // a listener set to smToListen will care of hypothesis stored in SMESH_EventListenerData
+        subMesh->SetEventListener( new _EnforcedMeshRestorer(),
+                                   SMESH_subMeshEventListenerData::MakeData( subMesh ),
+                                   smToListen);
+      }
+    }
+  }
 }

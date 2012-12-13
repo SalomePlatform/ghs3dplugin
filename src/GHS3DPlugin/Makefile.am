@@ -44,16 +44,16 @@ dist_libGHS3DEngine_la_SOURCES = \
   GHS3DPlugin_Hypothesis_i.cxx
 
 libGHS3DEngine_la_CPPFLAGS =  \
-  $(KERNEL_CXXFLAGS)    \
-  $(CAS_CPPFLAGS)       \
-  $(GEOM_CXXFLAGS)      \
-  $(MED_CXXFLAGS)       \
-  $(SMESH_CXXFLAGS)     \
-  $(VTK_INCLUDES) \
-  $(BOOST_CPPFLAGS)     \
-  $(CORBA_CXXFLAGS)     \
-  $(CORBA_INCLUDES)     \
-  -I$(top_builddir)/idl
+	$(KERNEL_CXXFLAGS)    \
+	$(CAS_CPPFLAGS)       \
+	$(GEOM_CXXFLAGS)      \
+	$(MED_CXXFLAGS)       \
+	$(SMESH_CXXFLAGS)     \
+	$(VTK_INCLUDES) \
+	$(BOOST_CPPFLAGS)     \
+	$(CORBA_CXXFLAGS)     \
+	$(CORBA_INCLUDES)     \
+	-I$(top_builddir)/idl
 
 libGHS3DEngine_la_LDFLAGS  = \
   ../../idl/libSalomeIDLGHS3DPLUGIN.la \

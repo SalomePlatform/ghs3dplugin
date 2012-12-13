@@ -75,6 +75,8 @@ public:
   virtual bool Compute(SMESH_Mesh&         theMesh,
                        SMESH_MesherHelper* aHelper);
 
+  virtual void SubmeshRestored(SMESH_subMesh* subMesh);
+
   bool importGMFMesh(const char* aGMFFileName, SMESH_Mesh& aMesh);
 
 private:

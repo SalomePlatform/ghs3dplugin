@@ -44,9 +44,6 @@
 // #include <SALOMEconfig.h>
 // #include CORBA_SERVER_HEADER(SALOMEDS)
 
-#ifndef GHS3D_VERSION
-#define GHS3D_VERSION 41
-#endif
 //=======================================================================
 //function : GHS3DPlugin_Hypothesis_i
 //=======================================================================
@@ -839,16 +836,16 @@ GHS3DPlugin::GHS3DEnforcedMeshList* GHS3DPlugin_Hypothesis_i::GetEnforcedMeshes(
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, const char* theGroupName)
   throw (SALOME::SALOME_Exception)
 {
-#if GHS3D_VERSION >= 42
+// #if GHS3D_VERSION >= 42
   return p_SetEnforcedMesh(theSource, theType, "", theGroupName);
-#else
-  SALOME::ExceptionStruct ExDescription;
-  ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
-  ExDescription.type = SALOME::BAD_PARAM;
-  ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
-  ExDescription.lineNumber = 719;
-  throw SALOME::SALOME_Exception(ExDescription);
-#endif
+// #else
+//   SALOME::ExceptionStruct ExDescription;
+//   ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
+//   ExDescription.type = SALOME::BAD_PARAM;
+//   ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+//   ExDescription.lineNumber = 719;
+//   throw SALOME::SALOME_Exception(ExDescription);
+// #endif
 }
 
 /*!
@@ -858,16 +855,16 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSour
   throw (SALOME::SALOME_Exception)
 {
 //   MESSAGE("GHS3DPlugin_Hypothesis_i::SetEnforcedMesh");
-#if GHS3D_VERSION >= 42
+// #if GHS3D_VERSION >= 42
   return p_SetEnforcedMesh(theSource, theType);
-#else
-  SALOME::ExceptionStruct ExDescription;
-  ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
-  ExDescription.type = SALOME::BAD_PARAM;
-  ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
-  ExDescription.lineNumber = 750;
-  throw SALOME::SALOME_Exception(ExDescription);
-#endif
+// #else
+//   SALOME::ExceptionStruct ExDescription;
+//   ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
+//   ExDescription.type = SALOME::BAD_PARAM;
+//   ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+//   ExDescription.lineNumber = 750;
+//   throw SALOME::SALOME_Exception(ExDescription);
+// #endif
 }
 
 /*!
@@ -876,16 +873,16 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSour
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize, const char* theGroupName)
   throw (SALOME::SALOME_Exception)
 {
-#if GHS3D_VERSION >= 42
+// #if GHS3D_VERSION >= 42
   return p_SetEnforcedMesh(theSource, theType, "", theGroupName);
-#else
-  SALOME::ExceptionStruct ExDescription;
-  ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
-  ExDescription.type = SALOME::BAD_PARAM;
-  ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
-  ExDescription.lineNumber = 750;
-  throw SALOME::SALOME_Exception(ExDescription);
-#endif
+// #else
+//   SALOME::ExceptionStruct ExDescription;
+//   ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
+//   ExDescription.type = SALOME::BAD_PARAM;
+//   ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+//   ExDescription.lineNumber = 750;
+//   throw SALOME::SALOME_Exception(ExDescription);
+// #endif
 }
 
 /*!
@@ -894,16 +891,16 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSourc
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize)
   throw (SALOME::SALOME_Exception)
 {
-#if GHS3D_VERSION >= 42
+// #if GHS3D_VERSION >= 42
   return p_SetEnforcedMesh(theSource, theType);
-#else
-  SALOME::ExceptionStruct ExDescription;
-  ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
-  ExDescription.type = SALOME::BAD_PARAM;
-  ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
-  ExDescription.lineNumber = 750;
-  throw SALOME::SALOME_Exception(ExDescription);
-#endif
+// #else
+//   SALOME::ExceptionStruct ExDescription;
+//   ExDescription.text = "Bad version of GHS3D. It must >= 4.2.";
+//   ExDescription.type = SALOME::BAD_PARAM;
+//   ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
+//   ExDescription.lineNumber = 750;
+//   throw SALOME::SALOME_Exception(ExDescription);
+// #endif
 }
 
 bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, const char* theName, const char* theGroupName)
