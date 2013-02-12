@@ -211,13 +211,10 @@ TopoDS_Shape GHS3DPlugin_GHS3D::entryToShape(std::string entry)
   GEOM::GEOM_Object_var aGeomObj;
   TopoDS_Shape S = TopoDS_Shape();
   SALOMEDS::SObject_var aSObj = myStudy->FindObjectID( entry.c_str() );
-  SALOMEDS::GenericAttribute_var anAttr;
-
-  if (!aSObj->_is_nil() && aSObj->FindAttribute(anAttr, "AttributeIOR")) {
-    SALOMEDS::AttributeIOR_var anIOR = SALOMEDS::AttributeIOR::_narrow(anAttr);
-    CORBA::String_var aVal = anIOR->Value();
-    CORBA::Object_var obj = myStudy->ConvertIORToObject(aVal);
+  if (!aSObj->_is_nil() ) {
+    CORBA::Object_var obj = aSObj->GetObject();
     aGeomObj = GEOM::GEOM_Object::_narrow(obj);
+    aSObj->UnRegister();
   }
   if ( !aGeomObj->_is_nil() )
     S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
