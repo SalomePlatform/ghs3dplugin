@@ -425,6 +425,7 @@ AC_OUTPUT([ \
   GHS3DPLUGIN_version.h \
   doc/Makefile \
   doc/salome/Makefile \
+  doc/salome/examples/Makefile \
   doc/salome/gui/Makefile \
   doc/salome/gui/GHS3DPLUGIN/Makefile \
   doc/salome/gui/GHS3DPLUGIN/doxyfile \

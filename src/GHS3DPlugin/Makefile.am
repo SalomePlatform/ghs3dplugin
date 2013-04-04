@@ -63,4 +63,8 @@ libGHS3DEngine_la_LDFLAGS  = \
   $(KERNEL_LDFLAGS) -lSalomeGenericObj -lSALOMELocalTrace -lSALOMEBasics -lSalomeNS -lOpUtil
 
 # Scripts to be installed.
-dist_salomescript_DATA= GHS3DPluginDC.py
+#dist_salomescript_DATA= GHS3DPluginDC.py
+mypkgpythondir = $(salomepythondir)/salome/GHS3DPlugin
+mypkgpython_PYTHON = \
+	__init__.py \
+	GHS3DPluginBuilder.py

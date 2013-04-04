@@ -17,12 +17,17 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-SUBDIRS = examples gui
-SUBDIRSGUI = gui
+#  File   : Makefile
+#  Author : Alexander KOVALEV (Open Cascade NN)
+#  Modified by : 
+#  Module : doc
+#
+include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
-usr_docs:
-	@@SETX@; for d in $(SUBDIRSGUI); do 	\
-	   (cd $$d && $(MAKE) $@) || exit 1; 	\
-	done;
+pyexamplesdir = $(docdir)/examples/GHS3DPLUGIN
 
-docs: usr_docs
+pyexamples_SCRIPTS = ghs3ddemo.py \
+		     ghs3d_enfvert.py \
+		     ghs3d_enfmesh.py
+
+EXTRA_DIST += $(pyexamples_SCRIPTS)

@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2013  CEA/DEN, EDF R&D, OPEN CASCADE
+# Copyright (C) 2007-2013  CEA/DEN, EDF R&D
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -17,12 +17,7 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-SUBDIRS = examples gui
-SUBDIRSGUI = gui
+##
+# @package GHS3DPluginBuilder
+# Python API for the GHS3D meshing plug-in module.
 
-usr_docs:
-	@@SETX@; for d in $(SUBDIRSGUI); do 	\
-	   (cd $$d && $(MAKE) $@) || exit 1; 	\
-	done;
-
-docs: usr_docs

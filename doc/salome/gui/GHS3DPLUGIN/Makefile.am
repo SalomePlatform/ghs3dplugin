@@ -27,10 +27,7 @@ DOC_PYTHONPATH=$(prefix)/bin/salome:$(SMESH_ROOT_DIR)/bin/salome:$(SMESH_ROOT_DI
 DOC_LD_LIBRARY_PATH=$(prefix)/lib/salome:${SMESH_ROOT_DIR}/lib/salome:${MED_ROOT_DIR}/lib/salome:${GEOM_ROOT_DIR}/lib/salome:${KERNEL_ROOT_DIR}/lib/salome
 DOC_SMESH_MeshersList=GHS3DPlugin
 
-smesh.py: $(top_srcdir)/src/GHS3DPlugin/GHS3DPluginDC.py
-	@PYTHONPATH=$(DOC_PYTHONPATH):${PYTHONPATH} LD_LIBRARY_PATH=$(DOC_LD_LIBRARY_PATH):${LD_LIBRARY_PATH} SMESH_MeshersList=$(DOC_SMESH_MeshersList) $(PYTHON) $(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py -d -o $@ GHS3DPlugin
-
-usr_docs: doxyfile_py doxyfile smesh.py
+usr_docs: doxyfile_py doxyfile
 	@$(DOXYGEN) doxyfile_py ; \
 	$(DOXYGEN) doxyfile
 
