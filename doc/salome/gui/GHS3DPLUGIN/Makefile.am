@@ -24,10 +24,11 @@ guidocdir = $(docdir)/gui/GHS3DPLUGIN
 guidoc_DATA = images/head.png
 
 DOC_PYTHONPATH=$(prefix)/bin/salome:$(SMESH_ROOT_DIR)/bin/salome:$(SMESH_ROOT_DIR)/lib/python$(PYTHON_VERSION)/site-packages/salome:$(MED_ROOT_DIR)/lib/python$(PYTHON_VERSION)/site-packages/salome:$(GEOM_ROOT_DIR)/bin/salome:$(GEOM_ROOT_DIR)/lib/python$(PYTHON_VERSION)/site-packages/salome:$(KERNEL_ROOT_DIR)/bin/salome:$(KERNEL_ROOT_DIR)/lib/python$(PYTHON_VERSION)/site-packages/salome:$(OMNIORB_ROOT)/lib/python$(PYTHON_VERSION)/site-packages:$(OMNIORB_ROOT)/lib64/python$(PYTHON_VERSION)/site-packages
+DOC_LD_LIBRARY_PATH=$(prefix)/lib/salome:${SMESH_ROOT_DIR}/lib/salome:${MED_ROOT_DIR}/lib/salome:${GEOM_ROOT_DIR}/lib/salome:${KERNEL_ROOT_DIR}/lib/salome
 DOC_SMESH_MeshersList=GHS3DPlugin
 
 smesh.py: $(top_srcdir)/src/GHS3DPlugin/GHS3DPluginDC.py
-	@PYTHONPATH=$(DOC_PYTHONPATH):${PYTHONPATH} SMESH_MeshersList=$(DOC_SMESH_MeshersList) $(PYTHON) $(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py -d -o $@ GHS3DPlugin
+	@PYTHONPATH=$(DOC_PYTHONPATH):${PYTHONPATH} LD_LIBRARY_PATH=$(DOC_LD_LIBRARY_PATH):${LD_LIBRARY_PATH} SMESH_MeshersList=$(DOC_SMESH_MeshersList) $(PYTHON) $(SMESH_ROOT_DIR)/bin/salome/collect_mesh_methods.py -d -o $@ GHS3DPlugin
 
 usr_docs: doxyfile_py doxyfile smesh.py
 	@$(DOXYGEN) doxyfile_py ; \
