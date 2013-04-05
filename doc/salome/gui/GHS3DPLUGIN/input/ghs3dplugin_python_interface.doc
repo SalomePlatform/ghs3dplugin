@@ -4,7 +4,7 @@
 
 Python package GHS3DPlugin defines several classes, destined for creation of the 3D meshes.
 
-GHS3D meshing plugin dynamically adds several methods to the  \ref SMESH_SWIG.smeshBuilder.Mesh "class Mesh" class to create meshing algorithms.
+GHS3D meshing plugin dynamically adds several methods to the smeshBuilder.Mesh class to create meshing algorithms.
 
 Below you can see an example of usage of the GHS3DPlugin Python API for mesh generation:
 

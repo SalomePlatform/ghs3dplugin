@@ -47,7 +47,7 @@ GHS3D = "GHS3D_3D"
 
 ## Tetrahedron GHS3D 3D algorithm
 #  
-#  It can be created by calling smeshBuilder.Mesh.Tetrahedron( smesh.GHS3D, geom=0 )
+#  It can be created by calling smeshBuilder.Mesh.Tetrahedron( smeshBuilder.GHS3D, geom=0 )
 class GHS3D_Algorithm(Mesh_Algorithm):
 
     ## name of the dynamic method in smeshBuilder.Mesh class
