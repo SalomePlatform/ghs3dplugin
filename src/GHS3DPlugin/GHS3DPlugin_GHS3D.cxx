@@ -29,23 +29,24 @@
 
 #include <Basics_Utils.hxx>
 
-//#include "SMESH_Gen.hxx"
+//#include <SMESH_Gen.hxx>
 #include <SMESH_Client.hxx>
-#include "SMESH_Mesh.hxx"
-#include "SMESH_Comment.hxx"
-#include "SMESH_MesherHelper.hxx"
-#include "SMESH_MeshEditor.hxx"
-#include "SMESH_OctreeNode.hxx"
-#include "SMESH_Group.hxx"
+#include <SMESH_Mesh.hxx>
+#include <SMESH_Comment.hxx>
+#include <SMESH_MesherHelper.hxx>
+#include <SMESH_MeshEditor.hxx>
+#include <SMESH_OctreeNode.hxx>
+#include <SMESH_Group.hxx>
 #include <SMESH_subMeshEventListener.hxx>
 #include <SMESH_HypoFilter.hxx>
+#include <SMESH_MeshAlgos.hxx>
 
-#include "SMDS_MeshElement.hxx"
-#include "SMDS_MeshNode.hxx"
-#include "SMDS_FaceOfNodes.hxx"
-#include "SMDS_VolumeOfNodes.hxx"
+#include <SMDS_MeshElement.hxx>
+#include <SMDS_MeshNode.hxx>
+#include <SMDS_FaceOfNodes.hxx>
+#include <SMDS_VolumeOfNodes.hxx>
 
-#include "SMESHDS_Group.hxx"
+#include <SMESHDS_Group.hxx>
 
 #include <StdMeshers_QuadToTriaAdaptor.hxx>
 #include <StdMeshers_ViscousLayers.hxx>
@@ -76,7 +77,7 @@
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Solid.hxx>
 
-#include "utilities.h"
+#include <utilities.h>
 
 #ifdef WIN32
 #include <io.h>
@@ -1127,7 +1128,7 @@ static bool readGMFFile(const char*                     theFile,
   SMESH_ElementSearcher* elemSearcher = 0;
   vector< const SMDS_MeshElement* > foundVolumes;
   if ( theHelper->GetMesh()->NbVolumes() > 0 )
-    elemSearcher = SMESH_MeshEditor( theHelper->GetMesh() ).GetElementSearcher();
+    elemSearcher = SMESH_MeshAlgos::GetElementSearcher( *theHelper->GetMeshDS() );
 
   int nbVertices = GmfStatKwd(InpMsh, GmfVertices) - nbInitialNodes;
   GMFNode = new const SMDS_MeshNode*[ nbVertices + 1 ];
@@ -1438,7 +1439,8 @@ static bool writeGMFFile(const char*                                     theMesh
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap::iterator elemIt;
   TIDSortedElemSet::iterator elemSetIt;
   bool isOK;
-  auto_ptr< SMESH_ElementSearcher > pntCls ( SMESH_MeshEditor( theMesh ).GetElementSearcher());
+  auto_ptr< SMESH_ElementSearcher > pntCls
+    ( SMESH_MeshAlgos::GetElementSearcher(*theMesh->GetMeshDS()));
   
   int nbEnforcedVertices = theEnforcedVertices.size();
   
