@@ -91,6 +91,27 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToMeshHoles()
 }
 
 //=======================================================================
+//function : SetToMakeGroupsOfDomains
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetToMakeGroupsOfDomains(CORBA::Boolean toMakeGroups)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetToMakeGroupsOfDomains(toMakeGroups);
+  SMESH::TPythonDump() << _this() << ".SetToMakeGroupsOfDomains( " << toMakeGroups << " )";
+}
+
+//=======================================================================
+//function : GetToMakeGroupsOfDomains
+//=======================================================================
+
+CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToMakeGroupsOfDomains()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetToMakeGroupsOfDomains();
+}
+
+//=======================================================================
 //function : SetMaximumMemory
 //=======================================================================
 

@@ -19,7 +19,6 @@
 
 //  File   : GHS3D_Algorithm.idl
 //  Author : Julia DOROVSKIKH
-//  $Header$
 //
 #ifndef _GHS3D_Algorithm_IDL_
 #define _GHS3D_Algorithm_IDL_
@@ -72,6 +71,13 @@ module GHS3DPlugin
      */
     void SetToMeshHoles(in boolean toMesh);
     boolean GetToMeshHoles();
+    /*!
+     * To make groups of volumes of different domains when mesh is generated from skin.
+     * Default is to make groups.
+     * This option works only (1) for the mesh w/o shape and (2) if GetToMeshHoles() == true
+     */
+    void SetToMakeGroupsOfDomains(in boolean toMakeGroups);
+    boolean GetToMakeGroupsOfDomains();
     /*!
      * Maximal size of memory to be used by the algorithm (in Megabytes).
      * Negative value means not to use this option

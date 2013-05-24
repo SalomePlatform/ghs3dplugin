@@ -86,6 +86,14 @@ class GHS3D_Algorithm(Mesh_Algorithm):
         self.Parameters().SetToMeshHoles(toMesh)
         pass
 
+    ## To make groups of volumes of different domains when mesh is generated from skin.
+    #  Default is to make groups.
+    # This option works only (1) for the mesh w/o shape and (2) if GetToMeshHoles() == true
+    #  @param toMesh "mesh holes" flag value
+    def SetToMakeGroupsOfDomains(self, toMakeGroups):
+        self.Parameters().SetToMakeGroupsOfDomains(toMakeGroups)
+        pass
+
     ## Set Optimization level:
     #  @param level optimization level, one of the following values
     #  - None_Optimization

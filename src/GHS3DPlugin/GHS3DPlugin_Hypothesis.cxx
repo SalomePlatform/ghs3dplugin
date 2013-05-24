@@ -42,6 +42,7 @@
 GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen * gen)
   : SMESH_Hypothesis(hypId, studyId, gen),
   myToMeshHoles(DefaultMeshHoles()),
+  myToMakeGroupsOfDomains(DefaultToMakeGroupsOfDomains()),
   myMaximumMemory(-1),
   myInitialMemory(-1),
   myOptimizationLevel(DefaultOptimizationLevel()),
@@ -95,6 +96,39 @@ bool GHS3DPlugin_Hypothesis::GetToMeshHoles(bool checkFreeOption) const
       return false;
   }
   return myToMeshHoles;
+}
+
+//=======================================================================
+//function : SetToMakeGroupsOfDomains
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetToMakeGroupsOfDomains(bool toMakeGroups)
+{
+  if ( myToMakeGroupsOfDomains != toMakeGroups ) {
+    myToMakeGroupsOfDomains = toMakeGroups;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetToMakeGroupsOfDomains
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains() const
+{
+  return myToMakeGroupsOfDomains;
+}
+
+//=======================================================================
+//function : GetToMakeGroupsOfDomains
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains(const GHS3DPlugin_Hypothesis* hyp)
+{
+  bool res;
+  if ( hyp ) res = hyp->GetToMeshHoles(true) && hyp->GetToMakeGroupsOfDomains();
+  else       res = DefaultMeshHoles()        && DefaultToMakeGroupsOfDomains();
+  return res;
 }
 
 //=======================================================================
@@ -757,6 +791,15 @@ bool GHS3DPlugin_Hypothesis::DefaultMeshHoles()
 }
 
 //=======================================================================
+//function : DefaultToMakeGroupsOfDomains
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::DefaultToMakeGroupsOfDomains()
+{
+  return DefaultMeshHoles(); // issue 0022172
+}
+
+//=======================================================================
 //function : DefaultMaximumMemory
 //=======================================================================
 
@@ -922,6 +965,7 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
   save << (int)myToUseFemCorrection           << " ";
   save << (int)myToRemoveCentralPoint         << " ";
   save << myGradation                         << " ";
+  save << myToMakeGroupsOfDomains             << " ";
   if (!myTextOption.empty()) {
     save << "__OPTIONS_BEGIN__ ";
     save << myTextOption                      << " ";
@@ -1096,6 +1140,12 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
   bool hasEnforcedVertices = false;
   bool hasEnforcedMeshes = false;
   isOK = (load >> separator);
+
+  if ( isOK && ( separator == "0" || separator == "1" ))
+  {
+    myToMakeGroupsOfDomains = ( separator == "1" );
+    isOK = (load >> separator);
+  }
 
   if (isOK) {
     if (separator == "__OPTIONS_BEGIN__")

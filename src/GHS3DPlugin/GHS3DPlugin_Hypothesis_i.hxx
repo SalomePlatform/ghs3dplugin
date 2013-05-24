@@ -56,6 +56,13 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   void SetToMeshHoles(CORBA::Boolean toMesh);
   CORBA::Boolean GetToMeshHoles();
   /*!
+   * To make groups of volumes of different domains when mesh is generated from skin.
+   * Default is to make groups.
+   * This option works only (1) for the mesh w/o shape and (2) if GetToMeshHoles() == true
+   */
+  void SetToMakeGroupsOfDomains(CORBA::Boolean toMakeGroups);
+  CORBA::Boolean GetToMakeGroupsOfDomains();
+  /*!
    * Maximal size of memory to be used by the algorithm (in Megabytes)
    */
   void SetMaximumMemory(CORBA::Short MB) throw ( SALOME::SALOME_Exception );

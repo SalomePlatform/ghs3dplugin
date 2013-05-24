@@ -125,6 +125,13 @@ public:
   void SetToMeshHoles(bool toMesh);
   bool GetToMeshHoles(bool checkFreeOption = false) const;
   /*!
+   * To make groups of volumes of different domains when mesh is generated from skin.
+   * Default is to make groups.
+   * This option works only (1) for the mesh w/o shape and (2) if GetToMeshHoles() == true
+   */
+  void SetToMakeGroupsOfDomains(bool toMakeGroups);
+  bool GetToMakeGroupsOfDomains() const;
+  /*!
    * Maximal size of memory to be used by the algorithm (in Megabytes)
    */
   void SetMaximumMemory(short MB);
@@ -263,9 +270,11 @@ public:
   static TIDSortedElemGroupMap GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp);
   static TID2SizeMap GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp);
   static TSetStrings GetGroupsToRemove(const GHS3DPlugin_Hypothesis* hyp);
+  static bool GetToMakeGroupsOfDomains(const GHS3DPlugin_Hypothesis* hyp);
   void ClearGroupsToRemove();
   
   static bool   DefaultMeshHoles();
+  static bool   DefaultToMakeGroupsOfDomains();
   static short  DefaultMaximumMemory();
   static short  DefaultInitialMemory();
   static short  DefaultOptimizationLevel();
@@ -313,6 +322,7 @@ public:
 private:
 
   bool   myToMeshHoles;
+  bool   myToMakeGroupsOfDomains;
   short  myMaximumMemory;
   short  myInitialMemory;
   short  myOptimizationLevel;

@@ -64,10 +64,8 @@ public:
   virtual bool Compute(SMESH_Mesh&         aMesh,
                        const TopoDS_Shape& aShape);
 
-#ifdef WITH_SMESH_CANCEL_COMPUTE
-    virtual void CancelCompute();
-    bool computeCanceled() { return _compute_canceled;};
-#endif
+  virtual void CancelCompute();
+  bool         computeCanceled() { return _compute_canceled;};
 
   virtual bool Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
@@ -77,12 +75,16 @@ public:
 
   virtual void SubmeshRestored(SMESH_subMesh* subMesh);
 
-  bool importGMFMesh(const char* aGMFFileName, SMESH_Mesh& aMesh);
+  virtual void SetEventListener(SMESH_subMesh* subMesh);
+
+  bool         importGMFMesh(const char* aGMFFileName, SMESH_Mesh& aMesh);
+
+  static const char* Name() { return "GHS3D_3D"; }
 
 private:
 
-  bool storeErrorDescription(const TCollection_AsciiString& logFile,
-                             const _Ghs2smdsConvertor &     toSmdsConvertor );
+  bool         storeErrorDescription(const TCollection_AsciiString& logFile,
+                                     const _Ghs2smdsConvertor &     toSmdsConvertor );
   TopoDS_Shape entryToShape(std::string entry);
   
   int  _iShape;
@@ -93,10 +95,7 @@ private:
   SALOMEDS::Study_var myStudy;
   SMESH_Gen_i* smeshGen_i;
 
-#ifdef WITH_SMESH_CANCEL_COMPUTE
   volatile bool _compute_canceled;
-#endif
-
 };
 
 /*!
