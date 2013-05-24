@@ -22,6 +22,14 @@ create mesh in the holes inside a solid shape, else only the outermost
 shape will be meshed. Volumic elements created within holes are bound
 to the solid.
 
+- <b>To make groups of domains</b> - if checked, the algorithm will
+create groups of just generated elements corresponding to each mesh
+domain.<br>
+The groups are created provided that 
+ - <b>To mesh holes</b> is switched on,
+ - the mesh is not based on geometry, e.g. imported from file, and 
+ - there are several domains in the mesh.
+
 - <b>Optimization level</b> - allows choosing the required
 optimization level (higher level of optimisation provides better mesh,
 but can be time-consuming):

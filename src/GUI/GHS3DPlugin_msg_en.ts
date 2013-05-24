@@ -32,6 +32,10 @@
         <translation>To mesh holes</translation>
     </message>
     <message>
+        <source>GHS3D_TO_MAKE_DOMAIN_GROUPS</source>
+        <translation>To make groups of domains</translation>
+    </message>
+    <message>
         <source>INIT_MEMORY_SIZE</source>
         <translation>Initial memory size</translation>
     </message>

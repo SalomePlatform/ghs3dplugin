@@ -21,13 +21,11 @@
 //  File   : GHS3DPluginGUI_HypothesisCreator.cxx
 //  Author : Michael Zorin
 //  Module : GHS3DPlugin
-//  $Header: 
 //
 #include "GHS3DPluginGUI_HypothesisCreator.h"
-// #include "GHS3DPluginGUI_EnforcedDelegates.h"
 #include "GHS3DPluginGUI_Enums.h"
 
-#include "GeometryGUI.h"
+#include <GeometryGUI.h>
 
 #include <SMESHGUI_Utils.h>
 #include <SMESHGUI_SpinBox.h>
@@ -294,7 +292,7 @@ QWidget *EnforcedMeshTableWidgetDelegate::createEditor(QWidget *parent,
 void EnforcedMeshTableWidgetDelegate::setEditorData(QWidget *editor,
                                                const QModelIndex &index) const
 {
-	QItemDelegate::setEditorData(editor, index);
+        QItemDelegate::setEditorData(editor, index);
 }
 
 void EnforcedMeshTableWidgetDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
@@ -392,7 +390,9 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   }
 
   myToMeshHolesCheck = new QCheckBox( tr( "GHS3D_TO_MESH_HOLES" ), myStdGroup );
-  aStdLayout->addWidget( myToMeshHolesCheck, row++, 0, 1, 2 );
+  aStdLayout->addWidget( myToMeshHolesCheck, row, 0, 1, 1 );
+  myToMakeGroupsOfDomains = new QCheckBox( tr( "GHS3D_TO_MAKE_DOMAIN_GROUPS" ), myStdGroup );
+  aStdLayout->addWidget( myToMakeGroupsOfDomains, row++, 1, 1, 1 );
 
   aStdLayout->addWidget( new QLabel( tr( "GHS3D_OPTIMIZATIOL_LEVEL" ), myStdGroup ), row, 0, 1, 1 );
   myOptimizationLevelCombo = new QComboBox( myStdGroup );
@@ -645,6 +645,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   tab->setCurrentIndex( STD_TAB );
 
   // connections
+  connect( myToMeshHolesCheck,      SIGNAL( toggled( bool ) ), this, SLOT( onToMeshHoles(bool)));
   connect( myMaximumMemoryCheck,    SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myInitialMemoryCheck,    SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myBoundaryRecoveryCheck, SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
@@ -1384,6 +1385,13 @@ void GHS3DPluginGUI_HypothesisCreator::onRemoveEnforcedVertex()
   myEnforcedTableWidget->selectionModel()->clearSelection();
 }
 
+void GHS3DPluginGUI_HypothesisCreator::onToMeshHoles(bool isOn)
+{
+  myToMakeGroupsOfDomains->setEnabled( isOn );
+  if ( !isOn )
+    myToMakeGroupsOfDomains->setChecked( false );
+}
+
 void GHS3DPluginGUI_HypothesisCreator::onDirBtnClicked()
 {
   QString dir = SUIT_FileDlg::getExistingDirectory( dlg(), myWorkingDir->text(), QString() );
@@ -1393,6 +1401,7 @@ void GHS3DPluginGUI_HypothesisCreator::onDirBtnClicked()
 
 void GHS3DPluginGUI_HypothesisCreator::updateWidgets()
 {
+  myToMakeGroupsOfDomains->setEnabled( myToMeshHolesCheck->isChecked() );
   myMaximumMemorySpin->setEnabled( myMaximumMemoryCheck->isChecked() );
   myInitialMemoryCheck->setEnabled( !myBoundaryRecoveryCheck->isChecked() );
   myInitialMemorySpin->setEnabled( myInitialMemoryCheck->isChecked() && !myBoundaryRecoveryCheck->isChecked() );
@@ -1424,6 +1433,7 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
     myName->setText( data.myName );
   
   myToMeshHolesCheck               ->setChecked    ( data.myToMeshHoles );
+  myToMakeGroupsOfDomains          ->setChecked    ( data.myToMakeGroupsOfDomains );
   myOptimizationLevelCombo         ->setCurrentIndex( data.myOptimizationLevel );
   myMaximumMemoryCheck             ->setChecked    ( data.myMaximumMemory > 0 );
   myMaximumMemorySpin              ->setValue      ( qMax( data.myMaximumMemory,
@@ -1668,6 +1678,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   h_data.myName = isCreation() && data ? hypName() : "";
 
   h_data.myToMeshHoles                = h->GetToMeshHoles();
+  h_data.myToMakeGroupsOfDomains      = h->GetToMeshHoles() && h->GetToMakeGroupsOfDomains();
   h_data.myMaximumMemory              = h->GetMaximumMemory();
   h_data.myInitialMemory              = h->GetInitialMemory();
   h_data.myInitialMemory              = h->GetInitialMemory();
@@ -1741,6 +1752,8 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
 
     if ( h->GetToMeshHoles() != h_data.myToMeshHoles ) // avoid duplication of DumpPython commands
       h->SetToMeshHoles      ( h_data.myToMeshHoles       );
+    if ( h->GetToMakeGroupsOfDomains() != h_data.myToMakeGroupsOfDomains )
+      h->SetToMakeGroupsOfDomains( h_data.myToMakeGroupsOfDomains );
     if ( h->GetMaximumMemory() != h_data.myMaximumMemory )
       h->SetMaximumMemory    ( h_data.myMaximumMemory     );
     if ( h->GetInitialMemory() != h_data.myInitialMemory )
@@ -1854,6 +1867,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
   MESSAGE("GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets");
   h_data.myName                       = myName ? myName->text() : "";
   h_data.myToMeshHoles                = myToMeshHolesCheck->isChecked();
+  h_data.myToMakeGroupsOfDomains      = myToMakeGroupsOfDomains->isChecked();
   h_data.myMaximumMemory              = myMaximumMemoryCheck->isChecked() ? myMaximumMemorySpin->value() : -1;
   h_data.myInitialMemory              = myInitialMemoryCheck->isChecked() ? myInitialMemorySpin->value() : -1;
   h_data.myOptimizationLevel          = myOptimizationLevelCombo->currentIndex();

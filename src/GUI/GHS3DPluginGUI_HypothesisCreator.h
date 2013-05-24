@@ -140,7 +140,7 @@ typedef std::set< TEnfMesh*, CompareEnfMeshes > TEnfMeshList;
 
 typedef struct
 {
-  bool    myToMeshHoles,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint;
+  bool    myToMeshHoles,myToMakeGroupsOfDomains,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint;
   int     myMaximumMemory,myInitialMemory,myOptimizationLevel;
   QString myName,myWorkingDir,myTextOption;
   double  myGradation;
@@ -173,6 +173,7 @@ protected:
   virtual QString  type() const;
 
 protected slots:
+  void                onToMeshHoles(bool);
   void                onDirBtnClicked();
   void                updateWidgets();
   
@@ -209,6 +210,7 @@ private:
   QWidget*            myStdGroup;
   QLineEdit*          myName;
   QCheckBox*          myToMeshHolesCheck;
+  QCheckBox*          myToMakeGroupsOfDomains;
   QComboBox*          myOptimizationLevelCombo;
 
   QWidget*            myAdvGroup;
