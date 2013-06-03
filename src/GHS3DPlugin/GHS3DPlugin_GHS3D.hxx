@@ -81,6 +81,10 @@ public:
 
   static const char* Name() { return "GHS3D_3D"; }
 
+protected:
+  const GHS3DPlugin_Hypothesis* _hyp;
+  const StdMeshers_ViscousLayers* _viscousLayersHyp;
+   
 private:
 
   bool         storeErrorDescription(const TCollection_AsciiString& logFile,
@@ -90,8 +94,6 @@ private:
   int  _iShape;
   int  _nbShape;
   bool _keepFiles;
-  const GHS3DPlugin_Hypothesis* _hyp;
-  const StdMeshers_ViscousLayers* _viscousLayersHyp;
   SALOMEDS::Study_var myStudy;
   SMESH_Gen_i* smeshGen_i;
 
