@@ -4,6 +4,10 @@
 <context>
     <name>@default</name>
     <message>
+        <source>GHS3D_TO_MAKE_DOMAIN_GROUPS</source>
+        <translation type="unfinished">To make groups of domains</translation>
+    </message>
+    <message>
         <source>GHS3D_ADV_ARGS</source>
         <translation>Avancé</translation>
     </message>
