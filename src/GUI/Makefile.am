@@ -49,7 +49,6 @@ libGHS3DPluginGUI_la_CPPFLAGS = \
 	$(KERNEL_CXXFLAGS) \
 	$(GUI_CXXFLAGS) \
 	$(GEOM_CXXFLAGS) \
-	$(MED_CXXFLAGS) \
 	$(SMESH_CXXFLAGS) \
 	$(BOOST_CPPFLAGS) \
 	$(CORBA_CXXFLAGS) \
@@ -61,7 +60,6 @@ libGHS3DPluginGUI_la_LDFLAGS  = \
 	../../idl/libSalomeIDLGHS3DPLUGIN.la \
 	$(QT_LIBS) \
 	$(KERNEL_LDFLAGS) -lSALOMELocalTrace \
-	$(MED_LDFLAGS) -lSalomeIDLMED \
 	$(GEOM_LDFLAGS) -lGEOM \
 	$(SMESH_LDFLAGS) -lSMESH -lGeomSelectionTools  -lStdMeshersGUI -lSMESHFiltersSelection \
 	$(GUI_LDFLAGS) -lsuit -lqtx -lSalomeApp \

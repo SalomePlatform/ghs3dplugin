@@ -47,7 +47,6 @@ libGHS3DEngine_la_CPPFLAGS =  \
 	$(KERNEL_CXXFLAGS)    \
 	$(CAS_CPPFLAGS)       \
 	$(GEOM_CXXFLAGS)      \
-	$(MED_CXXFLAGS)       \
 	$(SMESH_CXXFLAGS)     \
 	$(VTK_INCLUDES) \
 	$(BOOST_CPPFLAGS)     \
@@ -58,7 +57,6 @@ libGHS3DEngine_la_CPPFLAGS =  \
 libGHS3DEngine_la_LDFLAGS  = \
   ../../idl/libSalomeIDLGHS3DPLUGIN.la \
   $(CAS_KERNEL) -lTKBRep -lTKG2d -lTKG3d -lTKTopAlgo -lTKGeomBase -lTKGeomAlgo -lTKCDF \
-  $(MED_LDFLAGS) -lSalomeIDLMED \
   $(SMESH_LDFLAGS) -lSMESHimpl -lSMESHEngine -lSMESHDS -lSMDS -lStdMeshers -lMeshDriverGMF \
   $(KERNEL_LDFLAGS) -lSalomeGenericObj -lSALOMELocalTrace -lSALOMEBasics -lSalomeNS -lOpUtil
 

@@ -49,14 +49,12 @@ libSalomeIDLGHS3DPLUGIN_la_CPPFLAGS = \
 	$(CORBA_INCLUDES) \
 	$(KERNEL_CXXFLAGS) \
 	$(GEOM_CXXFLAGS) \
-	$(MED_CXXFLAGS) \
 	$(SMESH_CXXFLAGS)
 
 libSalomeIDLGHS3DPLUGIN_la_LDFLAGS = -no-undefined -version-info=0:0:0
 libSalomeIDLGHS3DPLUGIN_la_LIBADD  = \
 	$(KERNEL_LDFLAGS) -lSalomeIDLKernel \
 	$(GEOM_LDFLAGS) -lSalomeIDLGEOM \
-	$(MED_LDFLAGS) -lSalomeIDLMED \
 	$(SMESH_LDFLAGS) -lSalomeIDLSMESH \
 	@CORBA_LIBS@
 
@@ -68,7 +66,6 @@ OMNIORB_IDLPYFLAGS  = \
 	-I$(top_builddir)/idl/salome \
 	-I$(KERNEL_ROOT_DIR)/idl/salome \
 	-I$(GEOM_ROOT_DIR)/idl/salome \
-	-I$(MED_ROOT_DIR)/idl/salome \
 	-I$(SMESH_ROOT_DIR)/idl/salome
 
 IDLCXXFLAGS = \
@@ -77,13 +74,11 @@ IDLCXXFLAGS = \
 	-I$(top_builddir)/idl/salome \
 	-I$(KERNEL_ROOT_DIR)/idl/salome \
 	-I$(GEOM_ROOT_DIR)/idl/salome \
-	-I$(MED_ROOT_DIR)/idl/salome \
 	-I$(SMESH_ROOT_DIR)/idl/salome
 IDLPYFLAGS  = \
 	@IDLPYFLAGS@ \
 	-I$(KERNEL_ROOT_DIR)/idl/salome \
 	-I$(GEOM_ROOT_DIR)/idl/salome \
-	-I$(MED_ROOT_DIR)/idl/salome \
 	-I$(SMESH_ROOT_DIR)/idl/salome
 
 # potential problem on parallel make on the following - multiple outputs
@@ -121,7 +116,7 @@ mostlyclean-local:
 	@for dep in $^ dummy; do \
 	  if [ $$dep != "dummy" ]; then \
 	    echo Building dependencies for $$dep; \
-	    $(CPP) $(C_DEPEND_FLAG) -x c -I$(srcdir) -I$(KERNEL_ROOT_DIR)/idl/salome -I$(GEOM_ROOT_DIR)/idl/salome -I$(MED_ROOT_DIR)/idl/salome -I$(SMESH_ROOT_DIR)/idl/salome $$dep 2>/dev/null | \
+	    $(CPP) $(C_DEPEND_FLAG) -x c -I$(srcdir) -I$(KERNEL_ROOT_DIR)/idl/salome -I$(GEOM_ROOT_DIR)/idl/salome -I$(SMESH_ROOT_DIR)/idl/salome $$dep 2>/dev/null | \
 	    sed 's/\.o/\SK.cc/' >>$@; \
 	  fi; \
 	done ;
