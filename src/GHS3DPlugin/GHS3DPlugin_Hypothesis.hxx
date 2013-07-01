@@ -127,14 +127,14 @@ public:
   /*!
    * Maximal size of memory to be used by the algorithm (in Megabytes)
    */
-  void SetMaximumMemory(short MB);
-  short GetMaximumMemory() const;
+  void SetMaximumMemory(int MB);
+  int GetMaximumMemory() const;
   /*!
    * Initial size of memory to be used by the algorithm (in Megabytes) in
    * automatic memory adjustment mode. Default is zero
    */
-  void SetInitialMemory(short MB);
-  short GetInitialMemory() const;
+  void SetInitialMemory(int MB);
+  int GetInitialMemory() const;
   /*!
    * Optimization level: 0-none, 1-light, 2-medium, 3-standard+, 4-strong. Default is medium
    */
@@ -266,8 +266,8 @@ public:
   void ClearGroupsToRemove();
   
   static bool   DefaultMeshHoles();
-  static short  DefaultMaximumMemory();
-  static short  DefaultInitialMemory();
+  static int    DefaultMaximumMemory();
+  static int    DefaultInitialMemory();
   static short  DefaultOptimizationLevel();
   static std::string DefaultWorkingDirectory();
   static bool   DefaultKeepFiles();
@@ -313,8 +313,8 @@ public:
 private:
 
   bool   myToMeshHoles;
-  short  myMaximumMemory;
-  short  myInitialMemory;
+  int    myMaximumMemory;
+  int    myInitialMemory;
   short  myOptimizationLevel;
   bool   myKeepFiles;
   std::string myWorkingDirectory;

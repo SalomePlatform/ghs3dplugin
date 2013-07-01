@@ -94,7 +94,7 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToMeshHoles()
 //function : SetMaximumMemory
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis_i::SetMaximumMemory(CORBA::Short MB)
+void GHS3DPlugin_Hypothesis_i::SetMaximumMemory(CORBA::Long MB)
    throw ( SALOME::SALOME_Exception )
 {
   if ( MB == 0 )
@@ -108,7 +108,7 @@ void GHS3DPlugin_Hypothesis_i::SetMaximumMemory(CORBA::Short MB)
 //function : GetMaximumMemory
 //=======================================================================
 
-CORBA::Short GHS3DPlugin_Hypothesis_i::GetMaximumMemory()
+CORBA::Long GHS3DPlugin_Hypothesis_i::GetMaximumMemory()
 {
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetMaximumMemory();
@@ -118,7 +118,7 @@ CORBA::Short GHS3DPlugin_Hypothesis_i::GetMaximumMemory()
 //function : SetInitialMemory
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis_i::SetInitialMemory(CORBA::Short MB)
+void GHS3DPlugin_Hypothesis_i::SetInitialMemory(CORBA::Long MB)
   throw ( SALOME::SALOME_Exception )
 {
   if ( MB == 0 )
@@ -132,7 +132,7 @@ void GHS3DPlugin_Hypothesis_i::SetInitialMemory(CORBA::Short MB)
 //function : GetInitialMemory
 //=======================================================================
 
-CORBA::Short GHS3DPlugin_Hypothesis_i::GetInitialMemory()
+CORBA::Long GHS3DPlugin_Hypothesis_i::GetInitialMemory()
 {
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetInitialMemory();
