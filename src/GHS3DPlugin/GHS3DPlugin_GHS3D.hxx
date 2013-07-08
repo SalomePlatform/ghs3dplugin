@@ -82,8 +82,9 @@ public:
   static const char* Name() { return "GHS3D_3D"; }
 
 protected:
-  const GHS3DPlugin_Hypothesis* _hyp;
+  const GHS3DPlugin_Hypothesis*   _hyp;
   const StdMeshers_ViscousLayers* _viscousLayersHyp;
+  std::string                     _genericName;
    
 private:
 

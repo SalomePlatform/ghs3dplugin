@@ -3258,8 +3258,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   // a unique working file name
   // to avoid access to the same files by eg different users
-  TCollection_AsciiString aGenericName
-    = (char*) GHS3DPlugin_Hypothesis::GetFileName(_hyp).c_str();
+  _genericName = GHS3DPlugin_Hypothesis::GetFileName(_hyp);
+  TCollection_AsciiString aGenericName((char*) _genericName.c_str() );
 
   TCollection_AsciiString aResultFileName;
   TCollection_AsciiString aLogFileName    = aGenericName + ".log";    // log
@@ -3403,7 +3403,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // run ghs3d mesher
   // -----------------
 
-  TCollection_AsciiString cmd = TCollection_AsciiString((char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp ).c_str() );
+  TCollection_AsciiString cmd( (char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp ).c_str() );
   cmd += TCollection_AsciiString(" -f ") + aGenericName;  // file to read
   cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
   // The output .mesh file does not contain yet the subdomain-info (Ghs3D 4.2)
@@ -3533,8 +3533,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   // a unique working file name
   // to avoid access to the same files by eg different users
-  TCollection_AsciiString aGenericName
-    = (char*) GHS3DPlugin_Hypothesis::GetFileName(_hyp).c_str();
+  _genericName = GHS3DPlugin_Hypothesis::GetFileName(_hyp);
+  TCollection_AsciiString aGenericName((char*) _genericName.c_str() );
   TCollection_AsciiString aGenericNameRequired = aGenericName + "_required";
 
   TCollection_AsciiString aLogFileName    = aGenericName + ".log";    // log
@@ -3749,12 +3749,10 @@ void GHS3DPlugin_GHS3D::CancelCompute()
   _compute_canceled = true;
 #ifdef WNT
 #else
-  TCollection_AsciiString aGenericName
-    = (char*) GHS3DPlugin_Hypothesis::GetFileName(_hyp).c_str();
-  TCollection_AsciiString cmd =
-    TCollection_AsciiString("ps ux | grep ") + aGenericName;
-  cmd += TCollection_AsciiString(" | grep -v grep | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1");
-  system( cmd.ToCString() );
+  std::string cmd = "ps xo pid,args | grep " + _genericName;
+  cmd += " | grep -e \"^ *[0-9]\\+ \\+" + GHS3DPlugin_Hypothesis::GetExeName() + "\"";
+  cmd += " | awk '{print $1}' | xargs kill -9 > /dev/null 2>&1";
+  system( cmd.c_str() );
 #endif
 }
 
