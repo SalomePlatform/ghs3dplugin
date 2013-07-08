@@ -223,6 +223,10 @@ public:
    * \brief Return a unique file name
    */
   static std::string GetFileName(const GHS3DPlugin_Hypothesis* hyp);
+  /*!
+   * \brief Return the name of executable
+   */
+  static std::string GetExeName();
 
   /*!
    * To set an enforced vertex

@@ -1395,8 +1395,7 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  /*dflts*/
 std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
                                                  const bool         hasShapeToMesh)
 {
-  TCollection_AsciiString cmd;
-  cmd = "mg-tetra.exe";
+  TCollection_AsciiString cmd = GetExeName().c_str();
   // check if any option is overridden by hyp->myTextOption
   bool m   = hyp ? ( hyp->myTextOption.find("-m")  == std::string::npos ) : true;
   bool M   = hyp ? ( hyp->myTextOption.find("-M")  == std::string::npos ) : true;
@@ -1528,6 +1527,16 @@ std::string GHS3DPlugin_Hypothesis::GetFileName(const GHS3DPlugin_Hypothesis* hy
   return aGenericName.ToCString();
 }
 
+//================================================================================
+/*
+ * Return the name of executable
+ */
+//================================================================================
+
+std::string GHS3DPlugin_Hypothesis::GetExeName()
+{
+  return "mg-tetra.exe";
+}
 
 //================================================================================
 /*!
