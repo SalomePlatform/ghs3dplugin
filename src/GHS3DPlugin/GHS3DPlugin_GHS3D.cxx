@@ -3750,7 +3750,7 @@ void GHS3DPlugin_GHS3D::CancelCompute()
 #ifdef WNT
 #else
   std::string cmd = "ps xo pid,args | grep " + _genericName;
-  cmd += " | grep -e \"^ *[0-9]\\+ \\+" + GHS3DPlugin_Hypothesis::GetExeName() + "\"";
+  //cmd += " | grep -e \"^ *[0-9]\\+ \\+" + GHS3DPlugin_Hypothesis::GetExeName() + "\"";
   cmd += " | awk '{print $1}' | xargs kill -9 > /dev/null 2>&1";
   system( cmd.c_str() );
 #endif
