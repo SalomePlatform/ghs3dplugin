@@ -69,4 +69,5 @@ libGHS3DPluginGUI_la_LDFLAGS  = \
 nodist_salomeres_DATA= \
 	GHS3DPlugin_images.qm \
 	GHS3DPlugin_msg_en.qm \
-	GHS3DPlugin_msg_fr.qm
+	GHS3DPlugin_msg_fr.qm \
+	GHS3DPlugin_msg_ja.qm
