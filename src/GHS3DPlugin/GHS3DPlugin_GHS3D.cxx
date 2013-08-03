@@ -1464,6 +1464,12 @@ static bool readGMFFile(const char*                     theFile,
   aSubdomainFile.close();
 #endif  
   
+  if (elemSearcher)
+  {
+    MESSAGE("delete elemSearcher")
+    delete elemSearcher;
+    elemSearcher = 0;
+  }
   return true;
 }
 
