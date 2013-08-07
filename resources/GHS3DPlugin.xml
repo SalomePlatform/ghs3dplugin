@@ -27,6 +27,7 @@
 
 <meshers-group name="GHS3D"
                resources="GHS3DPlugin"
+               idl-module="GHS3DPlugin"
                server-lib="GHS3DEngine"
                gui-lib="GHS3DPluginGUI">
   <hypotheses>
