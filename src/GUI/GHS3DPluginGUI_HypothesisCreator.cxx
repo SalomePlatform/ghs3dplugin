@@ -645,7 +645,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   tab->setCurrentIndex( STD_TAB );
 
   // connections
-  connect( myToMeshHolesCheck,      SIGNAL( toggled( bool ) ), this, SLOT( onToMeshHoles(bool)));
+  //connect( myToMeshHolesCheck,      SIGNAL( toggled( bool ) ), this, SLOT( onToMeshHoles(bool)));
   connect( myMaximumMemoryCheck,    SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myInitialMemoryCheck,    SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myBoundaryRecoveryCheck, SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
@@ -1387,9 +1387,9 @@ void GHS3DPluginGUI_HypothesisCreator::onRemoveEnforcedVertex()
 
 void GHS3DPluginGUI_HypothesisCreator::onToMeshHoles(bool isOn)
 {
-  myToMakeGroupsOfDomains->setEnabled( isOn );
-  if ( !isOn )
-    myToMakeGroupsOfDomains->setChecked( false );
+  // myToMakeGroupsOfDomains->setEnabled( isOn );
+  // if ( !isOn )
+  //   myToMakeGroupsOfDomains->setChecked( false );
 }
 
 void GHS3DPluginGUI_HypothesisCreator::onDirBtnClicked()
@@ -1401,7 +1401,7 @@ void GHS3DPluginGUI_HypothesisCreator::onDirBtnClicked()
 
 void GHS3DPluginGUI_HypothesisCreator::updateWidgets()
 {
-  myToMakeGroupsOfDomains->setEnabled( myToMeshHolesCheck->isChecked() );
+  //myToMakeGroupsOfDomains->setEnabled( myToMeshHolesCheck->isChecked() );
   myMaximumMemorySpin->setEnabled( myMaximumMemoryCheck->isChecked() );
   myInitialMemoryCheck->setEnabled( !myBoundaryRecoveryCheck->isChecked() );
   myInitialMemorySpin->setEnabled( myInitialMemoryCheck->isChecked() && !myBoundaryRecoveryCheck->isChecked() );
@@ -1678,7 +1678,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   h_data.myName = isCreation() && data ? hypName() : "";
 
   h_data.myToMeshHoles                = h->GetToMeshHoles();
-  h_data.myToMakeGroupsOfDomains      = h->GetToMeshHoles() && h->GetToMakeGroupsOfDomains();
+  h_data.myToMakeGroupsOfDomains      = /*h->GetToMeshHoles() &&*/ h->GetToMakeGroupsOfDomains();
   h_data.myMaximumMemory              = h->GetMaximumMemory();
   h_data.myInitialMemory              = h->GetInitialMemory();
   h_data.myInitialMemory              = h->GetInitialMemory();

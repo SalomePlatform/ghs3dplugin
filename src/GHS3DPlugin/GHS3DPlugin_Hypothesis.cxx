@@ -126,8 +126,8 @@ bool GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains() const
 bool GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains(const GHS3DPlugin_Hypothesis* hyp)
 {
   bool res;
-  if ( hyp ) res = hyp->GetToMeshHoles(true) && hyp->GetToMakeGroupsOfDomains();
-  else       res = DefaultMeshHoles()        && DefaultToMakeGroupsOfDomains();
+  if ( hyp ) res = /*hyp->GetToMeshHoles(true) &&*/ hyp->GetToMakeGroupsOfDomains();
+  else       res = /*DefaultMeshHoles()        &&*/ DefaultToMakeGroupsOfDomains();
   return res;
 }
 
@@ -796,7 +796,7 @@ bool GHS3DPlugin_Hypothesis::DefaultMeshHoles()
 
 bool GHS3DPlugin_Hypothesis::DefaultToMakeGroupsOfDomains()
 {
-  return DefaultMeshHoles(); // issue 0022172
+  return true; // issue 0022172
 }
 
 //=======================================================================

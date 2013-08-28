@@ -1079,11 +1079,60 @@ static void removeEmptyGroupsOfDomains(SMESH_Mesh* mesh,
     // check the name
     if ( strncmp( name, refName, refLen ) == 0 && // starts from refName;
          isdigit( *( name + refLen )) &&          // refName is followed by a digit;
-         strtol( name + refLen, &end, 10) &&      // there are only digits ...
+         strtol( name + refLen, &end, 10) >= 0 && // there are only digits ...
          *end == '\0')                            // ... till a string end.
     {
       mesh->RemoveGroup( *id );
     }
+  }
+}
+
+//================================================================================
+/*!
+ * \brief Create the groups corresponding to domains
+ */
+//================================================================================
+
+static void makeDomainGroups( std::vector< std::vector< const SMDS_MeshElement* > >& elemsOfDomain,
+                              SMESH_MesherHelper*                                    theHelper)
+{
+  // int nbDomains = 0;
+  // for ( size_t i = 0; i < elemsOfDomain.size(); ++i )
+  //   nbDomains += ( elemsOfDomain[i].size() > 0 );
+
+  // if ( nbDomains > 1 )
+  for ( size_t iDomain = 0; iDomain < elemsOfDomain.size(); ++iDomain )
+  {
+    std::vector< const SMDS_MeshElement* > & elems = elemsOfDomain[ iDomain ];
+    if ( elems.empty() ) continue;
+
+    // find existing groups
+    std::vector< SMESH_Group* > groupOfType( SMDSAbs_NbElementTypes, (SMESH_Group*)NULL );
+    const std::string domainName = ( SMESH_Comment( theDomainGroupNamePrefix ) << iDomain );
+    SMESH_Mesh::GroupIteratorPtr groupIt = theHelper->GetMesh()->GetGroups();
+    while ( groupIt->more() )
+    {
+      SMESH_Group* group = groupIt->next();
+      if ( domainName == group->GetName() &&
+           dynamic_cast< SMESHDS_Group* >( group->GetGroupDS()) )
+        groupOfType[ group->GetGroupDS()->GetType() ] = group;
+    }
+    // create and fill the groups
+    size_t iElem = 0;
+    int groupID;
+    do
+    {
+      SMESH_Group* group = groupOfType[ elems[ iElem ]->GetType() ];
+      if ( !group )
+        group = theHelper->GetMesh()->AddGroup( elems[ iElem ]->GetType(),
+                                                domainName.c_str(), groupID );
+      SMDS_MeshGroup& groupDS =
+        static_cast< SMESHDS_Group* >( group->GetGroupDS() )->SMDSGroup();
+
+      while ( iElem < elems.size() && groupDS.Add( elems[iElem] ))
+        ++iElem;
+
+    } while ( iElem < elems.size() );
   }
 }
 
@@ -1401,46 +1450,7 @@ static bool readGMFFile(const char*                     theFile,
 
   // 0022172: [CEA 790] create the groups corresponding to domains
   if ( toMakeGroupsOfDomains )
-  {
-    int nbDomains = 0;
-    for ( size_t i = 0; i < elemsOfDomain.size(); ++i )
-      nbDomains += ( elemsOfDomain[i].size() > 0 );
-
-    if ( nbDomains > 1 )
-      for ( size_t iDomain = 0; iDomain < elemsOfDomain.size(); ++iDomain )
-      {
-        std::vector< const SMDS_MeshElement* > & elems = elemsOfDomain[ iDomain ];
-        if ( elems.empty() ) continue;
-
-        // find existing groups
-        std::vector< SMESH_Group* > groupOfType( SMDSAbs_NbElementTypes, (SMESH_Group*)NULL );
-        const std::string domainName = ( SMESH_Comment( theDomainGroupNamePrefix ) << iDomain );
-        SMESH_Mesh::GroupIteratorPtr groupIt = theHelper->GetMesh()->GetGroups();
-        while ( groupIt->more() )
-        {
-          SMESH_Group* group = groupIt->next();
-          if ( domainName == group->GetName() &&
-               dynamic_cast< SMESHDS_Group* >( group->GetGroupDS()) )
-            groupOfType[ group->GetGroupDS()->GetType() ] = group;
-        }
-        // create and fill the groups
-        size_t iElem = 0;
-        int groupID;
-        do
-        {
-          SMESH_Group* group = groupOfType[ elems[ iElem ]->GetType() ];
-          if ( !group )
-            group = theHelper->GetMesh()->AddGroup( elems[ iElem ]->GetType(),
-                                                    domainName.c_str(), groupID );
-          SMDS_MeshGroup& groupDS =
-            static_cast< SMESHDS_Group* >( group->GetGroupDS() )->SMDSGroup();
-
-          while ( iElem < elems.size() && groupDS.Add( elems[iElem] ))
-            ++iElem;
-
-        } while ( iElem < elems.size() );
-      }
-  }
+    makeDomainGroups( elemsOfDomain, theHelper );
 
 #ifdef _DEBUG_
   MESSAGE("Nb subdomains " << subdomainId2tetraId.size());
@@ -2885,7 +2895,8 @@ static bool readResultFile(const int                       fileOpen,
                            int                             nbEnforcedVertices,
                            int                             nbEnforcedNodes,
                            GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap & theEnforcedEdges,
-                           GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap & theEnforcedTriangles)
+                           GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap & theEnforcedTriangles,
+                           bool                            toMakeGroupsOfDomains)
 {
   MESSAGE("GHS3DPlugin_GHS3D::readResultFile()");
   Kernel_Utils::Localizer loc;
@@ -3037,6 +3048,9 @@ static bool readResultFile(const int                       fileOpen,
   if ( nbTriangle <= nbShape ) // no holes
     toMeshHoles = true; // not avoid creating tetras in holes
 
+  // IMP 0022172: [CEA 790] create the groups corresponding to domains
+  std::vector< std::vector< const SMDS_MeshElement* > > elemsOfDomain( Max( nbTriangle, nbShape ));
+
   // Associating the tetrahedrons to the shapes
   shapeID = compoundID;
   for (int iElem = 0; iElem < nbElems; iElem++) {
@@ -3052,6 +3066,7 @@ static bool readResultFile(const int                       fileOpen,
     // tetras within holes depending on hypo option,
     // so we first check if aTet is inside a hole and then create it 
     //aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
+    ghs3dShapeID = 0; // domain ID
     if ( nbTriangle > 1 ) {
       shapeID = HOLE_ID; // negative shapeID means not to create tetras if !toMeshHoles
       ghs3dShapeID = strtol(shapePtr, &shapePtr, 10) - IdShapeRef;
@@ -3096,11 +3111,19 @@ static bool readResultFile(const int                       fileOpen,
       aTet = theHelper.AddVolume( node[1], node[0], node[2], node[3],
                                   /*id=*/0, /*force3d=*/false);
       theMeshDS->SetMeshElementOnShape( aTet, shapeID );
+      if ( toMakeGroupsOfDomains )
+      {
+        if ( int( elemsOfDomain.size() ) < ghs3dShapeID+1 )
+          elemsOfDomain.resize( ghs3dShapeID+1 );
+        elemsOfDomain[ ghs3dShapeID ].push_back( aTet );
+      }
     }
 #ifdef _DEBUG_
     shapeIDs.insert( shapeID );
 #endif
   }
+  if ( toMakeGroupsOfDomains )
+    makeDomainGroups( elemsOfDomain, &theHelper );
   
   // Add enforced elements
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap::const_iterator elemIt;
@@ -3446,6 +3469,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   else {
     bool toMeshHoles =
       _hyp ? _hyp->GetToMeshHoles(true) : GHS3DPlugin_Hypothesis::DefaultMeshHoles();
+    const bool toMakeGroupsOfDomains = GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains( _hyp );
 
     helper.IsQuadraticSubMesh( theShape );
     helper.SetElementsOnShape( false );
@@ -3459,7 +3483,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                          aGhs3dIdToNodeMap, aNodeId2NodeIndexMap,
                          toMeshHoles, 
                          nbEnforcedVertices, nbEnforcedNodes, 
-                         enforcedEdges, enforcedTriangles );
+                         enforcedEdges, enforcedTriangles,
+                         toMakeGroupsOfDomains );
                          
 //       Ok = readGMFFile(
 // #ifndef GMF_HAS_SUBDOMAIN_INFO
@@ -3469,6 +3494,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 //                        _nbShape, tabShape, tabBox, 
 //                        aGhs3dIdToNodeMap, toMeshHoles,
 //                        nbEnforcedVertices, nbEnforcedNodes);
+
+    removeEmptyGroupsOfDomains( helper.GetMesh(), /*notEmptyAsWell =*/ !toMakeGroupsOfDomains );
   }
 
 
@@ -3483,8 +3510,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     if ( !_keepFiles )
       removeFile( aLogFileName );
 
-    if ( _hyp && _hyp->GetToMakeGroupsOfDomains() )
-      error( COMPERR_WARNING, "'toMakeGroupsOfDomains' is ignored since the mesh is on shape" );
+    // if ( _hyp && _hyp->GetToMakeGroupsOfDomains() )
+    //   error( COMPERR_WARNING, "'toMakeGroupsOfDomains' is ignored since the mesh is on shape" );
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
@@ -3705,7 +3732,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                    groupsToRemove, toMakeGroupsOfDomains);
 
   updateMeshGroups(theHelper->GetMesh(), groupsToRemove);
-  removeEmptyGroupsOfDomains( theHelper->GetMesh() );
+  removeEmptyGroupsOfDomains( theHelper->GetMesh(), /*notEmptyAsWell =*/ !toMakeGroupsOfDomains );
 
   if ( Ok ) {
     GHS3DPlugin_Hypothesis* that = (GHS3DPlugin_Hypothesis*)this->_hyp;
@@ -3721,8 +3748,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     if ( !_keepFiles )
       removeFile( aLogFileName );
 
-    if ( !toMakeGroupsOfDomains && _hyp && _hyp->GetToMakeGroupsOfDomains() )
-      error( COMPERR_WARNING, "'toMakeGroupsOfDomains' is ignored since 'toMeshHoles' is OFF." );
+    //if ( !toMakeGroupsOfDomains && _hyp && _hyp->GetToMakeGroupsOfDomains() )
+    //error( COMPERR_WARNING, "'toMakeGroupsOfDomains' is ignored since 'toMeshHoles' is OFF." );
   }
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
