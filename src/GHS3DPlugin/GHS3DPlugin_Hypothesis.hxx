@@ -319,7 +319,7 @@ public:
   virtual bool SetParametersByMesh(const SMESH_Mesh* theMesh, const TopoDS_Shape& theShape);
 
   /*!
-   * \brief Does nothing
+   * \brief Sets myToMakeGroupsOfDomains depending on whether theMesh is on shape or not
    */
   virtual bool SetParametersByDefaults(const TDefaults& dflts, const SMESH_Mesh* theMesh=0);
 

@@ -1376,14 +1376,15 @@ bool GHS3DPlugin_Hypothesis::SetParametersByMesh(const SMESH_Mesh* ,const TopoDS
 
 //================================================================================
 /*!
- * \brief Return false
+ * \brief Sets myToMakeGroupsOfDomains depending on whether theMesh is on shape or not
  */
 //================================================================================
 
 bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  /*dflts*/,
-                                                     const SMESH_Mesh* /*theMesh*/)
+                                                     const SMESH_Mesh* theMesh)
 {
-  return false;
+  myToMakeGroupsOfDomains = ( !theMesh || !theMesh->HasShapeToMesh() );
+  return true;
 }
 
 //================================================================================

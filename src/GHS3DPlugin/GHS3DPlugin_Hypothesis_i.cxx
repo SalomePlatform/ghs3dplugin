@@ -951,8 +951,8 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
       MESSAGE("Required type is FACE");
       break;
     default:
-    	MESSAGE("Incompatible required type: " << theType);
-    	return false;
+        MESSAGE("Incompatible required type: " << theType);
+        return false;
   }
 //   MESSAGE("Required type is "<<theType);
   SMESH::array_of_ElementType_var types = theSource->GetTypes();
@@ -980,20 +980,20 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
 
   string enfMeshName = theName;
   if (enfMeshName.empty())
-	  enfMeshName = SObj->GetName();
+          enfMeshName = SObj->GetName();
 
   if (theMesh_i)
   {
     try {
-    	bool res = this->GetImpl()->SetEnforcedMesh(theMesh_i->GetImpl(), theType, enfMeshName , SObj->GetID(), theGroupName);
-		if (theGroupName != "") {
-		  SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( "
-								<< theSource << ".GetMesh(), " << theType << ", \"" << theGroupName << "\" )";
-		}
-		else {
-		  SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMesh( "
-								<< theSource << ".GetMesh(), " << theType << " )";
-		}
+        bool res = this->GetImpl()->SetEnforcedMesh(theMesh_i->GetImpl(), theType, enfMeshName , SObj->GetID(), theGroupName);
+                if (theGroupName != "") {
+                  SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( "
+                                                                << theSource << ".GetMesh(), " << theType << ", \"" << theGroupName << "\" )";
+                }
+                else {
+                  SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMesh( "
+                                                                << theSource << ".GetMesh(), " << theType << " )";
+                }
 
       return res;
     }
@@ -1013,7 +1013,7 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
   {
     MESSAGE("The source is a group")
     try {
-    	bool res = this->GetImpl()->SetEnforcedGroup(theGroup_i->GetGroupDS()->GetMesh(), theGroup_i->GetListOfID(), theType, enfMeshName , SObj->GetID(), theGroupName);
+        bool res = this->GetImpl()->SetEnforcedGroup(theGroup_i->GetGroupDS()->GetMesh(), theGroup_i->GetListOfID(), theType, enfMeshName , SObj->GetID(), theGroupName);
         if (theGroupName != "") {
           SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( " 
                                 << theSource << ", " << theType << ", \"" << theGroupName << "\" )";
@@ -1040,7 +1040,7 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
   {
     MESSAGE("The source is a group on geom")
     try {
-    	bool res = this->GetImpl()->SetEnforcedGroup(theGroupOnGeom_i->GetGroupDS()->GetMesh(),theGroupOnGeom_i->GetListOfID(), theType, enfMeshName , SObj->GetID(), theGroupName);
+        bool res = this->GetImpl()->SetEnforcedGroup(theGroupOnGeom_i->GetGroupDS()->GetMesh(),theGroupOnGeom_i->GetListOfID(), theType, enfMeshName , SObj->GetID(), theGroupName);
         if (theGroupName != "") {
           SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( " 
                                 << theSource << ", " << theType << ", \"" << theGroupName << "\" )";
