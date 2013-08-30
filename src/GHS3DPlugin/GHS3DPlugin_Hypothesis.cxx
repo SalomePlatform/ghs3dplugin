@@ -1380,10 +1380,10 @@ bool GHS3DPlugin_Hypothesis::SetParametersByMesh(const SMESH_Mesh* ,const TopoDS
  */
 //================================================================================
 
-bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  /*dflts*/,
-                                                     const SMESH_Mesh* theMesh)
+bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
+                                                     const SMESH_Mesh* /*theMesh*/)
 {
-  myToMakeGroupsOfDomains = ( !theMesh || !theMesh->HasShapeToMesh() );
+  myToMakeGroupsOfDomains = ( !dflts._shape || dflts._shape->IsNull() );
   return true;
 }
 
