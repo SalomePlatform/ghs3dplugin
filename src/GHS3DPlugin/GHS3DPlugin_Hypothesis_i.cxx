@@ -398,6 +398,48 @@ CORBA::Double GHS3DPlugin_Hypothesis_i::GetGradation()
 }
 
 //=======================================================================
+//function : SetStandardOutputLog
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetStandardOutputLog(CORBA::Boolean logInStandardOutput)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetStandardOutputLog(logInStandardOutput);
+  SMESH::TPythonDump() << _this() << ".SetPrintLogInFile( " << !logInStandardOutput << " )";
+}
+
+//=======================================================================
+//function : GetStandardOutputLog
+//=======================================================================
+
+CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetStandardOutputLog()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetStandardOutputLog();
+}
+
+//=======================================================================
+//function : SetRemoveLogOnSuccess
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetRemoveLogOnSuccess(CORBA::Boolean removeLogOnSuccess)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetRemoveLogOnSuccess(removeLogOnSuccess);
+  SMESH::TPythonDump() << _this() << ".SetRemoveLogOnSuccess( " << removeLogOnSuccess << " )";
+}
+
+//=======================================================================
+//function : GetRemoveLogOnSuccess
+//=======================================================================
+
+CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetRemoveLogOnSuccess()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetRemoveLogOnSuccess();
+}
+
+//=======================================================================
 //function : SetEnforcedVertex
 //=======================================================================
 

@@ -61,6 +61,7 @@ class SMESHGUI_SpinBox;
 class StdMeshersGUI_ObjectReferenceParamWdg;
 class LightApp_SelectionMgr;
 class SUIT_SelectionFilter;
+class GHS3DPluginGUI_AdvWidget;
 
 class QTEnfVertex
 {
@@ -140,7 +141,8 @@ typedef std::set< TEnfMesh*, CompareEnfMeshes > TEnfMeshList;
 
 typedef struct
 {
-  bool    myToMeshHoles,myToMakeGroupsOfDomains,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint;
+  bool    myToMeshHoles,myToMakeGroupsOfDomains,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint,
+          myLogInStandardOutput, myRemoveLogOnSuccess;
   int     myMaximumMemory,myInitialMemory,myOptimizationLevel;
   QString myName,myWorkingDir,myTextOption;
   double  myGradation;
@@ -213,20 +215,8 @@ private:
   QCheckBox*          myToMakeGroupsOfDomains;
   QComboBox*          myOptimizationLevelCombo;
 
-  QWidget*            myAdvGroup;
-  QCheckBox*          myMaximumMemoryCheck;
-  QSpinBox*           myMaximumMemorySpin;
-  QCheckBox*          myInitialMemoryCheck;
-  QSpinBox*           myInitialMemorySpin;
-  QLineEdit*          myWorkingDir;
-  QCheckBox*          myKeepFiles;
-  QSpinBox*           myVerboseLevelSpin;
-  QCheckBox*          myToCreateNewNodesCheck;
-  QCheckBox*          myRemoveInitialCentralPointCheck;
-  QCheckBox*          myBoundaryRecoveryCheck;
-  QCheckBox*          myFEMCorrectionCheck;
-  SMESHGUI_SpinBox*   myGradation;
-  QLineEdit*          myTextOption;
+  QWidget*                  myAdvGroup;
+  GHS3DPluginGUI_AdvWidget* myAdvWidget;
   
   QWidget*            myEnfGroup;
   QPixmap             iconVertex, iconCompound;

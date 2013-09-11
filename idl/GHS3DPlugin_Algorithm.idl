@@ -153,6 +153,16 @@ module GHS3DPlugin
     void SetGradation(in double gradation);
     double GetGradation();
     /*!
+     * Print log in standard output
+     */
+    void SetStandardOutputLog(in boolean logInStandardOutput);
+    boolean GetStandardOutputLog();
+    /*!
+    * Remove log file on success
+    */
+    void SetRemoveLogOnSuccess(in boolean removeLogOnSuccess);
+    boolean GetRemoveLogOnSuccess();
+    /*!
      * To set an enforced vertex
      */
     boolean SetEnforcedVertex(in double x, in double y, in double z, in double size) raises (SALOME::SALOME_Exception);

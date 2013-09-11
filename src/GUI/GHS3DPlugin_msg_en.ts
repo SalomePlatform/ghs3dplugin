@@ -29,11 +29,15 @@
     </message>
     <message>
         <source>GHS3D_TO_MESH_HOLES</source>
-        <translation>To mesh holes</translation>
+        <translation>Mesh holes</translation>
     </message>
     <message>
         <source>GHS3D_TO_MAKE_DOMAIN_GROUPS</source>
-        <translation>To make groups of domains</translation>
+        <translation>Make groups of domains</translation>
+    </message>
+    <message>
+        <source>ADVANCED_MESHING_GROUP_TITLE</source>
+        <translation>Advanced meshing options</translation>
     </message>
     <message>
         <source>INIT_MEMORY_SIZE</source>
@@ -41,7 +45,7 @@
     </message>
     <message>
         <source>KEEP_WORKING_FILES</source>
-        <translation>To keep working files</translation>
+        <translation>Keep all working files</translation>
     </message>
     <message>
         <source>LEVEL_NONE</source>
@@ -64,28 +68,44 @@
         <translation>Strong</translation>
     </message>
     <message>
+        <source>LOG_IN_FILE</source>
+        <translation>Print log in a file</translation>
+    </message>
+    <message>
+        <source>LOG_GROUP_TITLE</source>
+        <translation>Logs and debug</translation>
+    </message>
+    <message>
         <source>MAX_MEMORY_SIZE</source>
         <translation>Maximum memory size</translation>
     </message>
     <message>
         <source>MEGABYTE</source>
-        <translation>Megabytes</translation>
+        <translation>MB</translation>
+    </message>
+    <message>
+        <source>MEMORY_GROUP_TITLE</source>
+        <translation>Memory settings</translation>
     </message>
     <message>
         <source>NO_INITIAL_CENTRAL_POINT</source>
-        <translation>To remove initial central point</translation>
+        <translation>Remove initial central point</translation>
     </message>
     <message>
         <source>RECOVERY_VERSION</source>
-        <translation>To use boundary recovery version</translation>
+        <translation>Use boundary recovery version</translation>
     </message>
     <message>
         <source>FEM_CORRECTION</source>
-        <translation>To use FEM correction</translation>
+        <translation>Use FEM correction</translation>
     </message>
     <message>
         <source>GHS3D_GRADATION</source>
         <translation>Volumic gradation</translation>
+    </message>
+    <message>
+        <source>REMOVE_LOG_ON_SUCCESS</source>
+        <translation>Remove log on success</translation>
     </message>
     <message>
         <source>SELECT_DIR</source>
@@ -97,7 +117,7 @@
     </message>
     <message>
         <source>TO_ADD_NODES</source>
-        <translation>To create new nodes</translation>
+        <translation>Create new nodes</translation>
     </message>
     <message>
         <source>VERBOSE_LEVEL</source>

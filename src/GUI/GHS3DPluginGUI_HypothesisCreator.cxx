@@ -24,6 +24,7 @@
 //
 #include "GHS3DPluginGUI_HypothesisCreator.h"
 #include "GHS3DPluginGUI_Enums.h"
+#include "GHS3DPluginGUI_Dlg.h"
 
 #include <GeometryGUI.h>
 
@@ -409,71 +410,41 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   QGridLayout* anAdvLayout = new QGridLayout( myAdvGroup );
   anAdvLayout->setSpacing( 6 );
   anAdvLayout->setMargin( 11 );
-  
-  myMaximumMemoryCheck = new QCheckBox( tr( "MAX_MEMORY_SIZE" ), myAdvGroup );
-  myMaximumMemorySpin = new QSpinBox( myAdvGroup );
-  myMaximumMemorySpin->setMinimum( 1 );
-  myMaximumMemorySpin->setMaximum( maxAvailableMemory() );
-  myMaximumMemorySpin->setSingleStep( 10 );
-  QLabel* aMegabyteLabel = new QLabel( tr( "MEGABYTE" ), myAdvGroup );
+  myAdvWidget = new GHS3DPluginGUI_AdvWidget(myAdvGroup);
+  anAdvLayout->addWidget( myAdvWidget);
 
-  myInitialMemoryCheck = new QCheckBox( tr( "INIT_MEMORY_SIZE" ), myAdvGroup );
-  myInitialMemorySpin = new QSpinBox( myAdvGroup );
-  myInitialMemorySpin->setMinimum( 1 );
-  myInitialMemorySpin->setMaximum( maxAvailableMemory() );
-  myInitialMemorySpin->setSingleStep( 10 );
-  QLabel* aMegabyteLabel2 = new QLabel( tr( "MEGABYTE" ), myAdvGroup );
+  myAdvWidget->maxMemoryCheck->setText(tr( "MAX_MEMORY_SIZE" ));
+  myAdvWidget->initialMemoryCheck->setText(tr( "INIT_MEMORY_SIZE" ));
 
-  QLabel* aWorkinDirLabel = new QLabel( tr( "WORKING_DIR" ), myAdvGroup );
-  myWorkingDir = new QLineEdit( myAdvGroup );
-  //myWorkingDir->setReadOnly( true );
-  QPushButton* dirBtn = new QPushButton( tr( "SELECT_DIR" ), myAdvGroup );
-  dirBtn->setSizePolicy( QSizePolicy( QSizePolicy::Fixed, QSizePolicy::Fixed ) );
+  myAdvWidget->maxMemorySpin ->setMinimum( 1 );
+  myAdvWidget->maxMemorySpin ->setMaximum( maxAvailableMemory() );
+  myAdvWidget->maxMemorySpin ->setSingleStep( 10 );
   
-  myKeepFiles = new QCheckBox( tr( "KEEP_WORKING_FILES" ), myAdvGroup );
+  myAdvWidget->initialMemorySpin->setMinimum( 1 );
+  myAdvWidget->initialMemorySpin->setMaximum( maxAvailableMemory() );
+  myAdvWidget->initialMemorySpin->setSingleStep( 10 );
 
-  QLabel* aVerboseLevelLabel = new QLabel( tr( "VERBOSE_LEVEL" ), myAdvGroup );
-  myVerboseLevelSpin = new QSpinBox( myAdvGroup );
-  myVerboseLevelSpin->setMinimum( 0 );
-  myVerboseLevelSpin->setMaximum( 10 );
-  myVerboseLevelSpin->setSingleStep( 1 );
-
-  myToCreateNewNodesCheck = new QCheckBox( tr( "TO_ADD_NODES" ), myAdvGroup );
+  myAdvWidget->initialMemoryLabel            ->setText (tr( "MEGABYTE" ));
+  myAdvWidget->maxMemoryLabel                ->setText (tr( "MEGABYTE" ));
   
-  myRemoveInitialCentralPointCheck = new QCheckBox( tr( "NO_INITIAL_CENTRAL_POINT" ), myAdvGroup );
+  myAdvWidget->workingDirectoryLabel         ->setText (tr( "WORKING_DIR" ));
+  myAdvWidget->workingDirectoryPushButton    ->setText (tr( "SELECT_DIR" ));
+  myAdvWidget->keepWorkingFilesCheck         ->setText (tr( "KEEP_WORKING_FILES" ));
+  myAdvWidget->verboseLevelLabel             ->setText (tr( "VERBOSE_LEVEL" ));
+  myAdvWidget->removeLogOnSuccessCheck       ->setText (tr( "REMOVE_LOG_ON_SUCCESS" ));
+  myAdvWidget->logInFileCheck                ->setText (tr( "LOG_IN_FILE" ));
   
-  myBoundaryRecoveryCheck = new QCheckBox( tr( "RECOVERY_VERSION" ), myAdvGroup );
+  myAdvWidget->memoryGroupBox                ->setTitle(tr( "MEMORY_GROUP_TITLE" ));
+  myAdvWidget->logGroupBox                   ->setTitle(tr( "LOG_GROUP_TITLE" ));
+  myAdvWidget->advancedMeshingGroupBox       ->setTitle(tr( "ADVANCED_MESHING_GROUP_TITLE" ));
   
-  myFEMCorrectionCheck = new QCheckBox( tr( "FEM_CORRECTION" ), myAdvGroup );
-  
-  QLabel* myGradationLabel = new QLabel( tr( "GHS3D_GRADATION" ), myAdvGroup );
-  myGradation = new SMESHGUI_SpinBox(myAdvGroup);
-  myGradation->RangeStepAndValidator(1.05, 5.0, 0.05, "length_precision");
-
-  QLabel* aTextOptionLabel = new QLabel( tr( "TEXT_OPTION" ), myAdvGroup );
-  myTextOption = new QLineEdit( myAdvGroup );
-
-  row = 0;
-  anAdvLayout->addWidget( myMaximumMemoryCheck,             row, 0, 1, 1 );
-  anAdvLayout->addWidget( myMaximumMemorySpin,              row, 1, 1, 1 );
-  anAdvLayout->addWidget( aMegabyteLabel,                   row++, 2, 1, 1 );
-  anAdvLayout->addWidget( myInitialMemoryCheck,             row, 0, 1, 1 );
-  anAdvLayout->addWidget( myInitialMemorySpin,              row, 1, 1, 1 );
-  anAdvLayout->addWidget( aMegabyteLabel2,                  row++, 2, 1, 1 );
-  anAdvLayout->addWidget( aWorkinDirLabel,                  row, 0, 1, 1 );
-  anAdvLayout->addWidget( myWorkingDir,                     row, 1, 1, 2 );
-  anAdvLayout->addWidget( dirBtn,                           row++, 3, 1, 1 );
-  anAdvLayout->addWidget( myKeepFiles,                      row++, 0, 1, 4 );
-  anAdvLayout->addWidget( aVerboseLevelLabel,               row, 0, 1, 1 );
-  anAdvLayout->addWidget( myVerboseLevelSpin,               row++, 1, 1, 2 );
-  anAdvLayout->addWidget( myToCreateNewNodesCheck,          row++, 0, 1, 4 );
-  anAdvLayout->addWidget( myRemoveInitialCentralPointCheck, row++, 0, 1, 4 );
-  anAdvLayout->addWidget( myBoundaryRecoveryCheck,          row++, 0, 1, 4 );
-  anAdvLayout->addWidget( myFEMCorrectionCheck,             row++, 0, 1, 4 );
-  anAdvLayout->addWidget( myGradationLabel,                 row, 0, 1, 1 );
-  anAdvLayout->addWidget( myGradation,                      row++, 1, 1, 2 );
-  anAdvLayout->addWidget( aTextOptionLabel,                 row, 0, 1, 1 );
-  anAdvLayout->addWidget( myTextOption,                     row++, 1, 1, 2 );
+  myAdvWidget->createNewNodesCheck           ->setText (tr( "TO_ADD_NODES" ));
+  myAdvWidget->removeInitialCentralPointCheck->setText (tr( "NO_INITIAL_CENTRAL_POINT" ));
+  myAdvWidget->boundaryRecoveryCheck         ->setText (tr( "RECOVERY_VERSION" ));
+  myAdvWidget->FEMCorrectionCheck            ->setText (tr( "FEM_CORRECTION" ));
+  myAdvWidget->gradationLabel                ->setText (tr( "GHS3D_GRADATION" ));
+  myAdvWidget->gradationSpinBox->RangeStepAndValidator(1.05, 5.0, 0.05, "length_precision");
+  myAdvWidget->textOptionLabel->setText(tr( "TEXT_OPTION" ));
 
   // Enforced vertices parameters
   myEnfGroup = new QWidget();
@@ -646,10 +617,13 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
 
   // connections
   //connect( myToMeshHolesCheck,      SIGNAL( toggled( bool ) ), this, SLOT( onToMeshHoles(bool)));
-  connect( myMaximumMemoryCheck,    SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
-  connect( myInitialMemoryCheck,    SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
-  connect( myBoundaryRecoveryCheck, SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
-  connect( dirBtn,                  SIGNAL( clicked() ),       this, SLOT( onDirBtnClicked() ) );
+  connect( myAdvWidget->maxMemoryCheck,             SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
+  connect( myAdvWidget->initialMemoryCheck,         SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
+  connect( myAdvWidget->boundaryRecoveryCheck,      SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
+  connect( myAdvWidget->logInFileCheck,             SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
+  connect( myAdvWidget->keepWorkingFilesCheck,      SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
+  connect( myAdvWidget->workingDirectoryPushButton, SIGNAL( clicked() ),       this, SLOT( onDirBtnClicked() ) );
+  
   connect( myEnforcedTableWidget,   SIGNAL( itemClicked(QTableWidgetItem *)), this, SLOT( synchronizeCoords() ) );
   connect( myEnforcedTableWidget,   SIGNAL( itemChanged(QTableWidgetItem *)), this, SLOT( updateEnforcedVertexValues(QTableWidgetItem *) ) );
   connect( myEnforcedTableWidget,   SIGNAL( itemSelectionChanged() ),         this, SLOT( synchronizeCoords() ) );
@@ -1394,25 +1368,33 @@ void GHS3DPluginGUI_HypothesisCreator::onToMeshHoles(bool isOn)
 
 void GHS3DPluginGUI_HypothesisCreator::onDirBtnClicked()
 {
-  QString dir = SUIT_FileDlg::getExistingDirectory( dlg(), myWorkingDir->text(), QString() );
+  QString dir = SUIT_FileDlg::getExistingDirectory( dlg(), myAdvWidget->workingDirectoryLineEdit->text(), QString() );
   if ( !dir.isEmpty() )
-    myWorkingDir->setText( dir );
+    myAdvWidget->workingDirectoryLineEdit->setText( dir );
 }
 
 void GHS3DPluginGUI_HypothesisCreator::updateWidgets()
 {
   //myToMakeGroupsOfDomains->setEnabled( myToMeshHolesCheck->isChecked() );
-  myMaximumMemorySpin->setEnabled( myMaximumMemoryCheck->isChecked() );
-  myInitialMemoryCheck->setEnabled( !myBoundaryRecoveryCheck->isChecked() );
-  myInitialMemorySpin->setEnabled( myInitialMemoryCheck->isChecked() && !myBoundaryRecoveryCheck->isChecked() );
-  myOptimizationLevelCombo->setEnabled( !myBoundaryRecoveryCheck->isChecked() );
+  myAdvWidget->maxMemorySpin->setEnabled( myAdvWidget->maxMemoryCheck->isChecked() );
+  myAdvWidget->initialMemoryCheck->setEnabled( !myAdvWidget->boundaryRecoveryCheck->isChecked() );
+  myAdvWidget->initialMemorySpin->setEnabled( myAdvWidget->initialMemoryCheck->isChecked() && !myAdvWidget->boundaryRecoveryCheck->isChecked() );
+  myOptimizationLevelCombo->setEnabled( !myAdvWidget->boundaryRecoveryCheck->isChecked() );
+  if ( sender() == myAdvWidget->logInFileCheck ||
+       sender() == myAdvWidget->keepWorkingFilesCheck )
+  {
+    bool logFileRemovable = myAdvWidget->logInFileCheck->isChecked() &&
+                            !myAdvWidget->keepWorkingFilesCheck->isChecked();
+                             
+    myAdvWidget->removeLogOnSuccessCheck->setEnabled( logFileRemovable );
+  }
 }
 
 bool GHS3DPluginGUI_HypothesisCreator::checkParams(QString& msg) const
 {
   MESSAGE("GHS3DPluginGUI_HypothesisCreator::checkParams");
 
-  if ( !QFileInfo( myWorkingDir->text().trimmed() ).isWritable() ) {
+  if ( !QFileInfo( myAdvWidget->workingDirectoryLineEdit->text().trimmed() ).isWritable() ) {
     SUIT_MessageBox::warning( dlg(),
                               tr( "SMESH_WRN_WARNING" ),
                               tr( "GHS3D_PERMISSION_DENIED" ) );
@@ -1432,24 +1414,26 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   if ( myName )
     myName->setText( data.myName );
   
-  myToMeshHolesCheck               ->setChecked    ( data.myToMeshHoles );
-  myToMakeGroupsOfDomains          ->setChecked    ( data.myToMakeGroupsOfDomains );
-  myOptimizationLevelCombo         ->setCurrentIndex( data.myOptimizationLevel );
-  myMaximumMemoryCheck             ->setChecked    ( data.myMaximumMemory > 0 );
-  myMaximumMemorySpin              ->setValue      ( qMax( data.myMaximumMemory,
-                                                           myMaximumMemorySpin->minimum() ));
-  myInitialMemoryCheck             ->setChecked    ( data.myInitialMemory > 0 );
-  myInitialMemorySpin              ->setValue      ( qMax( data.myInitialMemory,
-                                                           myInitialMemorySpin->minimum() ));
-  myWorkingDir                     ->setText       ( data.myWorkingDir );
-  myKeepFiles                      ->setChecked    ( data.myKeepFiles );
-  myVerboseLevelSpin               ->setValue      ( data.myVerboseLevel );
-  myToCreateNewNodesCheck          ->setChecked    ( data.myToCreateNewNodes );
-  myRemoveInitialCentralPointCheck ->setChecked    ( data.myRemoveInitialCentralPoint );
-  myBoundaryRecoveryCheck          ->setChecked    ( data.myBoundaryRecovery );
-  myFEMCorrectionCheck             ->setChecked    ( data.myFEMCorrection );
-  myGradation                      ->setValue      ( data.myGradation );
-  myTextOption                     ->setText       ( data.myTextOption );
+  myToMeshHolesCheck                          ->setChecked    ( data.myToMeshHoles );
+  myToMakeGroupsOfDomains                     ->setChecked    ( data.myToMakeGroupsOfDomains );
+  myOptimizationLevelCombo                    ->setCurrentIndex( data.myOptimizationLevel );
+  myAdvWidget->maxMemoryCheck                 ->setChecked    ( data.myMaximumMemory > 0 );
+  myAdvWidget->maxMemorySpin                  ->setValue      ( qMax( data.myMaximumMemory,
+                                                                      myAdvWidget->maxMemorySpin->minimum() ));
+  myAdvWidget->initialMemoryCheck             ->setChecked    ( data.myInitialMemory > 0 );
+  myAdvWidget->initialMemorySpin              ->setValue      ( qMax( data.myInitialMemory,
+                                                                      myAdvWidget->initialMemorySpin->minimum() ));
+  myAdvWidget->workingDirectoryLineEdit       ->setText       ( data.myWorkingDir );
+  myAdvWidget->keepWorkingFilesCheck           ->setChecked    ( data.myKeepFiles );
+  myAdvWidget->verboseLevelSpin               ->setValue      ( data.myVerboseLevel );
+  myAdvWidget->createNewNodesCheck            ->setChecked    ( data.myToCreateNewNodes );
+  myAdvWidget->removeInitialCentralPointCheck ->setChecked    ( data.myRemoveInitialCentralPoint );
+  myAdvWidget->boundaryRecoveryCheck          ->setChecked    ( data.myBoundaryRecovery );
+  myAdvWidget->FEMCorrectionCheck             ->setChecked    ( data.myFEMCorrection );
+  myAdvWidget->gradationSpinBox               ->setValue      ( data.myGradation );
+  myAdvWidget->textOptionLineEdit             ->setText       ( data.myTextOption );
+  myAdvWidget->logInFileCheck                 ->setChecked    ( !data.myLogInStandardOutput );
+  myAdvWidget->removeLogOnSuccessCheck        ->setChecked    ( data.myRemoveLogOnSuccess );
 
   TEnfVertexList::const_iterator it;
   int rowCount = 0;
@@ -1692,6 +1676,8 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   h_data.myFEMCorrection              = h->GetFEMCorrection();
   h_data.myGradation                  = h->GetGradation();
   h_data.myTextOption                 = h->GetTextOption();
+  h_data.myLogInStandardOutput        = h->GetStandardOutputLog();
+  h_data.myRemoveLogOnSuccess         = h->GetRemoveLogOnSuccess();
   
   GHS3DPlugin::GHS3DEnforcedVertexList_var vertices = h->GetEnforcedVertices();
   MESSAGE("vertices->length(): " << vertices->length());
@@ -1762,24 +1748,28 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       h->SetInitialMemory    ( h_data.myInitialMemory     );
     if ( h->GetOptimizationLevel() != h_data.myOptimizationLevel )
       h->SetOptimizationLevel( h_data.myOptimizationLevel );
-    if ( h->GetKeepFiles() != h_data.myKeepFiles )
+    if ( h->GetKeepFiles() != h_data.myKeepFiles         )
       h->SetKeepFiles        ( h_data.myKeepFiles         );
     if ( h->GetWorkingDirectory() != h_data.myWorkingDir )
       h->SetWorkingDirectory ( h_data.myWorkingDir.toLatin1().constData() );
-    if ( h->GetVerboseLevel() != h_data.myVerboseLevel )
-      h->SetVerboseLevel     ( h_data.myVerboseLevel );
+    if ( h->GetVerboseLevel() != h_data.myVerboseLevel   )
+      h->SetVerboseLevel     ( h_data.myVerboseLevel      );
     if ( h->GetToCreateNewNodes() != h_data.myToCreateNewNodes )
-      h->SetToCreateNewNodes( h_data.myToCreateNewNodes );
+      h->SetToCreateNewNodes( h_data.myToCreateNewNodes   );
     if ( h->GetToRemoveCentralPoint() != h_data.myRemoveInitialCentralPoint )
       h->SetToRemoveCentralPoint( h_data.myRemoveInitialCentralPoint );
     if ( h->GetToUseBoundaryRecoveryVersion() != h_data.myBoundaryRecovery )
       h->SetToUseBoundaryRecoveryVersion( h_data.myBoundaryRecovery );
     if ( h->GetFEMCorrection() != h_data.myFEMCorrection )
-      h->SetFEMCorrection( h_data.myFEMCorrection );
-    if ( h->GetGradation() != h_data.myGradation )
-      h->SetGradation     ( h_data.myGradation );
-    if ( h->GetTextOption() != h_data.myTextOption )
+      h->SetFEMCorrection    ( h_data.myFEMCorrection     );
+    if ( h->GetGradation() != h_data.myGradation         )
+      h->SetGradation        ( h_data.myGradation         );
+    if ( h->GetTextOption() != h_data.myTextOption       )
       h->SetTextOption       ( h_data.myTextOption.toLatin1().constData() );
+    if ( h->GetStandardOutputLog() != h_data.myLogInStandardOutput   )
+      h->SetStandardOutputLog( h_data.myLogInStandardOutput  );
+     if ( h->GetRemoveLogOnSuccess() != h_data.myRemoveLogOnSuccess   )
+      h->SetRemoveLogOnSuccess( h_data.myRemoveLogOnSuccess  );
     
     // Enforced vertices
     int nbVertex = (int) h_data.myEnforcedVertices.size();
@@ -1868,18 +1858,20 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
   h_data.myName                       = myName ? myName->text() : "";
   h_data.myToMeshHoles                = myToMeshHolesCheck->isChecked();
   h_data.myToMakeGroupsOfDomains      = myToMakeGroupsOfDomains->isChecked();
-  h_data.myMaximumMemory              = myMaximumMemoryCheck->isChecked() ? myMaximumMemorySpin->value() : -1;
-  h_data.myInitialMemory              = myInitialMemoryCheck->isChecked() ? myInitialMemorySpin->value() : -1;
+  h_data.myMaximumMemory              = myAdvWidget->maxMemoryCheck->isChecked() ? myAdvWidget->maxMemorySpin->value() : -1;
+  h_data.myInitialMemory              = myAdvWidget->initialMemoryCheck->isChecked() ? myAdvWidget->initialMemorySpin->value() : -1;
   h_data.myOptimizationLevel          = myOptimizationLevelCombo->currentIndex();
-  h_data.myKeepFiles                  = myKeepFiles->isChecked();
-  h_data.myWorkingDir                 = myWorkingDir->text().trimmed();
-  h_data.myVerboseLevel               = myVerboseLevelSpin->value();
-  h_data.myToCreateNewNodes           = myToCreateNewNodesCheck->isChecked();
-  h_data.myRemoveInitialCentralPoint  = myRemoveInitialCentralPointCheck->isChecked();
-  h_data.myBoundaryRecovery           = myBoundaryRecoveryCheck->isChecked();
-  h_data.myFEMCorrection              = myFEMCorrectionCheck->isChecked();
-  h_data.myGradation                  = myGradation->value();
-  h_data.myTextOption                 = myTextOption->text();
+  h_data.myKeepFiles                  = myAdvWidget->keepWorkingFilesCheck->isChecked();
+  h_data.myWorkingDir                 = myAdvWidget->workingDirectoryLineEdit->text().trimmed();
+  h_data.myVerboseLevel               = myAdvWidget->verboseLevelSpin->value();
+  h_data.myToCreateNewNodes           = myAdvWidget->createNewNodesCheck->isChecked();
+  h_data.myRemoveInitialCentralPoint  = myAdvWidget->removeInitialCentralPointCheck->isChecked();
+  h_data.myBoundaryRecovery           = myAdvWidget->boundaryRecoveryCheck->isChecked();
+  h_data.myFEMCorrection              = myAdvWidget->FEMCorrectionCheck->isChecked();
+  h_data.myGradation                  = myAdvWidget->gradationSpinBox->value();
+  h_data.myTextOption                 = myAdvWidget->textOptionLineEdit->text();
+  h_data.myLogInStandardOutput        = !myAdvWidget->logInFileCheck->isChecked();
+  h_data.myRemoveLogOnSuccess         = myAdvWidget->removeLogOnSuccessCheck->isChecked();
   
   // Enforced vertices
   h_data.myEnforcedVertices.clear();

@@ -27,6 +27,7 @@ include $(top_srcdir)/adm_local/unix/make_common_starter.am
 
 # header files 
 salomeinclude_HEADERS = \
+	GHS3DPluginGUI_Dlg.h	\
 	GHS3DPluginGUI_HypothesisCreator.h \
 	GHS3DPluginGUI_Enums.h
 
@@ -35,10 +36,17 @@ lib_LTLIBRARIES = libGHS3DPluginGUI.la
 
 dist_libGHS3DPluginGUI_la_SOURCES = \
 	GHS3DPluginGUI.cxx \
-	GHS3DPluginGUI_HypothesisCreator.cxx
+	GHS3DPluginGUI_HypothesisCreator.cxx \
+	GHS3DPluginGUI_AdvWidget.cxx
 
 MOC_FILES = \
-	GHS3DPluginGUI_HypothesisCreator_moc.cxx
+	GHS3DPluginGUI_HypothesisCreator_moc.cxx \
+	GHS3DPluginGUI_Dlg_moc.cxx
+
+UIC_FILES =	\
+	ui_GHS3DPluginGUI_AdvWidget_QTD.h 
+
+BUILT_SOURCES = $(UIC_FILES)
 
 nodist_libGHS3DPluginGUI_la_SOURCES= \
 	$(MOC_FILES)

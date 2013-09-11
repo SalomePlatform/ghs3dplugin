@@ -36,12 +36,16 @@
         <translation>Mailler les trous</translation>
     </message>
     <message>
+        <source>ADVANCED_MESHING_GROUP_TITLE</source>
+        <translation>Options de maillage avancées</translation>
+    </message>
+    <message>
         <source>INIT_MEMORY_SIZE</source>
         <translation>Taille initiale de la mémoire</translation>
     </message>
     <message>
         <source>KEEP_WORKING_FILES</source>
-        <translation>Conserver les fichiers temporaires</translation>
+        <translation>Conserver tous les fichiers temporaires</translation>
     </message>
     <message>
         <source>LEVEL_NONE</source>
@@ -64,12 +68,24 @@
         <translation>Fort</translation>
     </message>
     <message>
+        <source>LOG_IN_FILE</source>
+        <translation>Imprimer le log dans un fichier</translation>
+    </message>
+    <message>
+        <source>LOG_GROUP_TITLE</source>
+        <translation>Logs et debug</translation>
+    </message>
+    <message>
         <source>MAX_MEMORY_SIZE</source>
         <translation>Taille maximale de la mémoire</translation>
     </message>
     <message>
         <source>MEGABYTE</source>
         <translation>Megabytes</translation>
+    </message>
+    <message>
+        <source>MEMORY_GROUP_TITLE</source>
+        <translation>Paramètres mémoire</translation>
     </message>
     <message>
         <source>NO_INITIAL_CENTRAL_POINT</source>
@@ -81,11 +97,15 @@
     </message>
     <message>
         <source>FEM_CORRECTION</source>
-        <translation>Utiliser correction FEM</translation>
+        <translation>Utiliser la correction FEM</translation>
     </message>
     <message>
         <source>GHS3D_GRADATION</source>
         <translation>Gradation volumique</translation>
+    </message>
+    <message>
+        <source>REMOVE_LOG_ON_SUCCESS</source>
+        <translation>Supprimer le log en cas de succès</translation>
     </message>
     <message>
         <source>SELECT_DIR</source>

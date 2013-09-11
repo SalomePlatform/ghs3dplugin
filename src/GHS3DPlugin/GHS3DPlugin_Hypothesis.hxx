@@ -204,6 +204,16 @@ public:
   */
   void SetGradation(double gradation);
   double GetGradation() const ;
+  /*!
+  * Print log in standard output
+  */
+  void SetStandardOutputLog(bool logInStandardOutput);
+  bool GetStandardOutputLog() const ;
+  /*!
+  * Remove log file on success
+  */
+  void SetRemoveLogOnSuccess(bool removeLogOnSuccess);
+  bool GetRemoveLogOnSuccess() const ;
     
   
 //   struct TEnforcedEdge {
@@ -289,6 +299,8 @@ public:
   static bool   DefaultToUseBoundaryRecoveryVersion();
   static bool   DefaultToUseFEMCorrection();
   static bool   DefaultToRemoveCentralPoint();
+  static bool   DefaultStandardOutputLog();
+  static bool   DefaultRemoveLogOnSuccess();
   static double DefaultGradation();
   
   static TGHS3DEnforcedVertex DefaultGHS3DEnforcedVertex() {return TGHS3DEnforcedVertex();}
@@ -337,6 +349,8 @@ private:
   bool   myToUseBoundaryRecoveryVersion;
   bool   myToUseFemCorrection;
   bool   myToRemoveCentralPoint;
+  bool   myLogInStandardOutput;
+  bool   myRemoveLogOnSuccess;
   std::string myTextOption;
   double myGradation;
   

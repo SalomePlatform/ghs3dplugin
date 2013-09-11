@@ -54,6 +54,7 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   myToUseFemCorrection(DefaultToUseFEMCorrection()),
   myToRemoveCentralPoint(DefaultToRemoveCentralPoint()),
   myGradation(DefaultGradation()),
+  myLogInStandardOutput(DefaultStandardOutputLog()),
   _enfVertexList(DefaultGHS3DEnforcedVertexList()),
   _enfVertexCoordsSizeList(DefaultGHS3DEnforcedVertexCoordsValues()),
   _enfVertexEntrySizeList(DefaultGHS3DEnforcedVertexEntryValues()),
@@ -382,6 +383,48 @@ void GHS3DPlugin_Hypothesis::SetGradation(double gradation)
 double GHS3DPlugin_Hypothesis::GetGradation() const
 {
   return myGradation;
+}
+
+//=======================================================================
+//function : SetStandardOutputLog
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetStandardOutputLog(bool logInStandardOutput)
+{
+  if ( myLogInStandardOutput != logInStandardOutput ) {
+    myLogInStandardOutput = logInStandardOutput;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetStandardOutputLog
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::GetStandardOutputLog() const
+{
+  return myLogInStandardOutput;
+}
+
+//=======================================================================
+//function : SetRemoveLogOnSuccess
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis::SetRemoveLogOnSuccess(bool removeLogOnSuccess)
+{
+  if ( myRemoveLogOnSuccess != removeLogOnSuccess ) {
+    myRemoveLogOnSuccess = removeLogOnSuccess;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function : GetRemoveLogOnSuccess
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::GetRemoveLogOnSuccess() const
+{
+  return myRemoveLogOnSuccess;
 }
 
 //=======================================================================
@@ -884,6 +927,16 @@ bool   GHS3DPlugin_Hypothesis::DefaultKeepFiles()
 }
 
 //=======================================================================
+//function : DefaultRemoveLogOnSuccess
+//=======================================================================
+
+bool   GHS3DPlugin_Hypothesis::DefaultRemoveLogOnSuccess()
+{
+  return false;
+}
+
+
+//=======================================================================
 //function : DefaultVerboseLevel
 //=======================================================================
 
@@ -935,6 +988,15 @@ bool GHS3DPlugin_Hypothesis::DefaultToRemoveCentralPoint()
 double GHS3DPlugin_Hypothesis::DefaultGradation()
 {
   return 1.05;
+}
+
+//=======================================================================
+//function : DefaultStandardOutputLog
+//=======================================================================
+
+bool GHS3DPlugin_Hypothesis::DefaultStandardOutputLog()
+{
+  return false;
 }
 
 // //=======================================================================

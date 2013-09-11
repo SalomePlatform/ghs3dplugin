@@ -135,11 +135,21 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   void SetGradation(CORBA::Double gradation);
   CORBA::Double GetGradation();
   /*!
+  * Print log in standard output
+  */
+  void SetStandardOutputLog(CORBA::Boolean logInStandardOutput);
+  CORBA::Boolean GetStandardOutputLog();
+  /*!
+  * Remove log file on success
+  */
+  void SetRemoveLogOnSuccess(CORBA::Boolean removeLogOnSuccess);
+  CORBA::Boolean GetRemoveLogOnSuccess();
+  /*!
    * To set an enforced vertex
    */
   bool p_SetEnforcedVertex(CORBA::Double size, CORBA::Double x = 0, CORBA::Double y = 0, CORBA::Double z = 0,
-                          const char* theVertexName = "", const char* theVertexEntry = "", const char* theGroupName = "",
-                          CORBA::Boolean isCompound = false) 
+                           const char* theVertexName = "", const char* theVertexEntry = "", const char* theGroupName = "",
+                           CORBA::Boolean isCompound = false) 
     throw (SALOME::SALOME_Exception);
   bool SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size) throw (SALOME::SALOME_Exception);
   bool SetEnforcedVertexNamed(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theVertexName) throw (SALOME::SALOME_Exception);

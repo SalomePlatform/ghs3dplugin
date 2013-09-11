@@ -126,10 +126,26 @@ class GHS3D_Algorithm(Mesh_Algorithm):
         self.Parameters().SetWorkingDirectory(path)
         pass
 
-    ## To keep working files or remove them. Log file remains in case of errors anyway.
+    ## To keep working files or remove them.
     #  @param toKeep "keep working files" flag value
     def SetKeepFiles(self, toKeep):
         self.Parameters().SetKeepFiles(toKeep)
+        pass
+    
+    ## Remove or not the log file (if any) in case of successful computation.
+    #  The log file remains in case of errors anyway. If 
+    #  the "keep working files" flag is set to true, this option
+    #  has no effect.
+    #  @param toRemove "remove log on success" flag value
+    def SetRemoveLogOnSuccess(self, toRemove):
+        self.Parameters().SetRemoveLogOnSuccess(toRemove)
+        pass
+    
+    ## Print the the log in a file. If set to false, the
+    # log is printed on the standard output
+    #  @param toPrintLogInFile "print log in a file" flag value
+    def SetPrintLogInFile(self, toPrintLogInFile):
+        self.Parameters().SetStandardOutputLog(not toPrintLogInFile)
         pass
 
     ## Set verbosity level [0-10].

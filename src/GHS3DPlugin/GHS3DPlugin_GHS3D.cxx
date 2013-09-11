@@ -183,6 +183,7 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
   _hyp = 0;
   _viscousLayersHyp = 0;
   _keepFiles = false;
+  _removeLogOnSuccess = true;
 
   const list <const SMESHDS_Hypothesis * >& hyps =
     GetUsedHypothesis(aMesh, aShape, /*ignoreAuxiliary=*/false);
@@ -195,7 +196,10 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
       _viscousLayersHyp = dynamic_cast< const StdMeshers_ViscousLayers*> ( *h );
   }
   if ( _hyp )
+  {
     _keepFiles = _hyp->GetKeepFiles();
+    _removeLogOnSuccess = _hyp->GetRemoveLogOnSuccess();
+  }
 
   return true;
 }
@@ -3434,7 +3438,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   TCollection_AsciiString cmd( (char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp ).c_str() );
   cmd += TCollection_AsciiString(" -f ") + aGenericName;  // file to read
-  cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
+  
+  if ( !_hyp->GetStandardOutputLog() )
+    cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
   // The output .mesh file does not contain yet the subdomain-info (Ghs3D 4.2)
 //   cmd += TCollection_AsciiString(" --in ") + aGenericName;
 //   cmd += TCollection_AsciiString(" --required_vertices ") + aGenericNameRequired;
@@ -3507,7 +3513,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if ( Ok )
   {
-    if ( !_keepFiles )
+    if ( _removeLogOnSuccess )
       removeFile( aLogFileName );
 
     // if ( _hyp && _hyp->GetToMakeGroupsOfDomains() )
@@ -3528,8 +3534,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
 
   if ( !_keepFiles ) {
-    if (! Ok)
-      if(_compute_canceled)
+    if (! Ok && _compute_canceled)
         removeFile( aLogFileName );
     removeFile( aFacesFileName );
     removeFile( aPointsFileName );
@@ -3745,7 +3750,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if ( Ok )
   {
-    if ( !_keepFiles )
+    if ( _removeLogOnSuccess )
       removeFile( aLogFileName );
 
     //if ( !toMakeGroupsOfDomains && _hyp && _hyp->GetToMakeGroupsOfDomains() )
@@ -3766,8 +3771,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if ( !_keepFiles )
   {
-    if (! Ok)
-      if(_compute_canceled)
+    if (! Ok && _compute_canceled)
         removeFile( aLogFileName );
     removeFile( aGMFFileName );
     removeFile( aResultFileName );

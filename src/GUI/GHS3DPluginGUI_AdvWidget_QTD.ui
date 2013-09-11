@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GHS3DPluginGUI_AdvWidget_QTD</class>
+ <widget class="QWidget" name="GHS3DPluginGUI_AdvWidget_QTD">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>465</width>
+    <height>477</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QGroupBox" name="memoryGroupBox">
+     <property name="title">
+      <string>Memory settings</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="3" column="4">
+       <widget class="QLabel" name="maxMemoryLabel">
+        <property name="text">
+         <string>MB</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="initialMemoryCheck">
+        <property name="text">
+         <string>Initial memory size</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2" colspan="2">
+       <widget class="QSpinBox" name="maxMemorySpin">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="maxMemoryCheck">
+        <property name="text">
+         <string>Max memory size</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2" colspan="2">
+       <widget class="QSpinBox" name="initialMemorySpin">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QLabel" name="initialMemoryLabel">
+        <property name="text">
+         <string>MB</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="logGroupBox">
+     <property name="title">
+      <string>Logs and debug</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="workingDirectoryLabel">
+          <property name="text">
+           <string>Working directory</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="workingDirectoryLineEdit"/>
+        </item>
+        <item row="0" column="2">
+         <widget class="QPushButton" name="workingDirectoryPushButton">
+          <property name="text">
+           <string>PushButton</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="verboseLevelLabel">
+          <property name="text">
+           <string>Verbose level</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QSpinBox" name="verboseLevelSpin"/>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QCheckBox" name="logInFileCheck">
+          <property name="text">
+           <string>Print log in a file</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="removeLogOnSuccessCheck">
+          <property name="text">
+           <string>Remove log file on success</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="keepWorkingFilesCheck">
+        <property name="text">
+         <string>Keep working files</string>
+        </property>
+        <property name="autoExclusive">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="advancedMeshingGroupBox">
+     <property name="title">
+      <string>Advanced meshing options</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="7" column="1">
+       <widget class="QLineEdit" name="textOptionLineEdit"/>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="gradationLabel">
+        <property name="text">
+         <string>Volumic gradation</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QLabel" name="textOptionLabel">
+        <property name="text">
+         <string>Option as text</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="SMESHGUI_SpinBox" name="gradationSpinBox"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="createNewNodesCheck">
+        <property name="text">
+         <string>Create new nodes</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QCheckBox" name="removeInitialCentralPointCheck">
+        <property name="text">
+         <string>Remove initial central point</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="FEMCorrectionCheck">
+        <property name="text">
+         <string>Use FEM correction</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="boundaryRecoveryCheck">
+        <property name="text">
+         <string>Use boundary recovery version</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>SMESHGUI_SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>SMESHGUI_SpinBox.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

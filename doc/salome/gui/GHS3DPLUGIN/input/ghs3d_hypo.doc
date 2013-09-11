@@ -17,12 +17,12 @@ To get a licence, visit http://www.distene.com/en/corp/eval-distene.html
 - <b>Name</b> - allows to define the name of the hypothesis (GHS3D 
 Parameters by default).
 
-- <b>To mesh holes</b> - if checked, the algorithm will 
+- <b>Mesh holes</b> - if checked, the algorithm will 
 create mesh in the holes inside a solid shape, else only the outermost
 shape will be meshed. Volumic elements created within holes are bound
 to the solid.
 
-- <b>To make groups of domains</b> - if checked, the algorithm will
+- <b>Make groups of domains</b> - if checked, the algorithm will
 create groups of just generated elements corresponding to each mesh
 domain.<br>
 
@@ -46,6 +46,8 @@ but can be time-consuming):
 
 \image html ghs3d_parameters_advanced.png
 
+\subsection memory_settings Memory settings
+
 - <b>Maximum memory size</b> - launches ghs3d software with
 work space limited to the specified amount of RAM, in Mbytes. If this option is
 checked off, the software will be launched with 7O% of the total RAM space.
@@ -54,12 +56,10 @@ checked off, the software will be launched with 7O% of the total RAM space.
 the specified amount of work space, in Mbytes. If this option is checked off, the
 software will be started with 100 Megabytes of working space.
 
+\subsection log Logs and debug
+
 - <b>Working directory</b> - allows defining the folder for input and output
 files of ghs3d software, which are the files starting with "GHS3D_" prefix.
-
-- <b>Keep working files</b> - allows checking input and output files
-of ghs3d software, while usually these files are removed after the
-launch of the mesher.
 
 - <b>Verbose level</b> - to choose verbosity level in the range from
 0 to 10.
@@ -73,11 +73,25 @@ launch of the mesher.
   - 10, same as 2 plus the main steps in the computation, quality
   statistics histogram of the skin mesh, quality statistics histogram
   together with the characteristics of the final mesh.
+  
+- <b>Print log in a file</b> - if this option is checked on the log is printed in a 
+file placed in the working directory, otherwise it is printed on the standard output.
 
-- <b>To create new nodes</b> - if this option is checked off, ghs3d
+- <b>Remove log on success</b> - if this option is checked on the log file is kept only
+if an error occurs during the computation. This option is only available if <b>Print log in a file</b>
+is enabled (there must be a log file to delete it) and <b>Keep all working files</b> is disabled 
+(in this case the log file is always kept). 
+
+- <b>Keep all working files</b> - allows checking input and output files
+of ghs3d software, while usually these files are removed after the
+launch of the mesher. The log file (if any) is also kept if this option is checked.
+
+\subsection advanced_meshing_options Advanced meshing options
+
+- <b>Create new nodes</b> - if this option is checked off, ghs3d
 tries to create tetrahedrons using only the nodes of the 2D mesh.
 
-- <b>To remove the initial central point</b> TetMesh-GHS3D adds an internal point 
+- <b>Remove the initial central point</b> TetMesh-GHS3D adds an internal point 
 at the gravity centre of the bounding box to speed up and to simplify 
 the meshing process. However, it is possible to refrain from creating 
 this point by using the command line option -no initial central point. This can be
@@ -91,7 +105,7 @@ Note: when using this option, the speed of the meshing process may
 decrease, and the quality may change.
 Note: the boundary regeneration may fail with this option, in some rare cases.
 
-- <b>To use boundary recovery version</b> - enables using a
+- <b>Use boundary recovery version</b> - enables using a
 boundary recovery module which tries to
 create volume meshes starting from very poor quality surface meshes
 (almost flat triangles on the surface, high density propagation,
@@ -100,7 +114,7 @@ resulting volume mesh will however most likely have a very poor
 quality (poor aspect ratio of elements, tetrahedra with a very small
 positive volume).
 
-- <b>To use FEM correction</b> - Applies finite-element correction by 
+- <b>Use FEM correction</b> - Applies finite-element correction by 
 replacing overconstrained elements where it is possible. At first the process 
 slices the overconstrained edges and at second the overconstrained 
 facets. This ensures that there are no edges with two boundary
