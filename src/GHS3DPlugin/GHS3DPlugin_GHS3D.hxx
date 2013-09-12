@@ -96,6 +96,7 @@ private:
   int  _nbShape;
   bool _keepFiles;
   bool _removeLogOnSuccess;
+  bool _logInStandardOutput;
   SALOMEDS::Study_var myStudy;
   SMESH_Gen_i* smeshGen_i;
 

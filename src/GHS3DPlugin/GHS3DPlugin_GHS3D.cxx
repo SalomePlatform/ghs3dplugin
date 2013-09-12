@@ -184,6 +184,7 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
   _viscousLayersHyp = 0;
   _keepFiles = false;
   _removeLogOnSuccess = true;
+  _logInStandardOutput = false;
 
   const list <const SMESHDS_Hypothesis * >& hyps =
     GetUsedHypothesis(aMesh, aShape, /*ignoreAuxiliary=*/false);
@@ -199,6 +200,7 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
   {
     _keepFiles = _hyp->GetKeepFiles();
     _removeLogOnSuccess = _hyp->GetRemoveLogOnSuccess();
+    _logInStandardOutput = _hyp->GetStandardOutputLog();
   }
 
   return true;
@@ -3439,7 +3441,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   TCollection_AsciiString cmd( (char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp ).c_str() );
   cmd += TCollection_AsciiString(" -f ") + aGenericName;  // file to read
   
-  if ( !_hyp->GetStandardOutputLog() )
+  if ( !_logInStandardOutput )
     cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
   // The output .mesh file does not contain yet the subdomain-info (Ghs3D 4.2)
 //   cmd += TCollection_AsciiString(" --in ") + aGenericName;
@@ -3711,7 +3713,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   if ( nbEnforcedVertices + nbEnforcedNodes)
     cmd += TCollection_AsciiString(" --required_vertices ") + aGenericNameRequired;
   cmd += TCollection_AsciiString(" --out ") + aResultFileName;
-  cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
+  if ( !_logInStandardOutput )
+    cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
 
   std::cout << std::endl;
   std::cout << "Ghs3d execution..." << std::endl;
