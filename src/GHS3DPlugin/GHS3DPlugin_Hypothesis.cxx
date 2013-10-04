@@ -839,7 +839,7 @@ bool GHS3DPlugin_Hypothesis::DefaultMeshHoles()
 
 bool GHS3DPlugin_Hypothesis::DefaultToMakeGroupsOfDomains()
 {
-  return true; // issue 0022172
+  return false; // issue 0022172
 }
 
 //=======================================================================
