@@ -136,7 +136,7 @@ bool GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains(const GHS3DPlugin_Hypothes
 //function : SetMaximumMemory
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis::SetMaximumMemory(int MB)
+void GHS3DPlugin_Hypothesis::SetMaximumMemory(double MB)
 {
   if ( myMaximumMemory != MB ) {
     myMaximumMemory = MB;
@@ -149,7 +149,7 @@ void GHS3DPlugin_Hypothesis::SetMaximumMemory(int MB)
 //           * automatic memory adjustment mode. Default is zero
 //=======================================================================
 
-int GHS3DPlugin_Hypothesis::GetMaximumMemory() const
+double GHS3DPlugin_Hypothesis::GetMaximumMemory() const
 {
   return myMaximumMemory;
 }
@@ -158,7 +158,7 @@ int GHS3DPlugin_Hypothesis::GetMaximumMemory() const
 //function : SetInitialMemory
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis::SetInitialMemory(int MB)
+void GHS3DPlugin_Hypothesis::SetInitialMemory(double MB)
 {
   if ( myInitialMemory != MB ) {
     myInitialMemory = MB;
@@ -170,7 +170,7 @@ void GHS3DPlugin_Hypothesis::SetInitialMemory(int MB)
 //function : GetInitialMemory
 //=======================================================================
 
-int GHS3DPlugin_Hypothesis::GetInitialMemory() const
+double GHS3DPlugin_Hypothesis::GetInitialMemory() const
 {
   return myInitialMemory;
 }
@@ -852,14 +852,14 @@ bool GHS3DPlugin_Hypothesis::DefaultToMakeGroupsOfDomains()
 #include <windows.h>
 #endif
 
-int  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
+double  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
 {
 #ifndef WIN32
   struct sysinfo si;
   int err = sysinfo( &si );
   if ( err == 0 ) {
     int ramMB = si.totalram * si.mem_unit / 1024 / 1024;
-    return (int) ( 0.7 * ramMB );
+    return ( 0.7 * ramMB );
   }
 #else
   // See http://msdn.microsoft.com/en-us/library/aa366589.aspx
@@ -871,7 +871,7 @@ int  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
       statex.ullTotalPhys / 1024 / 1024 +
       statex.ullTotalPageFile / 1024 / 1024 +
       statex.ullTotalVirtual / 1024 / 1024;
-    return (int) ( 0.7 * totMB );
+    return ( 0.7 * totMB );
   }
 #endif
   return 1024;
@@ -881,7 +881,7 @@ int  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
 //function : DefaultInitialMemory
 //=======================================================================
 
-int  GHS3DPlugin_Hypothesis::DefaultInitialMemory()
+double  GHS3DPlugin_Hypothesis::DefaultInitialMemory()
 {
   return DefaultMaximumMemory();
 }
@@ -1121,15 +1121,15 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> i);
+  isOK = (load >> d);
   if (isOK)
-    myMaximumMemory = i;
+    myMaximumMemory = d;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> i);
+  isOK = (load >> d);
   if (isOK)
-    myInitialMemory = i;
+    myInitialMemory = d;
   else
     load.clear(ios::badbit | load.rdstate());
 
@@ -1480,7 +1480,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   // Default memory is defined at ghs3d installation but it may be not enough,
   // so allow to use about all available memory
   if ( m ) {
-    int aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
+    double aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
     cmd += " -m ";
     if ( aMaximumMemory < 0 )
       cmd += DefaultMaximumMemory();
@@ -1488,7 +1488,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
       cmd += aMaximumMemory;
   }
   if ( M && !useBndRecovery ) {
-    int aInitialMemory = hyp ? hyp->myInitialMemory : -1;
+    double aInitialMemory = hyp ? hyp->myInitialMemory : -1;
     cmd += " -M ";
     if ( aInitialMemory > 0 )
       cmd += aInitialMemory;

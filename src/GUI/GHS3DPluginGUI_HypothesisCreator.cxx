@@ -416,13 +416,11 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myAdvWidget->maxMemoryCheck->setText(tr( "MAX_MEMORY_SIZE" ));
   myAdvWidget->initialMemoryCheck->setText(tr( "INIT_MEMORY_SIZE" ));
 
-  myAdvWidget->maxMemorySpin ->setMinimum( 1 );
-  myAdvWidget->maxMemorySpin ->setMaximum( maxAvailableMemory() );
-  myAdvWidget->maxMemorySpin ->setSingleStep( 10 );
-  
-  myAdvWidget->initialMemorySpin->setMinimum( 1 );
-  myAdvWidget->initialMemorySpin->setMaximum( maxAvailableMemory() );
-  myAdvWidget->initialMemorySpin->setSingleStep( 10 );
+  myAdvWidget->maxMemorySpin->RangeStepAndValidator(20.0, 1e6, 10.0);
+  myAdvWidget->maxMemorySpin->setValue( 128.0 );
+
+  myAdvWidget->initialMemorySpin->RangeStepAndValidator(0.0, 1e6, 10.0);
+  myAdvWidget->initialMemorySpin->setValue( 100.0 );
 
   myAdvWidget->initialMemoryLabel            ->setText (tr( "MEGABYTE" ));
   myAdvWidget->maxMemoryLabel                ->setText (tr( "MEGABYTE" ));

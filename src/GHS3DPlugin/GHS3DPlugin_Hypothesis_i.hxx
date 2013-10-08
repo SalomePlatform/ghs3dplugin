@@ -65,14 +65,14 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   /*!
    * Maximal size of memory to be used by the algorithm (in Megabytes)
    */
-  void SetMaximumMemory(CORBA::Long MB) throw ( SALOME::SALOME_Exception );
-  CORBA::Long GetMaximumMemory();
+  void SetMaximumMemory(CORBA::Double MB) throw ( SALOME::SALOME_Exception );
+  CORBA::Double GetMaximumMemory();
   /*!
    * Initial size of memory to be used by the algorithm (in Megabytes) in
    * automatic memory adjustment mode. Default is zero
    */
-  void SetInitialMemory(CORBA::Long MB) throw ( SALOME::SALOME_Exception );
-  CORBA::Long GetInitialMemory();
+  void SetInitialMemory(CORBA::Double MB) throw ( SALOME::SALOME_Exception );
+  CORBA::Double GetInitialMemory();
   /*!
    * Optimization level: 0-none, 1-light, 2-medium, 3-strong. Default is medium
    */
