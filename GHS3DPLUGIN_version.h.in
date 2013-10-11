@@ -24,12 +24,22 @@
 #if !defined(__GHS3DPLUGIN_VERSION_H__)
 #define __GHS3DPLUGIN_VERSION_H__
 
-/*
-  GHS3DPLUGIN_VERSION is (major << 16) + (minor << 8) + patch.
+/*!
+  Specify version of SALOME GHS3DPLUGIN module, as follows
+
+  GHS3DPLUGIN_VERSION_MAJOR       : (integer) number identifying major version
+  GHS3DPLUGIN_VERSION_MINOR       : (integer) number identifying minor version
+  GHS3DPLUGIN_VERSION_MAINTENANCE : (integer) number identifying maintenance version
+  GHS3DPLUGIN_VERSION_STR         : (string)  complete version number "major.minor.maintenance"
+  GHS3DPLUGIN_VERSION             : (hex)     complete version number (major << 16) + (minor << 8) + maintenance
+  GHS3DPLUGIN_DEVELOPMENT         : (integer) indicates development version when set to 1
 */
 
-#define GHS3DPLUGIN_VERSION_STR "@VERSION@"
-#define GHS3DPLUGIN_VERSION     @XVERSION@
-#define GHS3DPLUGIN_DEVELOPMENT @VERSION_DEV@
+#define GHS3DPLUGIN_VERSION_MAJOR       @SALOMEGHS3DPLUGIN_MAJOR_VERSION@
+#define GHS3DPLUGIN_VERSION_MINOR       @SALOMEGHS3DPLUGIN_MINOR_VERSION@
+#define GHS3DPLUGIN_VERSION_MAINTENANCE @SALOMEGHS3DPLUGIN_PATCH_VERSION@
+#define GHS3DPLUGIN_VERSION_STR         "@SALOMEGHS3DPLUGIN_VERSION@"
+#define GHS3DPLUGIN_VERSION             @SALOMEGHS3DPLUGIN_XVERSION@
+#define GHS3DPLUGIN_DEVELOPMENT         @SALOMEGHS3DPLUGIN_VERSION_DEV@
 
 #endif // __GHS3DPLUGIN_VERSION_H__

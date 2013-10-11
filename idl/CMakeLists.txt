@@ -1,5 +1,4 @@
-#!/bin/sh
-# Copyright (C) 2004-2013  CEA/DEN, EDF R&D
+# Copyright (C) 2012-2013  CEA/DEN, EDF R&D, OPEN CASCADE
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,8 +17,31 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-rm -rf autom4te.cache aclocal.m4 configure make_config
-find . -name "*~" -print -exec rm {} \;
-find . -name "*.pyc" -print -exec rm {} \;
-find . -name Makefile.in | xargs rm -f
-( cd adm_local/unix/config_files && rm -f config.* depcomp install-sh l*.m4 ltmain.sh missing py-compile )
+INCLUDE(UseOmniORB)  # Provided by KERNEL
+
+INCLUDE_DIRECTORIES(
+  ${OMNIORB_INCLUDE_DIR}
+  ${KERNEL_INCLUDE_DIRS}
+  ${GEOM_INCLUDE_DIRS}
+  ${SMESH_INCLUDE_DIRS}
+  ${PROJECT_BINARY_DIR}/idl
+)
+
+SET(SalomeIDLGHS3DPLUGIN_IDLSOURCES
+  GHS3DPlugin_Algorithm.idl
+)
+
+SET(_idl_include_dirs
+  ${KERNEL_ROOT_DIR}/idl/salome
+  ${GEOM_ROOT_DIR}/idl/salome
+  ${SMESH_ROOT_DIR}/idl/salome
+)
+
+SET(_idl_link_flags
+  ${KERNEL_SalomeIDLKernel}
+  ${GEOM_SalomeIDLGEOM}
+  ${SMESH_SalomeIDLSMESH}
+)
+
+OMNIORB_ADD_MODULE(SalomeIDLGHS3DPLUGIN "${SalomeIDLGHS3DPLUGIN_IDLSOURCES}" "${_idl_include_dirs}" "${_idl_link_flags}")
+INSTALL(TARGETS SalomeIDLGHS3DPLUGIN EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_LIBS})

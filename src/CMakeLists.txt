@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2013  CEA/DEN, EDF R&D, OPEN CASCADE
+# Copyright (C) 2012-2013  CEA/DEN, EDF R&D, OPEN CASCADE
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -17,17 +17,24 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-#  File   : Makefile
-#  Author : Alexander KOVALEV (Open Cascade NN)
-#  Modified by : 
-#  Module : doc
-#
-include $(top_srcdir)/adm_local/unix/make_common_starter.am
+##
+# Common packages
+##
+SET(SUBDIRS_COMMON
+  GHS3DPlugin
+)
 
-pyexamplesdir = $(docdir)/examples/GHS3DPLUGIN
+IF(SALOME_BUILD_GUI)
+  SET(SUBDIRS_ENABLE_GUI
+    GUI
+  )
+ENDIF(SALOME_BUILD_GUI)
 
-pyexamples_SCRIPTS = ghs3ddemo.py \
-		     ghs3d_enfvert.py \
-		     ghs3d_enfmesh.py
+SET(SUBDIRS
+  ${SUBDIRS_COMMON}
+  ${SUBDIRS_ENABLE_GUI}
+)
 
-EXTRA_DIST += $(pyexamples_SCRIPTS)
+FOREACH(dir ${SUBDIRS})
+ ADD_SUBDIRECTORY(${dir})
+ENDFOREACH(dir ${SUBDIRS})

@@ -16,11 +16,16 @@
 #
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
-include $(top_srcdir)/adm_local/unix/make_common_starter.am
+#
 
-SUBDIRS = GHS3DPLUGIN
+IF(NOT SalomeGHS3DPLUGIN_FIND_QUIETLY)
+  MESSAGE(STATUS "Looking for Salome GHS3DPLUGIN ...")
+ENDIF()
 
-usr_docs:
-	(cd GHS3DPLUGIN && $(MAKE) $(AM_MAKEFLAGS) usr_docs)
+SET(CMAKE_PREFIX_PATH "${GHS3DPLUGIN_ROOT_DIR}")
 
-docs: usr_docs
+SALOME_FIND_PACKAGE(SalomeGHS3DPLUGIN SalomeGHS3DPLUGIN CONFIG)
+
+IF(NOT SalomeGHS3DPLUGIN_FIND_QUIETLY)
+  MESSAGE(STATUS "Found Salome GHS3DPLUGIN: ${GHS3DPLUGIN_ROOT_DIR}")
+ENDIF()
