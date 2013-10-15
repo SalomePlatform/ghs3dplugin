@@ -4185,9 +4185,23 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
     // and all errors from a new (Release 1.1) MeshGems User Manual
     switch ( errNum ) {
     case 0015: // The face number (numfac) with vertices (f 1, f 2, f 3) has a null vertex.
+    case 1005620 : // a too bad quality face is detected. This face is considered degenerated.
       ptr = getIds(ptr, SKIP_ID, nodeIds);
       ptr = getIds(ptr, TRIA, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      break;
+    case 1005621 : // a too bad quality face is detected. This face is degenerated.
+      // hence the is degenerated it is invisible, add its edges in addition
+      ptr = getIds(ptr, SKIP_ID, nodeIds);
+      ptr = getIds(ptr, TRIA, nodeIds);
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
+      {
+        vector<int> edgeNodes( nodeIds.begin(), --nodeIds.end() ); // 01
+        badElems.push_back( toSmdsConvertor.getElement(edgeNodes));
+        edgeNodes[1] = nodeIds[2]; // 02
+        badElems.push_back( toSmdsConvertor.getElement(edgeNodes));
+        edgeNodes[0] = nodeIds[1]; // 12
+      }      
       break;
     case 1000: // Face (f 1, f 2, f 3) appears more than once in the input surface mesh.
       // ERR  1000 :  1 3 2
@@ -4195,8 +4209,6 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
     case 3019: // Constrained face (f 1, f 2, f 3) cannot be enforced
     case 1002211: // a face has a vertex negative or null.
     case 1005200 : // a surface mesh appears more than once in the input surface mesh.
-    case 1005620 : // a too bad quality face is detected. This face is considered degenerated.
-    case 1005621 : // a too bad quality face is detected. This face is degenerated.
     case 1008423 : // a constrained face cannot be enforced (regeneration phase failed).
       ptr = getIds(ptr, TRIA, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
