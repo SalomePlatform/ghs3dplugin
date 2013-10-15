@@ -3802,7 +3802,7 @@ void GHS3DPlugin_GHS3D::CancelCompute()
  */
 //================================================================================
 
-static string translateError(const int errNum)
+static const char* translateError(const int errNum)
 {
   switch ( errNum ) {
   case 0:
@@ -3947,6 +3947,146 @@ static string translateError(const int errNum)
       "The surface mesh is probably very bad in terms of quality.";
   case 23602:
     return "Bad vertex number.";
+  case 1001200:
+    return "Cannot close mesh file NomFil.";
+  case 1002010:
+    return "There are wrong data.";
+  case 1002120:
+    return "The number of faces is negative or null.";
+  case 1002170:
+    return "The number of vertices is negative or null in the '.sol' file.";
+  case 1002190:
+    return "The number of tetrahedra is negative or null.";
+  case 1002210:
+    return "The number of vertices is negative or null.";
+  case 1002211:
+    return "A face has a vertex negative or null.";
+  case 1002270:
+    return "The field is not a size in file NomFil.";
+  case 1002280:
+    return "A count is wrong in the enclosing box in the .boite.mesh input "
+      "file (option '--read_boite').";
+  case 1002290:
+    return "A tetrahedron has a vertex with a negative number.";
+  case 1002300:
+    return "the 'MeshVersionFormatted' is not 1 or 2 in the '.mesh' file or the '.sol'.";
+ case 1002370:
+   return "The number of values in the '.sol' (metric file) is incompatible with "
+     "the expected value of number of mesh vertices in the '.mesh' file.";
+  case 1003000:
+    return "Not enough memory.";
+  case 1003020:
+    return "Not enough memory for the face table.";
+  case 1003050:
+    return "Insufficient memory ressources detected due to a bad quality "
+      "surface mesh leading to too many swaps.";
+  case 1005010:
+    return "The surface coordinates of a vertex are differing from the "
+      "volume coordinates, probably due to a precision problem.";
+  case 1005050:
+    return "Invalid dimension. Dimension 3 expected.";
+  case 1005100:
+    return "A point has a tag 0. This point is probably outside the domain which has been meshed.";
+  case 1005103:
+    return "The vertices of an element are too close to one another or coincident.";
+  case 1005104:
+    return "There are at least two points whose distance is very small, and considered as coincident.";
+  case 1005105:
+    return "Two vertices are too close to one another or coincident.";
+  case 1005106:
+    return "A vertex cannot be inserted.";
+  case 1005107:
+    return "Two vertices are too close to one another or coincident. Note : When "
+      "this error occurs during the overconstrained processing phase, this is only "
+      "a warning which means that it is difficult to break some overconstrained facets.";
+  case 1005110:
+    return "Two surface edges are intersecting.";
+  case 1005120:
+    return "A surface edge intersects a surface face.";
+  case 1005150:
+    return "A boundary point lies within a surface face.";
+  case 1005160:
+    return "A boundary point lies within a surface edge.";
+  case 1005200:
+    return "A surface mesh appears more than once in the input surface mesh.";
+  case 1005210:
+    return "An edge appears more than once in the input surface mesh.";
+  case 1005225:
+    return "Surface with unvalid triangles.";
+  case 1005270:
+    return "The metric in the '.sol' file contains more than one field.";
+  case 1005300:
+    return "The surface mesh includes at least one hole. The domain is not well defined.";
+  case 1005301:
+    return "Presumably, the surface mesh is not compatible with the domain being processed (warning).";
+  case 1005302:
+    return "Probable faces overlapping somewher.";
+  case 1005320:
+    return "The quadratic version does not work with prescribed free edges.";
+  case 1005321:
+    return "The quadratic version does not work with a volume mesh.";
+  case 1005370:
+    return "The metric in the '.sol' file is inadequate (values not per vertices).";
+  case 1005371:
+    return "The number of vertices in the '.sol' is different from the one in the "
+      "'.mesh' file for the required vertices (option '--required_vertices').";
+  case 1005372:
+    return "More than one type in file NomFil. The type must be equal to 1 in the '.sol'"
+      "for the required vertices (option '--required_vertices').";
+  case 1005515:
+    return "Bad vertex number.";
+  case 1005560:
+    return "No guess to start the definition of the connected component(s).";
+  case 1005602:
+    return "Some initial points cannot be inserted.";
+  case 1005620:
+    return "A too bad quality face is detected. This face is considered degenerated.";
+  case 1005621:
+    return "A too bad quality face is detected. This face is degenerated.";
+  case 1005622:
+    return "The algorithm cannot run further.";
+  case 1005690:
+    return "A too small volume element is detected.";
+  case 1005691:
+    return "A tetrahedra is suspected to be very bad shaped or wrong.";
+  case 1005692:
+    return "There is at least a null or negative volume element. The resulting mesh"
+      "may be inappropriate.";
+  case 1005693:
+    return "There are some null or negative volume element. The resulting mesh may"
+      "be inappropriate.";
+  case 1005820:
+    return "An edge is unique (i.e., bounds a hole in the surface).";
+  case 1007000:
+    return "Abnormal or internal error.";
+  case 1007010:
+    return "Too many components with respect to too many sub-domain.";
+  case 1007400:
+    return "An internal error has been encountered or a signal has been received. "
+      "Current mesh will not be saved.";
+  case 1008491:
+    return "Impossible to define a component.";
+  case 1008410:
+    return "There are some overconstrained edges.";
+  case 1008420:
+    return "There are some overconstrained facets.";
+  case 1008422:
+    return "Give the number of missing faces (information given when regeneration phase failed).";
+  case 1008423:
+    return "A constrained face cannot be enforced (information given when regeneration phase failed).";
+  case 1008441:
+    return "A constrained edge cannot be enforced.";
+  case 1008460:
+    return "It is dramatically tedious to enforce the boundary items.";
+  case 1008480:
+    return "The surface mesh regeneration step has failed. A .boite.mesh and .boite.map files are created.";
+  case 1008490:
+    return "Invalid resulting mesh.";
+  case 1008495:
+    return "P2 correction not successful.";
+  case 1009000:
+    return "Program has received an interruption or a termination signal sent by the "
+      "user or the system administrator. Current mesh will not be saved.";
   }
   return "";
 }
@@ -3993,9 +4133,6 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
     return error( SMESH_Comment("See ") << logFile << " for problem description");
 
   // get file size
-//   struct stat status;
-//   fstat(file, &status);
-//   size_t length = status.st_size;
   off_t length = lseek( file, 0, SEEK_END);
   lseek( file, 0, SEEK_SET);
 
@@ -4008,7 +4145,26 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
 
   SMESH_Comment errDescription;
 
-  enum { NODE = 1, EDGE, TRIA, VOL, ID = 1 };
+  enum { NODE = 1, EDGE, TRIA, VOL, SKIP_ID = 1 };
+
+  // look for MeshGems version
+  // Since "MG-TETRA -- MeshGems 1.1-3 (January, 2013)" error codes change.
+  // To discriminate old codes from new ones we add 1000000 to the new codes.
+  // This way value of the new codes is same as absolute value of codes printed
+  // in the log after "MGMESSAGE" string.
+  int versionAddition = 0;
+  {
+    char* verPtr = ptr;
+    while ( ++verPtr < bufEnd )
+    {
+      if ( strncmp( verPtr, "MG-TETRA -- MeshGems ", 21 ) != 0 )
+        continue;
+      if ( strcmp( verPtr, "MG-TETRA -- MeshGems 1.1-3 " ) >= 0 )
+        versionAddition = 1000000;
+      ptr = verPtr;
+      break;
+    }
+  }
 
   // look for errors "ERR #"
 
@@ -4024,97 +4180,83 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
 
     ptr += 4;
     char* errBeg = ptr;
-    int   errNum = strtol(ptr, &ptr, 10);
-    switch ( errNum ) { // we treat errors enumerated in [SALOME platform 0019316] issue
-    case 0015:
-      // The face number (numfac) with vertices (f 1, f 2, f 3) has a null vertex.
-      ptr = getIds(ptr, NODE, nodeIds);
+    int   errNum = strtol(ptr, &ptr, 10) + versionAddition;
+    // we treat errors enumerated in [SALOME platform 0019316] issue
+    // and all errors from a new (Release 1.1) MeshGems User Manual
+    switch ( errNum ) {
+    case 0015: // The face number (numfac) with vertices (f 1, f 2, f 3) has a null vertex.
+      ptr = getIds(ptr, SKIP_ID, nodeIds);
       ptr = getIds(ptr, TRIA, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
-    case 1000: // ERR  1000 :  1 3 2
-      // Face (f 1, f 2, f 3) appears more than once in the input surface mesh.
+    case 1000: // Face (f 1, f 2, f 3) appears more than once in the input surface mesh.
+      // ERR  1000 :  1 3 2
+    case 1002: // Face (f 1, f 2, f 3) has a vertex negative or null
+    case 3019: // Constrained face (f 1, f 2, f 3) cannot be enforced
+    case 1002211: // a face has a vertex negative or null.
+    case 1005200 : // a surface mesh appears more than once in the input surface mesh.
+    case 1005620 : // a too bad quality face is detected. This face is considered degenerated.
+    case 1005621 : // a too bad quality face is detected. This face is degenerated.
+    case 1008423 : // a constrained face cannot be enforced (regeneration phase failed).
       ptr = getIds(ptr, TRIA, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
-    case 1001:
-      // Edge (e1, e2) appears more than once in the input surface mesh
+    case 1001: // Edge (e1, e2) appears more than once in the input surface mesh
+    case 3009: // Constrained edge (e1, e2) cannot be enforced (warning).
+      // ERR  3109 :  EDGE  5 6 UNIQUE
+    case 3109: // Edge (e1, e2) is unique (i.e., bounds a hole in the surface)
+    case 1005210 : // an edge appears more than once in the input surface mesh.
+    case 1005820 : // an edge is unique (i.e., bounds a hole in the surface).
+    case 1008441 : // a constrained edge cannot be enforced.
       ptr = getIds(ptr, EDGE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
-    case 1002:
-      // Face (f 1, f 2, f 3) has a vertex negative or null
-      ptr = getIds(ptr, TRIA, nodeIds);
-      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
-      break;
-    case 2004:
-      // Vertex v1 and vertex v2 are too close to one another or coincident (warning).
+    case 2004: // Vertex v1 and vertex v2 are too close to one another or coincident (warning).
+    case 2014: // at least two points whose distance is dist, i.e., considered as coincident
+    case 2103: // Vertex v1 and vertex v2 are too close to one another or coincident (warning).
+      // ERR  2103 :  16 WITH  3
+    case 1005105 : // two vertices are too close to one another or coincident.
+    case 1005107: // Two vertices are too close to one another or coincident.
       ptr = getIds(ptr, NODE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       ptr = getIds(ptr, NODE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
-    case 2012:
-      // Vertex v1 cannot be inserted (warning).
+    case 2012: // Vertex v1 cannot be inserted (warning).
+    case 1005106 : // a vertex cannot be inserted.
       ptr = getIds(ptr, NODE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
-    case 2014:
-      // There are at least two points whose distance is dist, i.e., considered as coincident
-    case 2103: // ERR  2103 :  16 WITH  3
-      // Vertex v1 and vertex v2 are too close to one another or coincident (warning).
-      ptr = getIds(ptr, NODE, nodeIds);
-      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
-      ptr = getIds(ptr, NODE, nodeIds);
-      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
-      break;
-    case 3009:
-      // Constrained edge (e1, e2) cannot be enforced (warning).
-      ptr = getIds(ptr, EDGE, nodeIds);
-      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
-      break;
-    case 3019:
-      // Constrained face (f 1, f 2, f 3) cannot be enforced
-      ptr = getIds(ptr, TRIA, nodeIds);
-      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
-      break;
-    case 3103: // ERR  3103 :  1 2 WITH  7 3
-      // The surface edge (e1, e2) intersects another surface edge (e3, e4)
+    case 3103: // The surface edge (e1, e2) intersects another surface edge (e3, e4)
+    case 1005110 : // two surface edges are intersecting.
+      // ERR  3103 :  1 2 WITH  7 3
       ptr = getIds(ptr, EDGE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       ptr = getIds(ptr, EDGE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
-    case 3104: // ERR  3104 :  9 10 WITH  1 2 3
-      // The surface edge (e1, e2) intersects the surface face (f 1, f 2, f 3)
+    case 3104: // The surface edge (e1, e2) intersects the surface face (f 1, f 2, f 3)
+      // ERR  3104 :  9 10 WITH  1 2 3
+    case 3106: // One surface edge (say e1, e2) intersects a surface face (f 1, f 2, f 3)
+    case 1005120 : // a surface edge intersects a surface face.
       ptr = getIds(ptr, EDGE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       ptr = getIds(ptr, TRIA, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
-    case 3105: // ERR  3105 :  8 IN  2 3 5
-      // One boundary point (say p1) lies within a surface face (f 1, f 2, f 3)
+    case 3105: // One boundary point (say p1) lies within a surface face (f 1, f 2, f 3)
+      // ERR  3105 :  8 IN  2 3 5
+    case 1005150 : // a boundary point lies within a surface face.
       ptr = getIds(ptr, NODE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       ptr = getIds(ptr, TRIA, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
-    case 3106:
-      // One surface edge (say e1, e2) intersects a surface face (f 1, f 2, f 3)
-      ptr = getIds(ptr, EDGE, nodeIds);
-      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
-      ptr = getIds(ptr, TRIA, nodeIds);
-      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
-      break;
-    case 3107: // ERR  3107 :  2 IN  4 1
-      // One boundary point (say p1) lies within a surface edge (e1, e2) (stop).
+    case 3107: // One boundary point (say p1) lies within a surface edge (e1, e2) (stop).
+      // ERR  3107 :  2 IN  4 1
+    case 1005160 : // a boundary point lies within a surface edge.
       ptr = getIds(ptr, NODE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
-      ptr = getIds(ptr, EDGE, nodeIds);
-      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
-      break;
-    case 3109: // ERR  3109 :  EDGE  5 6 UNIQUE
-      // Edge (e1, e2) is unique (i.e., bounds a hole in the surface)
       ptr = getIds(ptr, EDGE, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
@@ -4123,11 +4265,11 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
       //  VOLUME   : -1.11325045E+11 W.R.T. EPSILON   0.
       // A too small volume element is detected. Are reported the index of the element,
       // its four vertex indices, its volume and the tolerance threshold value
-      ptr = getIds(ptr, ID, nodeIds);
+      ptr = getIds(ptr, SKIP_ID, nodeIds);
       ptr = getIds(ptr, VOL, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       // even if all nodes found, volume it most probably invisible,
-      // add its faces to demenstrate it anyhow
+      // add its faces to demonstrate it anyhow
       {
         vector<int> faceNodes( nodeIds.begin(), --nodeIds.end() ); // 012
         badElems.push_back( toSmdsConvertor.getElement(faceNodes));
@@ -4160,7 +4302,7 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
       //  SMALL INRADIUS :   0.
       // A too bad quality face is detected. This face is degenerated,
       // its index, its three vertex indices together with its inradius are reported
-      ptr = getIds(ptr, ID, nodeIds);
+      ptr = getIds(ptr, SKIP_ID, nodeIds);
       ptr = getIds(ptr, TRIA, nodeIds);
       badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       // add triangle edges as it most probably has zero area and hence invisible
@@ -4173,6 +4315,12 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
         edgeNodes[0] = nodeIds[1]; // 1-2
         badElems.push_back( toSmdsConvertor.getElement(edgeNodes));
       }
+      break;
+    case 1005103 : // the vertices of an element are too close to one another or coincident.
+      ptr = getIds(ptr, TRIA, nodeIds);
+      if ( nodeIds.back() == 0 ) // index of the third vertex of the element (0 for an edge)
+        nodeIds.resize( EDGE );
+      badElems.push_back( toSmdsConvertor.getElement(nodeIds));
       break;
     }
 
