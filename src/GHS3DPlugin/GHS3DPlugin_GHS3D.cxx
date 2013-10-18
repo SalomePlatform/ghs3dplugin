@@ -3709,7 +3709,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   TCollection_AsciiString cmd = TCollection_AsciiString((char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp, false ).c_str());
 
-  cmd += TCollection_AsciiString(" --in ") + aGenericName;
+  cmd += TCollection_AsciiString(" --in ") + aGMFFileName;
   if ( nbEnforcedVertices + nbEnforcedNodes)
     cmd += TCollection_AsciiString(" --required_vertices ") + aGenericNameRequired;
   cmd += TCollection_AsciiString(" --out ") + aResultFileName;
