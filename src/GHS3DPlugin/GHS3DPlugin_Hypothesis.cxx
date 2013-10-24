@@ -30,7 +30,7 @@
 
 #include <TCollection_AsciiString.hxx>
 
-#ifdef WNT
+#ifdef WIN32
 #include <process.h>
 #define getpid _getpid
 #endif
@@ -1558,7 +1558,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
     cmd += hyp->myGradation;
   }
 
-#ifdef WNT
+#ifdef WIN32
   cmd += " < NUL";
 #endif
 

@@ -100,7 +100,7 @@
 
 extern "C"
 {
-#ifndef WNT
+#ifndef WIN32
 #include <unistd.h>
 #include <sys/mman.h>
 #endif
@@ -614,7 +614,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //   length   = status.st_size;
 //   
 //   // Mapping the result file into memory
-// #ifdef WNT
+// #ifdef WIN32
 //   HANDLE fd = CreateFile(theFileName, GENERIC_READ, FILE_SHARE_READ,
 //                          NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 //   HANDLE hMapObject = CreateFileMapping(fd, NULL, PAGE_READONLY,
@@ -976,7 +976,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //   } // for
 //   cout << std::endl;
 //   
-// #ifdef WNT
+// #ifdef WIN32
 //   UnmapViewOfFile(mapPtr);
 //   CloseHandle(hMapObject);
 //   CloseHandle(fd);
@@ -2887,7 +2887,7 @@ static bool writePoints (ofstream &                       theFile,
 //=======================================================================
 
 static bool readResultFile(const int                       fileOpen,
-#ifdef WNT
+#ifdef WIN32
                            const char*                     fileName,
 #endif
                            GHS3DPlugin_GHS3D*              theAlgo,
@@ -2946,7 +2946,7 @@ static bool readResultFile(const int                       fileOpen,
   length   = status.st_size;
 
   // Mapping the result file into memory
-#ifdef WNT
+#ifdef WIN32
   HANDLE fd = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ,
                          NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
   HANDLE hMapObject = CreateFileMapping(fd, NULL, PAGE_READONLY,
@@ -3217,7 +3217,7 @@ static bool readResultFile(const int                       fileOpen,
     (nbShape <= 1) ? tmpStr = " shape" : " shapes";
     cout << tmpStr << endl;
   }
-#ifdef WNT
+#ifdef WIN32
   UnmapViewOfFile(mapPtr);
   CloseHandle(hMapObject);
   CloseHandle(fd);
@@ -3483,7 +3483,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     helper.SetElementsOnShape( false );
 
     Ok = readResultFile( fileOpen,
-#ifdef WNT
+#ifdef WIN32
                          aResultFileName.ToCString(),
 #endif
                          this,
@@ -3787,7 +3787,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 void GHS3DPlugin_GHS3D::CancelCompute()
 {
   _compute_canceled = true;
-#ifdef WNT
+#ifdef WIN32
 #else
   std::string cmd = "ps xo pid,args | grep " + _genericName;
   //cmd += " | grep -e \"^ *[0-9]\\+ \\+" + GHS3DPlugin_Hypothesis::GetExeName() + "\"";
@@ -4124,7 +4124,7 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
   if(_compute_canceled)
     return error(SMESH_Comment("interruption initiated by user"));
   // open file
-#ifdef WNT
+#ifdef WIN32
   int file = ::_open (logFile.ToCString(), _O_RDONLY|_O_BINARY);
 #else
   int file = ::open (logFile.ToCString(), O_RDONLY);
