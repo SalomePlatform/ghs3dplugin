@@ -17,7 +17,7 @@
     </message>
     <message>
       <source>GHS3D_PERMISSION_DENIED</source>
-      <translation>作業ディレクトリが書き込み可能ではないです。</translation>
+      <translation>ディレクトリを作成することはできません。</translation>
     </message>
     <message>
       <source>GHS3D_STD_ARGS</source>
@@ -25,19 +25,27 @@
     </message>
     <message>
       <source>GHS3D_TITLE</source>
-      <translation>仮説構築</translation>
+      <translation>仮説の構築</translation>
     </message>
     <message>
       <source>GHS3D_TO_MESH_HOLES</source>
-      <translation>メッシュに穴します。</translation>
+      <translation>メッシュの穴</translation>
+    </message>
+    <message>
+      <source>GHS3D_TO_MAKE_DOMAIN_GROUPS</source>
+      <translation>GHS3D_TO_MAKE_DOMAIN_GROUPS</translation>
+    </message>
+    <message>
+      <source>ADVANCED_MESHING_GROUP_TITLE</source>
+      <translation>ADVANCED_MESHING_GROUP_TITLE</translation>
     </message>
     <message>
       <source>INIT_MEMORY_SIZE</source>
-      <translation>初期メモリのサイズ</translation>
+      <translation>初期メモリのサイズ、</translation>
     </message>
     <message>
       <source>KEEP_WORKING_FILES</source>
-      <translation>作業ファイルを維持するには</translation>
+      <translation>一時ファイルを保持します。</translation>
     </message>
     <message>
       <source>LEVEL_NONE</source>
@@ -49,15 +57,23 @@
     </message>
     <message>
       <source>LEVEL_MEDIUM</source>
-      <translation>中 (標準)</translation>
+      <translation>(標準) の方法</translation>
     </message>
     <message>
       <source>LEVEL_STANDARDPLUS</source>
-      <translation>標準的です +</translation>
+      <translation>標準</translation>
     </message>
     <message>
       <source>LEVEL_STRONG</source>
-      <translation>強力な</translation>
+      <translation>砦</translation>
+    </message>
+    <message>
+      <source>LOG_IN_FILE</source>
+      <translation>LOG_IN_FILE</translation>
+    </message>
+    <message>
+      <source>LOG_GROUP_TITLE</source>
+      <translation>LOG_GROUP_TITLE</translation>
     </message>
     <message>
       <source>MAX_MEMORY_SIZE</source>
@@ -68,20 +84,28 @@
       <translation>メガバイト</translation>
     </message>
     <message>
+      <source>MEMORY_GROUP_TITLE</source>
+      <translation>MEMORY_GROUP_TITLE</translation>
+    </message>
+    <message>
       <source>NO_INITIAL_CENTRAL_POINT</source>
-      <translation>初期の中心点を削除するには</translation>
+      <translation>元の中心点を削除します。</translation>
     </message>
     <message>
       <source>RECOVERY_VERSION</source>
-      <translation>境界の回復のバージョンを使用するには</translation>
+      <translation>バージョン境界の復元を使用します。</translation>
     </message>
     <message>
       <source>FEM_CORRECTION</source>
-      <translation>有限要素法による補正を使用するには</translation>
+      <translation>使用 fix GEF</translation>
     </message>
     <message>
       <source>GHS3D_GRADATION</source>
-      <translation>Volumic グラデーション</translation>
+      <translation>ボリュームのグラデーション</translation>
+    </message>
+    <message>
+      <source>REMOVE_LOG_ON_SUCCESS</source>
+      <translation>REMOVE_LOG_ON_SUCCESS</translation>
     </message>
     <message>
       <source>SELECT_DIR</source>
@@ -89,11 +113,11 @@
     </message>
     <message>
       <source>TEXT_OPTION</source>
-      <translation>オプション テキストとして</translation>
+      <translation>テキスト オプション</translation>
     </message>
     <message>
       <source>TO_ADD_NODES</source>
-      <translation>新しいノードを作成するには</translation>
+      <translation>新しいノードを作成します。</translation>
     </message>
     <message>
       <source>VERBOSE_LEVEL</source>
@@ -105,11 +129,11 @@
     </message>
     <message>
       <source>GHS3D_ENFORCED_VERTICES</source>
-      <translation>適用された頂点</translation>
+      <translation>交差点</translation>
     </message>
     <message>
       <source>GHS3D_ENFORCED_MESHES</source>
-      <translation>強制メッシュ</translation>
+      <translation>制約メッシュ</translation>
     </message>
     <message>
       <source>GHS3D_ENF_NAME_COLUMN</source>
@@ -121,7 +145,7 @@
     </message>
     <message>
       <source>GHS3D_ENF_VER_Y_COLUMN</source>
-      <translation>Y</translation>
+      <translation>そこ</translation>
     </message>
     <message>
       <source>GHS3D_ENF_VER_Z_COLUMN</source>
@@ -133,7 +157,7 @@
     </message>
     <message>
       <source>GHS3D_ENF_ENTRY_COLUMN</source>
-      <translation>頂点のエントリ</translation>
+      <translation>ポイント ID</translation>
     </message>
     <message>
       <source>GHS3D_ENF_MESH_CONSTRAINT_COLUMN</source>
@@ -141,7 +165,7 @@
     </message>
     <message>
       <source>GHS3D_ENF_VER_COMPOUND_COLUMN</source>
-      <translation>化合物</translation>
+      <translation>複合</translation>
     </message>
     <message>
       <source>GHS3D_ENF_GROUP_COLUMN</source>
@@ -149,11 +173,11 @@
     </message>
     <message>
       <source>GHS3D_ENF_SELECT_VERTEX</source>
-      <translation>頂点を選択します</translation>
+      <translation>・ ポイント (s) の選択</translation>
     </message>
     <message>
       <source>GHS3D_ENF_SELECT_MESH</source>
-      <translation>メッシュを選択します。</translation>
+      <translation>1 つを選択/メッシュ (s)</translation>
     </message>
     <message>
       <source>GHS3D_ENF_VER_X_LABEL</source>
@@ -173,15 +197,15 @@
     </message>
     <message>
       <source>GHS3D_ENF_MESH_CONSTRAINT_NODE</source>
-      <translation>ノード</translation>
+      <translation>節点</translation>
     </message>
     <message>
       <source>GHS3D_ENF_MESH_CONSTRAINT_EDGE</source>
-      <translation>エッジ</translation>
+      <translation>セグメント</translation>
     </message>
     <message>
       <source>GHS3D_ENF_MESH_CONSTRAINT_FACE</source>
-      <translation>直面しています。</translation>
+      <translation>フェース</translation>
     </message>
     <message>
       <source>GHS3D_ENF_SIZE_LABEL</source>
@@ -201,11 +225,11 @@
     </message>
     <message>
       <source>GHS3D_ENF_VER_INFO</source>
-      <translation>&lt;b&gt;警告&lt;/b&gt;: 強制頂点は現在関連付けられているジオメトリ w/o メッシュののみ考慮します。</translation>
+      <translation>&lt;b&gt;注意&lt;/b&gt;: 交差ポイント関連ジオメトリなしメッシュが考慮されます。</translation>
     </message>
     <message>
       <source>GHS3D_ENF_MESH_INFO</source>
-      <translation>&lt;b&gt;警告&lt;/b&gt;: 現在適用されたメッシュはメッシュ関連付けられたジオメトリなしののみ考慮します。</translation>
+      <translation>&lt;b&gt;注意&lt;/b&gt;: 要素制約の関連付けられたジオメトリなしメッシュ考慮されます。</translation>
     </message>
   </context>
 </TS>
