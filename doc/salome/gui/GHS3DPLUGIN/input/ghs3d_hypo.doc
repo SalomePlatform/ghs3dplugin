@@ -135,14 +135,6 @@ for ghs3d, for example, advanced options.
 
 \section ghs3d_enforced_vertices Enforced vertices
 
-\note This feature is currently partially available only on meshes with no
-geometry attached. Such meshes can be obtained by
-- Copying an existing mesh
-- Importing a mesh from file
-- Applying a transformation to a mesh a get result in a new mesh
-.
-See below for more details.
-
 \image html ghs3d_enforced_vertices.png
 
 GHS3D algorithm can locally make the mesh finer. It is possible to
@@ -161,12 +153,6 @@ group. If the group does not exist, it is created.
 \ref ghs3d_top "Back to top"
 
 \section ghs3d_enforced_meshes Enforced Meshes
-
-\note This feature is currently only available on 2D meshes with no
-geometry attached. Such meshes can be obtained by
-- Copying an existing 2D mesh
-- Importing a 2D mesh from file
-- Applying a transformation to a 2D mesh a get result in a new mesh
 
 \image html ghs3d_enforced_meshes.png
 
