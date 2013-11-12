@@ -58,7 +58,7 @@ enum {
 // Enforced vertices widget inputs
 enum {
   ENF_VER_WARNING = 0,
-  ENF_VER_VERTEX,// = 0,
+  ENF_VER_VERTEX = 0,
   ENF_VER_X_COORD,
   ENF_VER_Y_COORD,
   ENF_VER_Z_COORD,
@@ -71,7 +71,7 @@ enum {
 // Enforced meshes widget inputs
 enum {
   ENF_MESH_WARNING = 0,
-  ENF_MESH_MESH /*= 0*/,
+  ENF_MESH_MESH = 0,
   ENF_MESH_CONSTRAINT,
   ENF_MESH_GROUP,
   ENF_MESH_BTN,

@@ -502,17 +502,17 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
 //   myGlobalGroupName = new QCheckBox(tr("GHS3D_ENF_VER_GROUPS"), myEnfGroup);
 //   myGlobalGroupName->setChecked(false);
   
-  QGroupBox* GroupBox = new QGroupBox( myEnfGroup );
-  QLabel* info = new QLabel( GroupBox );
-  info->setText( tr( "GHS3D_ENF_VER_INFO" ) );
-  info->setWordWrap( true );
-  QVBoxLayout* GroupBoxVLayout = new QVBoxLayout( GroupBox );
-  GroupBoxVLayout->setSpacing( 6 );
-  GroupBoxVLayout->setMargin( 11 );
-  GroupBoxVLayout->addWidget( info );
+  // QGroupBox* GroupBox = new QGroupBox( myEnfGroup );
+  // QLabel* info = new QLabel( GroupBox );
+  // info->setText( tr( "GHS3D_ENF_VER_INFO" ) );
+  // info->setWordWrap( true );
+  // QVBoxLayout* GroupBoxVLayout = new QVBoxLayout( GroupBox );
+  // GroupBoxVLayout->setSpacing( 6 );
+  // GroupBoxVLayout->setMargin( 11 );
+  // GroupBoxVLayout->addWidget( info );
   
 
-  anEnfLayout->addWidget(GroupBox,                  ENF_VER_WARNING, 0, 1, 2 );
+  //anEnfLayout->addWidget(GroupBox,                  ENF_VER_WARNING, 0, 1, 2 );
   anEnfLayout->addWidget(myEnforcedTableWidget,     ENF_VER_VERTEX, 0, ENF_VER_NB_LINES, 1);
   
   QGridLayout* anEnfLayout2 = new QGridLayout(myEnfGroup);
@@ -581,16 +581,16 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
 //   addEnfMeshButton->setEnabled(false);
   removeEnfMeshButton = new QPushButton(tr("GHS3D_ENF_REMOVE"),myEnfMeshGroup);
     
-  QGroupBox* GroupBox2 = new QGroupBox( myEnfMeshGroup );
-  QLabel* info2 = new QLabel( GroupBox2 );
-  info2->setText( tr( "GHS3D_ENF_MESH_INFO" ) );
-  info2->setWordWrap( true );
-  QVBoxLayout* GroupBox2VLayout = new QVBoxLayout( GroupBox2 );
-  GroupBox2VLayout->setSpacing( 6 );
-  GroupBox2VLayout->setMargin( 11 );
-  GroupBox2VLayout->addWidget( info2 );
+  // QGroupBox* GroupBox2 = new QGroupBox( myEnfMeshGroup );
+  // QLabel* info2 = new QLabel( GroupBox2 );
+  // info2->setText( tr( "GHS3D_ENF_MESH_INFO" ) );
+  // info2->setWordWrap( true );
+  // QVBoxLayout* GroupBox2VLayout = new QVBoxLayout( GroupBox2 );
+  // GroupBox2VLayout->setSpacing( 6 );
+  // GroupBox2VLayout->setMargin( 11 );
+  // GroupBox2VLayout->addWidget( info2 );
   
-  anEnfMeshLayout->addWidget( GroupBox2,                ENF_MESH_WARNING, 0, 1, 2 );
+  // anEnfMeshLayout->addWidget( GroupBox2,                ENF_MESH_WARNING, 0, 1, 2 );
   anEnfMeshLayout->addWidget(myEnforcedMeshTableWidget, ENF_MESH_MESH, 0, ENF_MESH_NB_LINES , 1);
   
   QGridLayout* anEnfMeshLayout2 = new QGridLayout(myEnfMeshGroup);
