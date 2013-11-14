@@ -27,33 +27,27 @@
 #include "GHS3DPlugin_GHS3D.hxx"
 #include "GHS3DPlugin_Hypothesis.hxx"
 
-#include <Basics_Utils.hxx>
-
-//#include <SMESH_Gen.hxx>
-#include <SMESH_Client.hxx>
-#include <SMESH_Mesh.hxx>
-#include <SMESH_Comment.hxx>
-#include <SMESH_MesherHelper.hxx>
-#include <SMESH_MeshEditor.hxx>
-#include <SMESH_OctreeNode.hxx>
-#include <SMESH_Group.hxx>
-#include <SMESH_subMeshEventListener.hxx>
-#include <SMESH_HypoFilter.hxx>
-#include <SMESH_MeshAlgos.hxx>
-
+#include <SMDS_FaceOfNodes.hxx>
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
-#include <SMDS_FaceOfNodes.hxx>
 #include <SMDS_VolumeOfNodes.hxx>
-
 #include <SMESHDS_Group.hxx>
-
+#include <SMESH_Comment.hxx>
+#include <SMESH_Group.hxx>
+#include <SMESH_HypoFilter.hxx>
+#include <SMESH_Mesh.hxx>
+#include <SMESH_MeshAlgos.hxx>
+#include <SMESH_MeshEditor.hxx>
+#include <SMESH_MesherHelper.hxx>
+#include <SMESH_OctreeNode.hxx>
+#include <SMESH_subMeshEventListener.hxx>
 #include <StdMeshers_QuadToTriaAdaptor.hxx>
 #include <StdMeshers_ViscousLayers.hxx>
 
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
+#include <BRepClass3d.hxx>
 #include <BRepClass3d_SolidClassifier.hxx>
 #include <BRepExtrema_DistShapeShape.hxx>
 #include <BRepGProp.hxx>
@@ -64,7 +58,6 @@
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <OSD_File.hxx>
 #include <Precision.hxx>
-#include <Quantity_Parameter.hxx>
 #include <Standard_ErrorHandler.hxx>
 #include <Standard_Failure.hxx>
 #include <Standard_ProgramError.hxx>
@@ -74,9 +67,10 @@
 #include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopTools_MapOfShape.hxx>
 #include <TopoDS.hxx>
-#include <TopoDS_Shape.hxx>
+#include <TopoDS_Shell.hxx>
 #include <TopoDS_Solid.hxx>
 
+#include <Basics_Utils.hxx>
 #include <utilities.h>
 
 #ifdef WIN32
@@ -86,17 +80,7 @@
 #endif
 #include <algorithm>
 
-//#include <Standard_Stream.hxx>
-
-
 #define castToNode(n) static_cast<const SMDS_MeshNode *>( n );
-
-#ifdef _DEBUG_
-#define DUMP(txt) \
-//  std::cout << txt
-#else
-#define DUMP(txt)
-#endif
 
 extern "C"
 {
@@ -346,7 +330,11 @@ static int findShapeID(SMESH_Mesh&          mesh,
   SMESHDS_Mesh* meshDS = mesh.GetMeshDS();
 
   // face the nodes belong to
-  const SMDS_MeshElement * face = meshDS->FindFace(node1,node2,node3);
+  vector<const SMDS_MeshNode *> nodes(3);
+  nodes[0] = node1;
+  nodes[1] = node2;
+  nodes[2] = node3;
+  const SMDS_MeshElement * face = meshDS->FindElement( nodes, SMDSAbs_Face, /*noMedium=*/true);
   if ( !face )
     return isTmpFace(node1, node2, node3) ? HOLE_ID : invalidID;
 #ifdef _DEBUG_
@@ -384,25 +372,22 @@ static int findShapeID(SMESH_Mesh&          mesh,
     if ( toMeshHoles )
       return meshDS->ShapeToIndex( solid1 );
 
-    //////////// UNCOMMENT AS SOON AS
-    //////////// http://tracker.dev.opencascade.org/view.php?id=23129
-    //////////// IS SOLVED
     // - Are we at a hole boundary face?
-    // if ( shells(1).IsSame( BRepTools::OuterShell( solid1 )) )
-    // { // - No, but maybe a hole is bound by two shapes? Does shells(1) touches another shell?
-    //   bool touch = false;
-    //   TopExp_Explorer eExp( shells(1), TopAbs_EDGE );
-    //   // check if any edge of shells(1) belongs to another shell
-    //   for ( ; eExp.More() && !touch; eExp.Next() ) {
-    //     ansIt = mesh.GetAncestors( eExp.Current() );
-    //     for ( ; ansIt.More() && !touch; ansIt.Next() ) {
-    //       if ( ansIt.Value().ShapeType() == TopAbs_SHELL )
-    //         touch = ( !ansIt.Value().IsSame( shells(1) ));
-    //     }
-    //   }
-    //   if (!touch)
-    //     return meshDS->ShapeToIndex( solid1 );
-    // }
+    if ( shells(1).IsSame( BRepClass3d::OuterShell( solid1 )) )
+    { // - No, but maybe a hole is bound by two shapes? Does shells(1) touches another shell?
+      bool touch = false;
+      TopExp_Explorer eExp( shells(1), TopAbs_EDGE );
+      // check if any edge of shells(1) belongs to another shell
+      for ( ; eExp.More() && !touch; eExp.Next() ) {
+        ansIt = mesh.GetAncestors( eExp.Current() );
+        for ( ; ansIt.More() && !touch; ansIt.Next() ) {
+          if ( ansIt.Value().ShapeType() == TopAbs_SHELL )
+            touch = ( !ansIt.Value().IsSame( shells(1) ));
+        }
+      }
+      if (!touch)
+        return meshDS->ShapeToIndex( solid1 );
+    }
   }
   // find orientation of geom face within the first solid
   TopExp_Explorer fExp( solid1, TopAbs_FACE );
@@ -427,7 +412,6 @@ static int findShapeID(SMESH_Mesh&          mesh,
   // get normale to geomFace at any node
   bool geomNormalOK = false;
   gp_Vec geomNormal;
-  const SMDS_MeshNode* nodes[3] = { node1, node2, node3 };
   SMESH_MesherHelper helper( mesh ); helper.SetSubShape( geomFace );
   for ( int i = 0; !geomNormalOK && i < 3; ++i )
   {
@@ -1178,9 +1162,6 @@ static bool readGMFFile(const char*                     theFile,
   std::cout << "isQuadMesh: " << isQuadMesh << std::endl;
 #endif
   
-  // if ( theHelper->GetSubShapeID() != 0 && hasGeom )
-  //   theHelper->IsQuadraticSubMesh( theHelper->GetSubShape() );
-
   // ---------------------------------
   // Read generated elements and nodes
   // ---------------------------------
@@ -3639,8 +3620,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 {
   MESSAGE("GHS3DPlugin_GHS3D::Compute()");
 
-  //SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
-  TopoDS_Shape theShape = theHelper->GetSubShape();
+  theHelper->IsQuadraticSubMesh( theHelper->GetSubShape() );
 
   // a unique working file name
   // to avoid access to the same files by eg different users
