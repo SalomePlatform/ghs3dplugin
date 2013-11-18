@@ -3401,6 +3401,57 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 //   TIDSortedElemSet enforcedQuadrangles = GHS3DPlugin_Hypothesis::GetEnforcedQuadrangles(_hyp);
   GHS3DPlugin_Hypothesis::TID2SizeMap nodeIDToSizeMap = GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(_hyp);
 
+  GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList enfVertices = GHS3DPlugin_Hypothesis::GetEnforcedVertices(_hyp);
+  GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList::const_iterator enfVerIt = enfVertices.begin();
+  std::vector<double> coords;
+
+  for ( ; enfVerIt != enfVertices.end() ; ++enfVerIt)
+  {
+    GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* enfVertex = (*enfVerIt);
+//     if (enfVertex->geomEntry.empty() && enfVertex->coords.size()) {
+    if (enfVertex->coords.size()) {
+      coordsSizeMap.insert(make_pair(enfVertex->coords,enfVertex->size));
+      enfVerticesWithGroup.insert(make_pair(enfVertex->coords,enfVertex->groupName));
+//       MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<enfVertex->coords[0]<<","<<enfVertex->coords[1]<<","<<enfVertex->coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
+    }
+    else {
+//     if (!enfVertex->geomEntry.empty()) {
+      TopoDS_Shape GeomShape = entryToShape(enfVertex->geomEntry);
+//       GeomType = GeomShape.ShapeType();
+
+//       if (!enfVertex->isCompound) {
+// //       if (GeomType == TopAbs_VERTEX) {
+//         coords.clear();
+//         aPnt = BRep_Tool::Pnt(TopoDS::Vertex(GeomShape));
+//         coords.push_back(aPnt.X());
+//         coords.push_back(aPnt.Y());
+//         coords.push_back(aPnt.Z());
+//         if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
+//           coordsSizeMap.insert(make_pair(coords,enfVertex->size));
+//           enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
+//         }
+//       }
+//
+//       // Group Management
+//       else {
+//       if (GeomType == TopAbs_COMPOUND){
+        for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()){
+          coords.clear();
+          if (it.Value().ShapeType() == TopAbs_VERTEX){
+            gp_Pnt aPnt = BRep_Tool::Pnt(TopoDS::Vertex(it.Value()));
+            coords.push_back(aPnt.X());
+            coords.push_back(aPnt.Y());
+            coords.push_back(aPnt.Z());
+            if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
+              coordsSizeMap.insert(make_pair(coords,enfVertex->size));
+              enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
+//               MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<coords[0]<<","<<coords[1]<<","<<coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
+            }
+          }
+        }
+//       }
+    }
+  }
   int nbEnforcedVertices = coordsSizeMap.size();
   int nbEnforcedNodes = enforcedNodes.size();
   
