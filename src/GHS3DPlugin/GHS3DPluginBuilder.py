@@ -27,7 +27,7 @@ from salome.smesh.smeshBuilder import AssureGeomPublished
 # import GHS3DPlugin module if possible
 noGHS3DPlugin = 0
 try:
-    import GHS3DPlugin
+    from salome.GHS3DPlugin import GHS3DPluginBuilder
 except ImportError:
     noGHS3DPlugin = 1
     pass
