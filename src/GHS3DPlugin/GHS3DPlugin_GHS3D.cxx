@@ -3391,7 +3391,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 //#endif
   
   std::map <int,int> aNodeId2NodeIndexMap, aSmdsToGhs3dIdMap, anEnforcedNodeIdToGhs3dIdMap;
-  std::map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
+  //std::map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
   std::map <int, int> nodeID2nodeIndexMap;
   std::map<std::vector<double>, std::string> enfVerticesWithGroup;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues coordsSizeMap = GHS3DPlugin_Hypothesis::GetEnforcedVerticesCoordsSize(_hyp);
@@ -3628,7 +3628,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
     // get problem description from the log file
-    _Ghs2smdsConvertor conv( aGhs3dIdToNodeMap );
+    _Ghs2smdsConvertor conv( aNodeByGhs3dId );
     storeErrorDescription( aLogFileName, conv );
   }
   else
