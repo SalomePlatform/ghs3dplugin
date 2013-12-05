@@ -33,11 +33,11 @@
     </message>
     <message>
       <source>GHS3D_TO_MAKE_DOMAIN_GROUPS</source>
-      <translation>GHS3D_TO_MAKE_DOMAIN_GROUPS</translation>
+      <translation>ドメインのグループを確認するには</translation>
     </message>
     <message>
       <source>ADVANCED_MESHING_GROUP_TITLE</source>
-      <translation>ADVANCED_MESHING_GROUP_TITLE</translation>
+      <translation>高度なメッシュ オプション</translation>
     </message>
     <message>
       <source>INIT_MEMORY_SIZE</source>
@@ -45,7 +45,7 @@
     </message>
     <message>
       <source>KEEP_WORKING_FILES</source>
-      <translation>一時ファイルを保持します。</translation>
+      <translation>すべての一時ファイルを保持します。</translation>
     </message>
     <message>
       <source>LEVEL_NONE</source>
@@ -69,11 +69,11 @@
     </message>
     <message>
       <source>LOG_IN_FILE</source>
-      <translation>LOG_IN_FILE</translation>
+      <translation>ログ ファイルへの印刷します。</translation>
     </message>
     <message>
       <source>LOG_GROUP_TITLE</source>
-      <translation>LOG_GROUP_TITLE</translation>
+      <translation>Et のログをデバッグ</translation>
     </message>
     <message>
       <source>MAX_MEMORY_SIZE</source>
@@ -85,7 +85,7 @@
     </message>
     <message>
       <source>MEMORY_GROUP_TITLE</source>
-      <translation>MEMORY_GROUP_TITLE</translation>
+      <translation>メモリの設定</translation>
     </message>
     <message>
       <source>NO_INITIAL_CENTRAL_POINT</source>
@@ -97,7 +97,7 @@
     </message>
     <message>
       <source>FEM_CORRECTION</source>
-      <translation>使用 fix GEF</translation>
+      <translation>GEF 補正を使用してください。</translation>
     </message>
     <message>
       <source>GHS3D_GRADATION</source>
@@ -105,7 +105,7 @@
     </message>
     <message>
       <source>REMOVE_LOG_ON_SUCCESS</source>
-      <translation>REMOVE_LOG_ON_SUCCESS</translation>
+      <translation>削除ログ成功</translation>
     </message>
     <message>
       <source>SELECT_DIR</source>
@@ -205,7 +205,7 @@
     </message>
     <message>
       <source>GHS3D_ENF_MESH_CONSTRAINT_FACE</source>
-      <translation>フェース</translation>
+      <translation>Faces</translation>
     </message>
     <message>
       <source>GHS3D_ENF_SIZE_LABEL</source>
