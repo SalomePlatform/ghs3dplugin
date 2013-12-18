@@ -3377,10 +3377,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   TCollection_AsciiString aLogFileName    = aGenericName + ".log";    // log
   TCollection_AsciiString aResultFileName;
 
-  TCollection_AsciiString aGMFFileName, aRequiredVerticesFileName, aSolFileName;
+  TCollection_AsciiString aGMFFileName, aRequiredVerticesFileName, aSolFileName, aResSolFileName;
 //#ifdef _DEBUG_
   aGMFFileName              = aGenericName + ".mesh"; // GMF mesh file
   aResultFileName           = aGenericName + "Vol.mesh"; // GMF mesh file
+  aResSolFileName           = aGenericName + "Vol.sol"; // GMF mesh file
   aRequiredVerticesFileName = aGenericNameRequired + ".mesh"; // GMF required vertices mesh file
   aSolFileName              = aGenericNameRequired + ".sol"; // GMF solution file
 //#else
@@ -3645,6 +3646,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     removeFile( aGMFFileName );
     removeFile( aRequiredVerticesFileName );
     removeFile( aSolFileName );
+    removeFile( aResSolFileName );
     removeFile( aResultFileName );
     removeFile( aSmdsToGhs3dIdMapFileName );
   }
@@ -3683,10 +3685,11 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   TCollection_AsciiString aResultFileName;
   bool Ok;
 
-  TCollection_AsciiString aGMFFileName, aRequiredVerticesFileName, aSolFileName;
+  TCollection_AsciiString aGMFFileName, aRequiredVerticesFileName, aSolFileName, aResSolFileName;
 //#ifdef _DEBUG_
   aGMFFileName              = aGenericName + ".mesh"; // GMF mesh file
   aResultFileName           = aGenericName + "Vol.mesh"; // GMF mesh file
+  aResSolFileName           = aGenericName + "Vol.sol"; // GMF mesh file
   aRequiredVerticesFileName = aGenericNameRequired + ".mesh"; // GMF required vertices mesh file
   aSolFileName              = aGenericNameRequired + ".sol"; // GMF solution file
 //#else
@@ -3883,6 +3886,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     removeFile( aResultFileName );
     removeFile( aRequiredVerticesFileName );
     removeFile( aSolFileName );
+    removeFile( aResSolFileName );
   }
   return Ok;
 }
