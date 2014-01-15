@@ -58,6 +58,7 @@
                label-id="Tetrahedron (GHS3D)"
                icon-id="mesh_tree_hypo_ghs3d.png"
                input="TRIA,QUAD"
+               output="TETRA,PYRAMID"
 	       need-geom="false"
                opt-hypos="GHS3D_Parameters, ViscousLayers"
                dim="3">
