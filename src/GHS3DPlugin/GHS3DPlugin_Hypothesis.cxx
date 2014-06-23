@@ -1510,18 +1510,22 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
         cmd += " -c 1";
     }
   }
+  const bool toCreateNewNodes = ( p0 && ( !hyp || hyp->myToCreateNewNodes ));
 
   // optimization level
-  if ( o && hyp && !useBndRecovery ) {
+  if ( o && hyp && !useBndRecovery && toCreateNewNodes ) {
     if ( hyp->myOptimizationLevel >= 0 && hyp->myOptimizationLevel < 5 ) {
       const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
       cmd += " -o ";
       cmd += level[ hyp->myOptimizationLevel ];
     }
   }
+  if ( !toCreateNewNodes ) {
+    cmd += " -o none"; // issue 22608
+  }
 
   // to create internal nodes
-  if ( p0 && hyp && !hyp->myToCreateNewNodes ) {
+  if ( p0 && !toCreateNewNodes ) {
     cmd += " -p0";
   }
 
