@@ -3469,7 +3469,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::vector <const SMDS_MeshElement*> aFaceByGhs3dId;
   std::map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
   std::vector<std::string> aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId;
-  {
+
+  // proxyMesh must live till readGMFFile() as a proxy face can be used by
+  // ghs3d for domain indication
+  //{
     SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
 
     // make prisms on quadrangles
@@ -3512,7 +3515,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                       aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
                       enforcedNodes, enforcedEdges, enforcedTriangles, /*enforcedQuadrangles,*/
                       enfVerticesWithGroup, coordsSizeMap);
-  }
+    //}
 
   // Write aSmdsToGhs3dIdMap to temp file
   TCollection_AsciiString aSmdsToGhs3dIdMapFileName;
@@ -3792,7 +3795,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::vector <const SMDS_MeshElement*> aFaceByGhs3dId;
   std::map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
   std::vector<std::string> aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId;
-  {
+
+  // proxyMesh must live till readGMFFile() as a proxy face can be used by
+  // ghs3d for domain indication
+  //{
     SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
     if ( theMesh.NbQuadrangles() > 0 )
     {
@@ -3807,7 +3813,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                       aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
                       enforcedNodes, enforcedEdges, enforcedTriangles,
                       enfVerticesWithGroup, coordsSizeMap);
-  }
+    //}
 
   // -----------------
   // run ghs3d mesher
