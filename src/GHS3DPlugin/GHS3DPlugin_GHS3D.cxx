@@ -3632,7 +3632,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
     // get problem description from the log file
-    _Ghs2smdsConvertor conv( aNodeByGhs3dId );
+    _Ghs2smdsConvertor conv( aNodeByGhs3dId, proxyMesh );
     storeErrorDescription( aLogFileName, conv );
   }
   else
@@ -3874,7 +3874,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   else if ( OSD_File( aLogFileName ).Size() > 0 )
   {
     // get problem description from the log file
-    _Ghs2smdsConvertor conv( aNodeByGhs3dId );
+    _Ghs2smdsConvertor conv( aNodeByGhs3dId, proxyMesh );
     storeErrorDescription( aLogFileName, conv );
   }
   else {
@@ -4507,8 +4507,9 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
  */
 //================================================================================
 
-_Ghs2smdsConvertor::_Ghs2smdsConvertor( const map <int,const SMDS_MeshNode*> & ghs2NodeMap)
-  :_ghs2NodeMap( & ghs2NodeMap ), _nodeByGhsId( 0 )
+_Ghs2smdsConvertor::_Ghs2smdsConvertor( const map <int,const SMDS_MeshNode*> & ghs2NodeMap,
+                                        SMESH_ProxyMesh::Ptr                   mesh)
+  :_ghs2NodeMap( & ghs2NodeMap ), _nodeByGhsId( 0 ), _mesh( mesh )
 {
 }
 
@@ -4518,8 +4519,9 @@ _Ghs2smdsConvertor::_Ghs2smdsConvertor( const map <int,const SMDS_MeshNode*> & g
  */
 //================================================================================
 
-_Ghs2smdsConvertor::_Ghs2smdsConvertor( const vector <const SMDS_MeshNode*> &  nodeByGhsId)
-  : _ghs2NodeMap( 0 ), _nodeByGhsId( &nodeByGhsId )
+_Ghs2smdsConvertor::_Ghs2smdsConvertor( const vector <const SMDS_MeshNode*> &  nodeByGhsId,
+                                        SMESH_ProxyMesh::Ptr                   mesh)
+  : _ghs2NodeMap( 0 ), _nodeByGhsId( &nodeByGhsId ), _mesh( mesh )
 {
 }
 
@@ -4552,13 +4554,13 @@ const SMDS_MeshElement* _Ghs2smdsConvertor::getElement(const vector<int>& ghsNod
 
   if ( nbNodes == 2 ) {
     const SMDS_MeshElement* edge= SMDS_Mesh::FindEdge( nodes[0], nodes[1] );
-    if ( !edge )
+    if ( !edge || edge->GetID() < 1 || _mesh->IsTemporary( edge ))
       edge = new SMDS_LinearEdge( nodes[0], nodes[1] );
     return edge;
   }
   if ( nbNodes == 3 ) {
     const SMDS_MeshElement* face = SMDS_Mesh::FindFace( nodes );
-    if ( !face )
+    if ( !face || face->GetID() < 1 || _mesh->IsTemporary( face ))
       face = new SMDS_FaceOfNodes( nodes[0], nodes[1], nodes[2] );
     return face;
   }

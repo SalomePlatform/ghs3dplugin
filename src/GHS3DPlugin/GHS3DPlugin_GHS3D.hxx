@@ -26,9 +26,10 @@
 #ifndef _GHS3DPlugin_GHS3D_HXX_
 #define _GHS3DPlugin_GHS3D_HXX_
 
-#include "SMESH_Algo.hxx"
-#include "SMESH_Gen.hxx"
-#include "SMESH_Gen_i.hxx"
+#include <SMESH_Algo.hxx>
+#include <SMESH_Gen.hxx>
+#include <SMESH_Gen_i.hxx>
+#include <SMESH_ProxyMesh.hxx>
 
 #include <map>
 #include <vector>
@@ -110,11 +111,14 @@ class _Ghs2smdsConvertor
 {
   const std::map <int,const SMDS_MeshNode*> * _ghs2NodeMap;
   const std::vector <const SMDS_MeshNode*> *  _nodeByGhsId;
+  SMESH_ProxyMesh::Ptr                        _mesh;
 
 public:
-  _Ghs2smdsConvertor( const std::map <int,const SMDS_MeshNode*> & ghs2NodeMap);
+  _Ghs2smdsConvertor( const std::map <int,const SMDS_MeshNode*> & ghs2NodeMap,
+                      SMESH_ProxyMesh::Ptr                        mesh);
 
-  _Ghs2smdsConvertor( const std::vector <const SMDS_MeshNode*> &  nodeByGhsId);
+  _Ghs2smdsConvertor( const std::vector <const SMDS_MeshNode*> &  nodeByGhsId,
+                      SMESH_ProxyMesh::Ptr                        mesh);
 
   const SMDS_MeshElement* getElement(const std::vector<int>& ghsNodes) const;
 };
