@@ -187,7 +187,10 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
     _logInStandardOutput = _hyp->GetStandardOutputLog();
   }
 
-  return true;
+  if ( _viscousLayersHyp )
+    error( _viscousLayersHyp->CheckHypothesis( aMesh, aShape, aStatus ));
+
+  return aStatus == HYP_OK;
 }
 
 
