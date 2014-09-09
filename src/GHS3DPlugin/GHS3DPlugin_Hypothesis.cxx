@@ -68,7 +68,7 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   _nodeIDToSizeMap(DefaultID2SizeMap()),
   _groupsToRemove(DefaultGroupsToRemove())
 {
-  _name = "GHS3D_Parameters";
+  _name = GetHypType();
   _param_algo_dim = 3;
 }
 

@@ -14,31 +14,31 @@ Below you can see an example of usage of the GHS3DPluginBuilder Python API for m
 -# \ref tui_ghs3d_enforced_vertices
 -# \ref tui_ghs3d_enforced_meshes
 
-\section tui_ghs3d_basic Construction of Mesh using Ghs3D algorithm
+\section tui_ghs3d_basic Construction of Mesh using MG-Tetra algorithm
 
 \anchor example_BLSURFPlugin
-<h2>Example of mesh generation with GHS3D algorithm:</h2>
+<h2>Example of mesh generation with MG-Tetra algorithm:</h2>
 \tui_script{ghs3ddemo.py}
 
 
-\image html ghs3d_screenshot.png Ghs3d mesh without hypothesis
+\image html ghs3d_screenshot.png MG-Tetra mesh without hypothesis
 
 \ref tui_ghs3d "Back to top"
 
 \section tui_ghs3d_enforced_vertices Adding enforced vertices
 
-<h2>Example of enforced vertices with GHS3D algorithm:</h2>
+<h2>Example of enforced vertices with MG-Tetra algorithm:</h2>
 \tui_script{ghs3d_enfvert.py}
 
 
-\image html ghs3d_screenshot_enf1.png Ghs3d mesh with enforced vertex
-\image html ghs3d_screenshot_enf2.png Ghs3d mesh with enforced vertex from GEOM vertex
+\image html ghs3d_screenshot_enf1.png MG-Tetra mesh with enforced vertex
+\image html ghs3d_screenshot_enf2.png MG-Tetra mesh with enforced vertex from GEOM vertex
 
 \ref tui_ghs3d "Back to top"
 
 \section tui_ghs3d_enforced_meshes Adding enforced mesh
 
-<h2>Example of enforced meshes with GHS3D algorithm:</h2>
+<h2>Example of enforced meshes with MG-Tetra algorithm:</h2>
 \tui_script{ghs3d_enfmesh.py}
 
 \image html ghs3d_screenshot_enf3.png

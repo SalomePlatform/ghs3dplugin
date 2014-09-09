@@ -56,10 +56,12 @@ extern "C"
     // Hypotheses
 
     // Algorithm
-    if (strcmp(aHypName, "GHS3D_3D") == 0)
+    if (strcmp(aHypName, "GHS3D_3D") == 0 ||
+        strcmp(aHypName, "MG-Tetra") == 0)
       aCreator = new GHS3DPlugin_Creator_i<GHS3DPlugin_GHS3D_i>;
     // Hypothesis
-    else if (strcmp(aHypName, "GHS3D_Parameters") == 0)
+    else if (strcmp(aHypName, "GHS3D_Parameters") == 0 ||
+             strcmp(aHypName, "MG-Tetra Parameters") == 0)
       aCreator = new GHS3DPlugin_Creator_i<GHS3DPlugin_Hypothesis_i>;
     else ;
 

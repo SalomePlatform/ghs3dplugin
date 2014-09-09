@@ -35,7 +35,8 @@ extern "C"
   SMESHGUI_GenericHypothesisCreator* GetHypothesisCreator( const QString& aHypType )
   {
     SMESHGUI_GenericHypothesisCreator* aCreator = NULL;
-    if ( aHypType == "GHS3D_Parameters" )
+    if ( aHypType == "GHS3D_Parameters" ||
+         aHypType == "MG-Tetra Parameters" )
       aCreator =  new GHS3DPluginGUI_HypothesisCreator( aHypType );
     return aCreator;
   }

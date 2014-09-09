@@ -9,7 +9,7 @@
     </message>
     <message>
         <source>GHS3D_HYPOTHESIS</source>
-        <translation>GHS3D</translation>
+        <translation>MG-Tetra</translation>
     </message>
     <message>
         <source>GHS3D_OPTIMIZATIOL_LEVEL</source>

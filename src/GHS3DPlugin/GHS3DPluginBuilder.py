@@ -43,7 +43,8 @@ None_Optimization, Light_Optimization, Standard_Optimization, StandardPlus_Optim
 #----------------------------
 
 ## Algorithm type: GHS3D tetrahedron 3D algorithm, see GHS3D_Algorithm
-GHS3D = "GHS3D_3D"
+GHS3D = "MG-Tetra"
+MG_Tetra = "MG-Tetra"
 
 ## Tetrahedron GHS3D 3D algorithm
 #  
@@ -75,7 +76,7 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     #  @return hypothesis object
     def Parameters(self):
         if not self.params:
-            self.params = self.Hypothesis("GHS3D_Parameters", [],
+            self.params = self.Hypothesis("MG-Tetra Parameters", [],
                                           "libGHS3DEngine.so", UseExisting=0)
             pass
         return self.params

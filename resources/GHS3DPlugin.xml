@@ -31,8 +31,8 @@
                server-lib="GHS3DEngine"
                gui-lib="GHS3DPluginGUI">
   <hypotheses>
-    <hypothesis type="GHS3D_Parameters"
-		label-id="GHS3D Parameters"
+    <hypothesis type="MG-Tetra Parameters"
+		label-id="MG-Tetra Parameters"
 		icon-id="mesh_hypo_ghs3d.png"
 		dim="3">
       <python-wrap>
@@ -54,17 +54,17 @@
   </hypotheses>
 
   <algorithms>
-    <algorithm type="GHS3D_3D"
-               label-id="Tetrahedron (GHS3D)"
+    <algorithm type="MG-Tetra"
+               label-id="MG-Tetra"
                icon-id="mesh_tree_hypo_ghs3d.png"
                input="TRIA,QUAD"
                output="TETRA,PYRAMID"
 	       need-geom="false"
-               opt-hypos="GHS3D_Parameters, ViscousLayers"
+               opt-hypos="MG-Tetra Parameters,ViscousLayers"
                dim="3">
       <python-wrap>
-        <algo>GHS3D_3D=Tetrahedron(algo=smeshBuilder.GHS3D)</algo>
-        <hypo>GHS3D_Parameters=Parameters()</hypo>
+        <algo>MG-Tetra=Tetrahedron(algo=smeshBuilder.MG_Tetra)</algo>
+        <hypo>MG-Tetra Parameters=Parameters()</hypo>
         <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetIgnoreFaces())</hypo>
       </python-wrap>
     </algorithm>

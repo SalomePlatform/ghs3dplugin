@@ -80,7 +80,7 @@ public:
 
   bool         importGMFMesh(const char* aGMFFileName, SMESH_Mesh& aMesh);
 
-  static const char* Name() { return "GHS3D_3D"; }
+  static const char* Name() { return "MG-Tetra"; }
 
 protected:
   const GHS3DPlugin_Hypothesis*   _hyp;
