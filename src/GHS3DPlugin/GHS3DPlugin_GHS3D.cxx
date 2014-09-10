@@ -4716,7 +4716,8 @@ namespace
      */
     static GHS3DPlugin_Hypothesis* GetGHSHypothesis( SMESH_subMesh* subMesh )
     {
-      SMESH_HypoFilter ghsHypFilter( SMESH_HypoFilter::HasName( "GHS3D_Parameters" ));
+      SMESH_HypoFilter ghsHypFilter
+        ( SMESH_HypoFilter::HasName( GHS3DPlugin_Hypothesis::GetHypType() ));
       return (GHS3DPlugin_Hypothesis* )
         subMesh->GetFather()->GetHypothesis( subMesh->GetSubShape(),
                                              ghsHypFilter,
