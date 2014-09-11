@@ -19,5 +19,5 @@
 
 ##
 # @package GHS3DPluginBuilder
-# Python API for the GHS3D meshing plug-in module.
+# Python API for the MG-Tetra meshing plug-in module.
 

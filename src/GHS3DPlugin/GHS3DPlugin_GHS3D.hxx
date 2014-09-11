@@ -105,7 +105,7 @@ private:
 };
 
 /*!
- * \brief Convertor of GHS3D elements to SMDS ones
+ * \brief Convertor of MG-Tetra elements to SMDS ones
  */
 class _Ghs2smdsConvertor
 {

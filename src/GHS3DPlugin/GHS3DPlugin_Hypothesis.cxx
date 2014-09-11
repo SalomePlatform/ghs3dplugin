@@ -1451,7 +1451,7 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
 
 //================================================================================
 /*!
- * \brief Return command to run ghs3d mesher excluding file prefix (-f)
+ * \brief Return command to run MG-Tetra mesher excluding file prefix (-f)
  */
 //================================================================================
 
@@ -1476,8 +1476,8 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   if ( !useBndRecovery && hyp )
     useBndRecovery = hyp->myToUseBoundaryRecoveryVersion;
 
-  // ghs3d needs to know amount of memory it may use (MB).
-  // Default memory is defined at ghs3d installation but it may be not enough,
+  // MG-Tetra needs to know amount of memory it may use (MB).
+  // Default memory is defined at MG-Tetra installation but it may be not enough,
   // so allow to use about all available memory
   if ( m ) {
     double aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
@@ -1499,7 +1499,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   // 0 , all components to be meshed
   // 1 , only the main ( outermost ) component to be meshed
   if ( c && !useBndRecovery ) {
-    // We always run GHS3D with "to mesh holes'==TRUE (see PAL19680)
+    // We always run MG-Tetra with "to mesh holes'==TRUE (see PAL19680)
     if ( hasShapeToMesh )
       cmd += " -c 0";
     else {

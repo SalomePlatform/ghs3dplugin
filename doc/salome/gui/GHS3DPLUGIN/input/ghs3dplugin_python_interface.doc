@@ -2,11 +2,22 @@
 
 \page ghs3dplugin_python_interface_page Python Interface
 
-Python package GHS3DPluginBuilder defines several classes, destined for creation of the 3D meshes.
+\note The former name of MG-Tetra mesher is \a GHS3D and names
+of the corresponding classes and modules still include \a "GHS3D".
 
-GHS3D meshing plugin dynamically adds several methods to the smeshBuilder.Mesh class to create meshing algorithms.
+Python package GHS3DPluginBuilder defines
+GHS3DPluginBuilder.GHS3D_Algorithm class providing access
+to the MG-Tetra meshing algorithm and its parameters.
 
-Below you can see an example of usage of the GHS3DPluginBuilder Python API for mesh generation:
+You can get an instance of this class by calling
+smeshBuilder.Mesh.Tetrahedron(algo=smeshBuilder.MG_Tetra) or 
+smeshBuilder.Mesh.Tetrahedron(algo=smeshBuilder.GHS3D). This call
+creates an algorithm (if not yet exist), assigns it to the mesh and
+returns an instance of GHS3DPluginBuilder.GHS3D_Algorithm to the caller.
+
+The class of algorithm has methods to set up meshing parameters.
+
+Below you can see examples of usage of this class for tetrahedral mesh generation.
 
 \anchor tui_ghs3d
 
@@ -16,7 +27,7 @@ Below you can see an example of usage of the GHS3DPluginBuilder Python API for m
 
 \section tui_ghs3d_basic Construction of Mesh using MG-Tetra algorithm
 
-\anchor example_BLSURFPlugin
+\anchor example_GHS3DPlugin
 <h2>Example of mesh generation with MG-Tetra algorithm:</h2>
 \tui_script{ghs3ddemo.py}
 

@@ -17,7 +17,7 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-# It is possible to constrain GHS3D with another mesh or group.
+# It is possible to constrain MG-Tetra with another mesh or group.
 # The constraint can refer to the nodes, edges or faces.
 # This feature is available only on 2D meshes without geometry.
 # The constraining elements are called enforced elements for the mesh.
@@ -52,31 +52,31 @@ geompy.addToStudy( p2, "p2" )
 geompy.addToStudy( c, "c" )
 
 # Create the 2D algorithm and hypothesis
-BLSURF = smesh.CreateHypothesis('BLSURF', 'BLSURFEngine')
+MG_CADSurf = smesh.CreateHypothesis('MG-CADSurf', 'BLSURFEngine')
 # For the box
-BLSURF_Parameters = smesh.CreateHypothesis('BLSURF_Parameters', 'BLSURFEngine')
-BLSURF_Parameters.SetPhysicalMesh( 1 )
-BLSURF_Parameters.SetPhySize( 200 )
+MG_CADSurf_Parameters = smesh.CreateHypothesis('MG-CADSurf Parameters', 'BLSURFEngine')
+MG_CADSurf_Parameters.SetPhysicalMesh( 1 )
+MG_CADSurf_Parameters.SetPhySize( 200 )
 # For the cylinder
-BLSURF_Parameters2 = smesh.CreateHypothesis('BLSURF_Parameters', 'BLSURFEngine')
-BLSURF_Parameters2.SetGeometricMesh( 1 )
+MG_CADSurf_Parameters2 = smesh.CreateHypothesis('MG-CADSurf Parameters', 'BLSURFEngine')
+MG_CADSurf_Parameters2.SetGeometricMesh( 1 )
 
 # Create the 3D algorithm and hypothesis
-GHS3D = smesh.CreateHypothesis('GHS3D_3D', 'GHS3DEngine')
-GHS3D_Parameters_node = smesh.CreateHypothesis('GHS3D_Parameters', 'GHS3DEngine')
-#GHS3D_Parameters_node.SetToMeshHoles( 1 )
-GHS3D_Parameters_edge = smesh.CreateHypothesis('GHS3D_Parameters', 'GHS3DEngine')
-#GHS3D_Parameters_edge.SetToMeshHoles( 1 )
-GHS3D_Parameters_face = smesh.CreateHypothesis('GHS3D_Parameters', 'GHS3DEngine')
-GHS3D_Parameters_face.SetToMeshHoles( 1 ) # to mesh inside the cylinder
-GHS3D_Parameters_mesh = smesh.CreateHypothesis('GHS3D_Parameters', 'GHS3DEngine')
-GHS3D_Parameters_mesh.SetToMeshHoles( 1 ) # to mesh inside the cylinder
+MG_Tetra = smesh.CreateHypothesis('MG-Tetra', 'GHS3DEngine')
+MG_Tetra_Parameters_node = smesh.CreateHypothesis('MG-Tetra Parameters', 'GHS3DEngine')
+#MG_Tetra_Parameters_node.SetToMeshHoles( 1 )
+MG_Tetra_Parameters_edge = smesh.CreateHypothesis('MG-Tetra Parameters', 'GHS3DEngine')
+#MG_Tetra_Parameters_edge.SetToMeshHoles( 1 )
+MG_Tetra_Parameters_face = smesh.CreateHypothesis('MG-Tetra Parameters', 'GHS3DEngine')
+MG_Tetra_Parameters_face.SetToMeshHoles( 1 ) # to mesh inside the cylinder
+MG_Tetra_Parameters_mesh = smesh.CreateHypothesis('MG-Tetra Parameters', 'GHS3DEngine')
+MG_Tetra_Parameters_mesh.SetToMeshHoles( 1 ) # to mesh inside the cylinder
 
 # Create the mesh on the cylinder
 Mesh_cylindre = smesh.Mesh(cylindre)
 smesh.SetName(Mesh_cylindre,"Mesh_cylindre")
-Mesh_cylindre.AddHypothesis( BLSURF )
-Mesh_cylindre.AddHypothesis( BLSURF_Parameters2 )
+Mesh_cylindre.AddHypothesis( MG_CADSurf )
+Mesh_cylindre.AddHypothesis( MG_CADSurf_Parameters2 )
 # Create some groups
 face_cyl_faces = Mesh_cylindre.GroupOnGeom(face_cyl,'group_face_cyl', SMESH.FACE)
 face_cyl_edges = Mesh_cylindre.GroupOnGeom(face_cyl,'group_edge_cyl', SMESH.EDGE)
@@ -84,10 +84,9 @@ face_cyl_nodes = Mesh_cylindre.GroupOnGeom(face_cyl,'group_node_cyl', SMESH.NODE
 Mesh_cylindre.Compute()
 
 # Create the mesh on the cylinder
-Mesh_box_tri = smesh.Mesh(box)
-smesh.SetName(Mesh_box_tri,"Mesh_box_tri")
-Mesh_box_tri.AddHypothesis( BLSURF )
-Mesh_box_tri.AddHypothesis( BLSURF_Parameters )
+Mesh_box_tri = smesh.Mesh(box,"Mesh_box_tri")
+Mesh_box_tri.AddHypothesis( MG_CADSurf )
+Mesh_box_tri.AddHypothesis( MG_CADSurf_Parameters )
 Mesh_box_tri.Compute()
 
 # Create 4 copies of the 2D mesh to test the 3 types of contraints (NODE, EDGE, FACE)
@@ -95,26 +94,26 @@ Mesh_box_tri.Compute()
 # Then the 3D algo and hypothesis are assigned to them.
 
 mesh_mesh = smesh.CopyMesh( Mesh_box_tri, 'Enforced by faces of mesh', 0, 0)
-mesh_mesh.AddHypothesis( GHS3D )
-mesh_mesh.AddHypothesis( GHS3D_Parameters_mesh)
+mesh_mesh.AddHypothesis( MG_Tetra )
+mesh_mesh.AddHypothesis( MG_Tetra_Parameters_mesh)
 
 mesh_node = smesh.CopyMesh( Mesh_box_tri, 'Enforced by group of nodes', 0, 0)
-mesh_node.AddHypothesis( GHS3D )
-mesh_node.AddHypothesis( GHS3D_Parameters_node)
+mesh_node.AddHypothesis( MG_Tetra )
+mesh_node.AddHypothesis( MG_Tetra_Parameters_node)
 
 mesh_edge = smesh.CopyMesh( Mesh_box_tri, 'Enforced by group of edges', 0, 0)
-mesh_edge.AddHypothesis( GHS3D )
-mesh_edge.AddHypothesis( GHS3D_Parameters_edge)
+mesh_edge.AddHypothesis( MG_Tetra )
+mesh_edge.AddHypothesis( MG_Tetra_Parameters_edge)
 
 mesh_face = smesh.CopyMesh( Mesh_box_tri, 'Enforced by group of faces', 0, 0)
-mesh_face.AddHypothesis( GHS3D )
-mesh_face.AddHypothesis( GHS3D_Parameters_face)
+mesh_face.AddHypothesis( MG_Tetra )
+mesh_face.AddHypothesis( MG_Tetra_Parameters_face)
 
 # Add the enforced elements
-GHS3D_Parameters_mesh.SetEnforcedMeshWithGroup(Mesh_cylindre.GetMesh(),SMESH.FACE,"faces from cylinder")
-GHS3D_Parameters_node.SetEnforcedMeshWithGroup(face_cyl_nodes,SMESH.NODE,"nodes from face_cyl_nodes")
-GHS3D_Parameters_edge.SetEnforcedMeshWithGroup(face_cyl_edges,SMESH.EDGE,"edges from face_cyl_edges")
-GHS3D_Parameters_face.SetEnforcedMeshWithGroup(face_cyl_faces,SMESH.FACE,"faces from face_cyl_faces")
+MG_Tetra_Parameters_mesh.SetEnforcedMeshWithGroup(Mesh_cylindre.GetMesh(),SMESH.FACE,"faces from cylinder")
+MG_Tetra_Parameters_node.SetEnforcedMeshWithGroup(face_cyl_nodes,SMESH.NODE,"nodes from face_cyl_nodes")
+MG_Tetra_Parameters_edge.SetEnforcedMeshWithGroup(face_cyl_edges,SMESH.EDGE,"edges from face_cyl_edges")
+MG_Tetra_Parameters_face.SetEnforcedMeshWithGroup(face_cyl_faces,SMESH.FACE,"faces from face_cyl_faces")
 
 #Compute the meshes
 mesh_node.Compute()

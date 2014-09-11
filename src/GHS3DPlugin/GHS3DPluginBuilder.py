@@ -19,7 +19,7 @@
 
 ##
 # @package GHS3DPluginBuilder
-# Python API for the GHS3D meshing plug-in module.
+# Python API for the MG-Tetra meshing plug-in module.
 
 from salome.smesh.smesh_algorithm import Mesh_Algorithm
 from salome.smesh.smeshBuilder import AssureGeomPublished
@@ -32,7 +32,7 @@ except ImportError:
     noGHS3DPlugin = 1
     pass
 
-# Optimization level of GHS3D
+# Optimization level of MG-Tetra
 # V3.1
 None_Optimization, Light_Optimization, Medium_Optimization, Strong_Optimization = 0,1,2,3
 # V4.1 (partialy redefines V3.1). Issue 0020574
@@ -42,13 +42,13 @@ None_Optimization, Light_Optimization, Standard_Optimization, StandardPlus_Optim
 # Mesh algo type identifiers
 #----------------------------
 
-## Algorithm type: GHS3D tetrahedron 3D algorithm, see GHS3D_Algorithm
-GHS3D = "MG-Tetra"
+## Algorithm type: MG-Tetra tetrahedron 3D algorithm, see GHS3D_Algorithm
 MG_Tetra = "MG-Tetra"
+GHS3D = MG_Tetra
 
-## Tetrahedron GHS3D 3D algorithm
+## Tetrahedron MG-Tetra 3D algorithm
 #  
-#  It can be created by calling smeshBuilder.Mesh.Tetrahedron( smeshBuilder.GHS3D, geom=0 )
+#  It can be created by calling smeshBuilder.Mesh.Tetrahedron( smeshBuilder.MG_Tetra, geom=0 )
 class GHS3D_Algorithm(Mesh_Algorithm):
 
     ## name of the dynamic method in smeshBuilder.Mesh class
@@ -56,7 +56,7 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     meshMethod = "Tetrahedron"
     ## type of algorithm used with helper function in smeshBuilder.Mesh class
     #  @internal
-    algoType   = GHS3D
+    algoType   = MG_Tetra
     ## doc string of the method in smeshBuilder.Mesh class
     #  @internal
     docHelper  = "Creates tetrahedron 3D algorithm for volumes"
@@ -90,7 +90,7 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     ## To make groups of volumes of different domains when mesh is generated from skin.
     #  Default is to make groups.
     # This option works only (1) for the mesh w/o shape and (2) if GetToMeshHoles() == true
-    #  @param toMesh "mesh holes" flag value
+    #  @param toMakeGroups "Make groups of domains" flag value
     def SetToMakeGroupsOfDomains(self, toMakeGroups):
         self.Parameters().SetToMakeGroupsOfDomains(toMakeGroups)
         pass

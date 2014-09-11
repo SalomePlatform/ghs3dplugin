@@ -316,9 +316,9 @@ static bool isTmpFace(const SMDS_MeshNode* node1,
 
 //=======================================================================
 //function : findShapeID
-//purpose  : find the solid corresponding to GHS3D sub-domain following
-//           the technique proposed in GHS3D manual (available within
-//           ghs3d installation) in chapter "B.4 Subdomain (sub-region) assignment".
+//purpose  : find the solid corresponding to MG-Tetra sub-domain following
+//           the technique proposed in MG-Tetra manual (available within
+//           MG-Tetra installation) in chapter "B.4 Subdomain (sub-region) assignment".
 //           In brief: normal of the triangle defined by the given nodes
 //           points out of the domain it is associated to
 //=======================================================================
@@ -639,8 +639,8 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //   for (int i=0; i < nbTriangle; i++) {
 //     tabID[i] = 0;
 //     int nodeId1, nodeId2, nodeId3;
-//     // find the solid corresponding to GHS3D sub-domain following
-//     // the technique proposed in GHS3D manual in chapter
+//     // find the solid corresponding to MG-Tetra sub-domain following
+//     // the technique proposed in MG-Tetra manual in chapter
 //     // "B.4 Subdomain (sub-region) assignment"
 // 
 //     nodeId1 = strtol(ptr, &ptr, 10);
@@ -661,7 +661,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //       try {
 //         OCC_CATCH_SIGNALS;
 //         tabID[i] = findShapeID( theMesh, n1, n2, n3, toMeshHoles );
-//         // -- 0020330: Pb with ghs3d as a submesh
+//         // -- 0020330: Pb with MG-Tetra as a submesh
 //         // check that found shape is to be meshed
 //         if ( tabID[i] > 0 ) {
 //           const TopoDS_Shape& foundShape = theMeshDS->IndexToShape( tabID[i] );
@@ -671,7 +671,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //           if ( !isToBeMeshed )
 //             tabID[i] = HOLE_ID;
 //         }
-//         // END -- 0020330: Pb with ghs3d as a submesh
+//         // END -- 0020330: Pb with MG-Tetra as a submesh
 // #ifdef _DEBUG_
 //         std::cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << std::endl;
 // #endif
@@ -871,7 +871,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
 //           
 //           // IN WORK
 //           TopoDS_Shape aSolid;
-//           // We always run GHS3D with "to mesh holes"==TRUE but we must not create
+//           // We always run MG-Tetra with "to mesh holes"==TRUE but we must not create
 //           // tetras within holes depending on hypo option,
 //           // so we first check if aTet is inside a hole and then create it 
 //           if ( nbTriangle > 1 ) {
@@ -1630,9 +1630,9 @@ static bool writeGMFFile(const char*                                     theMesh
     nbNodes = elem->NbCornerNodes();
     while ( nodeIt->more() && nbNodes--)
     {
-      // find GHS3D ID
+      // find MG-Tetra ID
       const SMDS_MeshNode* node = castToNode( nodeIt->next() );
-      int newId = aNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
+      int newId = aNodeToGhs3dIdMap.size() + 1; // MG-Tetra ids count from 1
       aNodeToGhs3dIdMap.insert( make_pair( node, newId ));
     }
   }
@@ -1646,7 +1646,7 @@ static bool writeGMFFile(const char*                                     theMesh
     nodeIt = elem->nodesIterator();
     nbNodes = 2;
     while ( nodeIt->more() && nbNodes-- ) {
-      // find GHS3D ID
+      // find MG-Tetra ID
       const SMDS_MeshNode* node = castToNode( nodeIt->next() );
       // Test if point is inside shape to mesh
       gp_Pnt myPoint(node->X(),node->Y(),node->Z());
@@ -1662,7 +1662,7 @@ static bool writeGMFFile(const char*                                     theMesh
       nbNodes = 2;
       int newId = -1;
       while ( nodeIt->more() && nbNodes-- ) {
-        // find GHS3D ID
+        // find MG-Tetra ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         gp_Pnt myPoint(node->X(),node->Y(),node->Z());
         nbFoundElems = pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems);
@@ -1672,7 +1672,7 @@ static bool writeGMFFile(const char*                                     theMesh
 #endif
         if (nbFoundElems ==0) {
           if ((*aNodeToTopAbs_StateMap.find(node)).second == TopAbs_IN) {
-            newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
+            newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // MG-Tetra ids count from 1
             anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
           }
         }
@@ -1684,7 +1684,7 @@ static bool writeGMFFile(const char*                                     theMesh
         else
           isOK = false;
 #ifdef _DEBUG_
-        std::cout << "GHS3D node ID: "<<newId<<std::endl;
+        std::cout << "MG-Tetra node ID: "<<newId<<std::endl;
 #endif
       }
       if (isOK)
@@ -1701,7 +1701,7 @@ static bool writeGMFFile(const char*                                     theMesh
     nodeIt = elem->nodesIterator();
     nbNodes = 3;
     while ( nodeIt->more() && nbNodes--) {
-      // find GHS3D ID
+      // find MG-Tetra ID
       const SMDS_MeshNode* node = castToNode( nodeIt->next() );
       // Test if point is inside shape to mesh
       gp_Pnt myPoint(node->X(),node->Y(),node->Z());
@@ -1717,7 +1717,7 @@ static bool writeGMFFile(const char*                                     theMesh
       nbNodes = 3;
       int newId = -1;
       while ( nodeIt->more() && nbNodes--) {
-        // find GHS3D ID
+        // find MG-Tetra ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         gp_Pnt myPoint(node->X(),node->Y(),node->Z());
         nbFoundElems = pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems);
@@ -1726,7 +1726,7 @@ static bool writeGMFFile(const char*                                     theMesh
 #endif
         if (nbFoundElems ==0) {
           if ((*aNodeToTopAbs_StateMap.find(node)).second == TopAbs_IN) {
-            newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // ghs3d ids count from 1
+            newId = aNodeToGhs3dIdMap.size() + anEnforcedNodeToGhs3dIdMap.size() + 1; // MG-Tetra ids count from 1
             anEnforcedNodeToGhs3dIdMap.insert( make_pair( node, newId ));
           }
         }
@@ -1738,7 +1738,7 @@ static bool writeGMFFile(const char*                                     theMesh
         else
           isOK = false;
 #ifdef _DEBUG_
-        std::cout << "GHS3D node ID: "<<newId<<std::endl;
+        std::cout << "MG-Tetra node ID: "<<newId<<std::endl;
 #endif
       }
       if (isOK)
@@ -1755,7 +1755,7 @@ static bool writeGMFFile(const char*                                     theMesh
   for ( ; n2id != aNodeToGhs3dIdMap.end(); ++ n2id)
   {
 //     std::cout << "n2id->first: "<<n2id->first<<std::endl;
-    theNodeByGhs3dId[ n2id->second - 1 ] = n2id->first; // ghs3d ids count from 1
+    theNodeByGhs3dId[ n2id->second - 1 ] = n2id->first; // MG-Tetra ids count from 1
   }
 
   // put nodes to anEnforcedNodeToGhs3dIdMap vector
@@ -1767,7 +1767,7 @@ static bool writeGMFFile(const char*                                     theMesh
   for ( ; n2id != anEnforcedNodeToGhs3dIdMap.end(); ++ n2id)
   {
     if (n2id->second > aNodeToGhs3dIdMap.size()) {
-      theEnforcedNodeByGhs3dId[ n2id->second - aNodeToGhs3dIdMap.size() - 1 ] = n2id->first; // ghs3d ids count from 1
+      theEnforcedNodeByGhs3dId[ n2id->second - aNodeToGhs3dIdMap.size() - 1 ] = n2id->first; // MG-Tetra ids count from 1
     }
   }
   
@@ -2026,7 +2026,7 @@ static bool writeGMFFile(const char*                                     theMesh
       nodeIt = elem->nodesIterator();
       int index=0;
       while ( nodeIt->more() ) {
-        // find GHS3D ID
+        // find MG-Tetra ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
         if (it == anEnforcedNodeToGhs3dIdMap.end()) {
@@ -2065,7 +2065,7 @@ static bool writeGMFFile(const char*                                     theMesh
       nodeIt = elem->nodesIterator();
       int index=0;
       for ( int j = 0; j < 3; ++j ) {
-        // find GHS3D ID
+        // find MG-Tetra ID
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         map< const SMDS_MeshNode*,int >::iterator it = aNodeToGhs3dIdMap.find(node);
         if (it == aNodeToGhs3dIdMap.end())
@@ -2084,7 +2084,7 @@ static bool writeGMFFile(const char*                                     theMesh
         nodeIt = elem->nodesIterator();
         int index=0;
         for ( int j = 0; j < 3; ++j ) {
-          // find GHS3D ID
+          // find MG-Tetra ID
           const SMDS_MeshNode* node = castToNode( nodeIt->next() );
           map< const SMDS_MeshNode*,int >::iterator it = anEnforcedNodeToGhs3dIdMap.find(node);
           if (it == anEnforcedNodeToGhs3dIdMap.end()) {
@@ -2157,7 +2157,7 @@ static bool writeGMFFile(const char*                                     theMesh
 //   nbev = theEnforcedVertices.size();
 //   nben = theEnforcedNodes.size();
 //   
-//   // Issue 020674: EDF 870 SMESH: Mesh generated by Netgen not usable by GHS3D
+//   // Issue 020674: EDF 870 SMESH: Mesh generated by Netgen not usable by MG-Tetra
 //   // The problem is in nodes on degenerated edges, we need to skip nodes which are free
 //   // and replace not-free nodes on edges by the node on vertex
 //   TNodeNodeMap n2nDegen; // map a node on degenerated edge to a node on vertex
@@ -2336,7 +2336,7 @@ static bool writeGMFFile(const char*                                     theMesh
 //         itOnSubFace = aFace->nodesIterator();
 //         att.clear();
 //         for ( int j = 0; j < 3; ++j ) {
-//           // find GHS3D ID
+//           // find MG-Tetra ID
 //           node = castToNode( itOnSubFace->next() );
 //           if (( n2nDegenIt = n2nDegen.find( node )) != n2nDegen.end() )
 //             node = n2nDegenIt->second;
@@ -2512,7 +2512,7 @@ static bool writeGMFFile(const char*                                     theMesh
 // //         itOnSubFace = aFace->nodesIterator();
 // //         aqt.clear();
 // //         while ( itOnSubFace->more() ) {
-// //           // find GHS3D ID
+// //           // find MG-Tetra ID
 // //           aSmdsID = itOnSubFace->next()->GetID();
 // //           itOnMap = theSmdsToGhs3dIdMap.find( aSmdsID );
 // //           ASSERT( itOnMap != theSmdsToGhs3dIdMap.end() );
@@ -2642,7 +2642,7 @@ static bool writeFaces (ofstream &              theFile,
 
       itOnSubFace = aFace->nodesIterator();
       for ( int j = 0; j < 3; ++j ) {
-        // find GHS3D ID
+        // find MG-Tetra ID
         aSmdsID = itOnSubFace->next()->GetID();
         itOnMap = theSmdsToGhs3dIdMap.find( aSmdsID );
         // if ( itOnMap == theSmdsToGhs3dIdMap.end() ) {
@@ -2794,7 +2794,7 @@ static bool writePoints (ofstream &                       theFile,
   SMDS_NodeIteratorPtr nodeIt = theMeshDS->nodesIterator();
   const SMDS_MeshNode* node;
 
-  // Issue 020674: EDF 870 SMESH: Mesh generated by Netgen not usable by GHS3D
+  // Issue 020674: EDF 870 SMESH: Mesh generated by Netgen not usable by MG-Tetra
   // The problem is in nodes on degenerated edges, we need to skip nodes which are free
   // and replace not-free nodes on degenerated edges by the node on vertex
   TNodeNodeMap n2nDegen; // map a node on degenerated edge to a node on vertex
@@ -3067,7 +3067,7 @@ static bool readResultFile(const int                       fileOpen,
       // Creating SMESH nodes
       // - for enforced vertices
       // - for vertices of forced edges
-      // - for ghs3d nodes
+      // - for MG-Tetra nodes
       nodeAssigne[ iNode ] = 0;
       aNewNode = theMeshDS->AddNode( coord[0],coord[1],coord[2] );
       theGhs3dIdToNodeMap.insert(theGhs3dIdToNodeMap.end(), make_pair( iNode, aNewNode ));
@@ -3082,8 +3082,8 @@ static bool readResultFile(const int                       fileOpen,
     if(theAlgo->computeCanceled())
       return false;
     tabID[i] = 0;
-    // find the solid corresponding to GHS3D sub-domain following
-    // the technique proposed in GHS3D manual in chapter
+    // find the solid corresponding to MG-Tetra sub-domain following
+    // the technique proposed in MG-Tetra manual in chapter
     // "B.4 Subdomain (sub-region) assignment"
     int nodeId1 = strtol(ptr, &ptr, 10);
     int nodeId2 = strtol(ptr, &ptr, 10);
@@ -3100,7 +3100,7 @@ static bool readResultFile(const int                       fileOpen,
         OCC_CATCH_SIGNALS;
 //         tabID[i] = findShapeID( theHelper, n1, n2, n3, toMeshHoles );
         tabID[i] = findShapeID( *theHelper.GetMesh(), n1, n2, n3, toMeshHoles );
-        // -- 0020330: Pb with ghs3d as a submesh
+        // -- 0020330: Pb with MG-Tetra as a submesh
         // check that found shape is to be meshed
         if ( tabID[i] > 0 ) {
           const TopoDS_Shape& foundShape = theMeshDS->IndexToShape( tabID[i] );
@@ -3110,7 +3110,7 @@ static bool readResultFile(const int                       fileOpen,
           if ( !isToBeMeshed )
             tabID[i] = HOLE_ID;
         }
-        // END -- 0020330: Pb with ghs3d as a submesh
+        // END -- 0020330: Pb with MG-Tetra as a submesh
 #ifdef _DEBUG_
         std::cout << i+1 << " subdomain: findShapeID() returns " << tabID[i] << std::endl;
 #endif
@@ -3148,7 +3148,7 @@ static bool readResultFile(const int                       fileOpen,
       node[ iNode ] = itOnNode->second;
       nodeID[ iNode ] = ID;
     }
-    // We always run GHS3D with "to mesh holes"==TRUE but we must not create
+    // We always run MG-Tetra with "to mesh holes"==TRUE but we must not create
     // tetras within holes depending on hypo option,
     // so we first check if aTet is inside a hole and then create it 
     //aTet = theMeshDS->AddVolume( node[1], node[0], node[2], node[3] );
@@ -3332,7 +3332,7 @@ static bool readResultFile(const int                       fileOpen,
 
 //=============================================================================
 /*!
- *Here we are going to use the GHS3D mesher with geometry
+ *Here we are going to use the MG-Tetra mesher with geometry
  */
 //=============================================================================
 
@@ -3343,7 +3343,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   //SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
 
   // we count the number of shapes
-  // _nbShape = countShape( meshDS, TopAbs_SOLID ); -- 0020330: Pb with ghs3d as a submesh
+  // _nbShape = countShape( meshDS, TopAbs_SOLID ); -- 0020330: Pb with MG-Tetra as a submesh
   // _nbShape = 0;
   TopExp_Explorer expBox ( theShape, TopAbs_SOLID );
   // for ( ; expBox.More(); expBox.Next() )
@@ -3474,7 +3474,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::vector<std::string> aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId;
 
   // proxyMesh must live till readGMFFile() as a proxy face can be used by
-  // ghs3d for domain indication
+  // MG-Tetra for domain indication
   //{
     SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
 
@@ -3530,7 +3530,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     return error(SMESH_Comment("Can't write into ") << aSmdsToGhs3dIdMapFileName);
   }
   INFOS( "Writing ids relation into " << aSmdsToGhs3dIdMapFileName);
-  aIdsFile << "Smds Ghs3d" << std::endl;
+  aIdsFile << "Smds MG-Tetra" << std::endl;
   map <int,int>::const_iterator myit;
   for (myit=aSmdsToGhs3dIdMap.begin() ; myit != aSmdsToGhs3dIdMap.end() ; ++myit) {
     aIdsFile << myit->first << " " << myit->second << std::endl;
@@ -3550,7 +3550,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   removeFile( aResultFileName ); // needed for boundary recovery module usage
 
   // -----------------
-  // run ghs3d mesher
+  // run MG-Tetra mesher
   // -----------------
 
   TCollection_AsciiString cmd( (char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp ).c_str() );
@@ -3563,7 +3563,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
 
   std::cout << std::endl;
-  std::cout << "Ghs3d execution..." << std::endl;
+  std::cout << "MG-Tetra execution..." << std::endl;
   std::cout << cmd << std::endl;
 
   _compute_canceled = false;
@@ -3571,7 +3571,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   system( cmd.ToCString() ); // run
 
   std::cout << std::endl;
-  std::cout << "End of Ghs3d execution !" << std::endl;
+  std::cout << "End of MG-Tetra execution !" << std::endl;
 
   // --------------
   // read a result
@@ -3583,7 +3583,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // fileOpen = open( aResultFileName.ToCString(), O_RDONLY);
   // if ( fileOpen < 0 ) {
   //   std::cout << std::endl;
-  //   std::cout << "Can't open the " << aResultFileName.ToCString() << " GHS3D output file" << std::endl;
+  //   std::cout << "Can't open the " << aResultFileName.ToCString() << " MG-Tetra output file" << std::endl;
   //   std::cout << "Log: " << aLogFileName << std::endl;
   //   Ok = false;
   // }
@@ -3642,8 +3642,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   {
     // the log file is empty
     removeFile( aLogFileName );
-    INFOS( "GHS3D Error, command '" << cmd.ToCString() << "' failed" );
-    error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
+    INFOS( "MG-Tetra Error, command '" << cmd.ToCString() << "' failed" );
+    error(COMPERR_ALGO_FAILED, "mg-tetra.exe: command not found" );
   }
 
   if ( !_keepFiles ) {
@@ -3656,7 +3656,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     removeFile( aResultFileName );
     removeFile( aSmdsToGhs3dIdMapFileName );
   }
-  std::cout << "<" << aResultFileName.ToCString() << "> GHS3D output file ";
+  std::cout << "<" << aResultFileName.ToCString() << "> MG-Tetra output file ";
   if ( !Ok )
     std::cout << "not ";
   std::cout << "treated !" << std::endl;
@@ -3671,7 +3671,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
 //=============================================================================
 /*!
- *Here we are going to use the GHS3D mesher w/o geometry
+ *Here we are going to use the MG-Tetra mesher w/o geometry
  */
 //=============================================================================
 bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
@@ -3800,7 +3800,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::vector<std::string> aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId;
 
   // proxyMesh must live till readGMFFile() as a proxy face can be used by
-  // ghs3d for domain indication
+  // MG-Tetra for domain indication
   //{
     SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
     if ( theMesh.NbQuadrangles() > 0 )
@@ -3819,7 +3819,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     //}
 
   // -----------------
-  // run ghs3d mesher
+  // run MG-Tetra mesher
   // -----------------
 
   TCollection_AsciiString cmd = TCollection_AsciiString((char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp, false ).c_str());
@@ -3832,7 +3832,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
 
   std::cout << std::endl;
-  std::cout << "Ghs3d execution..." << std::endl;
+  std::cout << "MG-Tetra execution..." << std::endl;
   std::cout << cmd << std::endl;
 
   _compute_canceled = false;
@@ -3840,7 +3840,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   system( cmd.ToCString() ); // run
 
   std::cout << std::endl;
-  std::cout << "End of Ghs3d execution !" << std::endl;
+  std::cout << "End of MG-Tetra execution !" << std::endl;
 
   // --------------
   // read a result
@@ -3883,8 +3883,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   else {
     // the log file is empty
     removeFile( aLogFileName );
-    INFOS( "GHS3D Error, command '" << cmd.ToCString() << "' failed" );
-    error(COMPERR_ALGO_FAILED, "ghs3d: command not found" );
+    INFOS( "MG-Tetra Error, command '" << cmd.ToCString() << "' failed" );
+    error(COMPERR_ALGO_FAILED, "mg-tetra.exe: command not found" );
   }
 
   if ( !_keepFiles )
@@ -3914,7 +3914,7 @@ void GHS3DPlugin_GHS3D::CancelCompute()
 
 //================================================================================
 /*!
- * \brief Provide human readable text by error code reported by ghs3d
+ * \brief Provide human readable text by error code reported by MG-Tetra
  */
 //================================================================================
 
@@ -4492,7 +4492,7 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
     {
       char msg2[] = "SEGMENTATION FAULT";
       if ( search( &buf[0], bufEnd, msg2, msg2 + strlen(msg2)) != bufEnd )
-        errDescription << "ghs3d: SEGMENTATION FAULT. ";
+        errDescription << "MG-Tetra: SEGMENTATION FAULT. ";
     }
   }
 
@@ -4530,7 +4530,7 @@ _Ghs2smdsConvertor::_Ghs2smdsConvertor( const vector <const SMDS_MeshNode*> &  n
 
 //================================================================================
 /*!
- * \brief Return SMDS element by ids of GHS3D nodes
+ * \brief Return SMDS element by ids of MG-Tetra nodes
  */
 //================================================================================
 

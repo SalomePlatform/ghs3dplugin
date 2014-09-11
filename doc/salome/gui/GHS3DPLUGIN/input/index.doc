@@ -1,18 +1,22 @@
 /*!
 
-\mainpage Introduction to GHS3DPLUGIN
+\mainpage Introduction to MG-Tetra plug-in
 
-\b GHS3DPLUGIN plugin is destined for:
-- Meshing 3D geometric entities: volumes are split into tetrahedral (pyramidal) elements.
+\b MG-Tetra plug-in adds MG-Tetra (former GHS3D) meshing
+algorithm to the SALOME Mesh module.
+
+\b MG-Tetra meshing algorithm is destined for:
+- Meshing 3D geometric entities: solids are split into tetrahedral (pyramidal) elements.
 - Generating 3D meshes from 2D meshes (triangles and quadrangles), working without geometrical objects.
 
-\note GHS3DPLUGIN plugin used GHS3D commercial mesher and require a
+\note MG-Tetra plug-in uses MG-Tetra commercial mesher and requires a
 license to be used within the Mesh module.
+To obtain a license, visit http://www.meshgems.com/meshgems-products.html
 
-To manage parameters of the GHS3DPLUGIN use \subpage ghs3d_hypo_page and \subpage additional_hypo_page
+To manage parameters of the MG-Tetra mesher use \subpage ghs3d_hypo_page and \subpage additional_hypo_page
 
-Also all GHS3DPLUGIN functionalities are accessible via
-\subpage ghs3dplugin_python_interface_page "GHS3DPLUGIN Python interface".
+Also all MG-Tetra functionalities are accessible via
+\subpage ghs3dplugin_python_interface_page "MG-Tetra Python interface".
 
 
 \image html image2.gif "Example of a tetrahedral 3D mesh"

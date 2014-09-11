@@ -33,7 +33,7 @@
 #include "GHS3DPlugin_GHS3D.hxx"
 
 // ======================================================
-// GHS3D 3d algorithm
+// MG-Tetra 3d algorithm
 // ======================================================
 class GHS3DPlugin_GHS3D_i:
   public virtual POA_GHS3DPlugin::GHS3DPlugin_GHS3D,

@@ -225,7 +225,7 @@ public:
   
 
   /*!
-   * \brief Return command to run ghs3d mesher excluding file prefix (-f)
+   * \brief Return command to run MG-Tetra mesher excluding file prefix (-f)
    */
   static std::string CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
                                   const bool                    hasShapeToMesh=true);
