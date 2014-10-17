@@ -146,7 +146,8 @@ An enforced vertex is defined by:
   - from GEOM (Vertex, Compound) - only available on meshes with no
   geometry attached
   - or from (x,y,z) Cartesian coordinates
-- A constant physical size
+- A constant physical size. If this size is zero, then the mesh size is
+not affected.
 - If a group name is given, the created node will be added to the
 group. If the group does not exist, it is created.
 

@@ -1038,7 +1038,9 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedVertex(double x, double y, dou
       break;
 
 
-    if (( !isCompound && ((itemX == x) && (itemY == y) && (itemZ == z))) || /*( (itemEntry.toStdString() != "") && */ (itemEntry.toStdString() == geomEntry)/*)*/) {
+    if (( !isCompound && ((itemX == x) && (itemY == y) && (itemZ == z))) ||
+        ( !itemEntry.isEmpty() && ( itemEntry == geomEntry.c_str() )))
+    {
       // update size
       if (itemSize != size) {
         MESSAGE("Size is updated from \"" << itemSize << "\" to \"" << size << "\"");
@@ -1261,10 +1263,14 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
     if (selEnfVertex == 1) {
       MESSAGE("1 GEOM object selected");
       myEnfVertex = myEnfVertexWdg->GetObject< GEOM::GEOM_Object >();
-      std::string entry = "";
-      if (myEnfVertex != GEOM::GEOM_Object::_nil())
-        entry = myEnfVertex->GetStudyEntry();
-      addEnforcedVertex(x, y, z, size, myEnfVertex->GetName(),entry, groupName, myEnfVertex->GetShapeType() == GEOM::COMPOUND);
+      std::string entry = "", name = "";
+      bool isCompound = false;
+      if ( !myEnfVertex->_is_nil() ) {
+        entry = SMESH::toStdStr( myEnfVertex->GetStudyEntry() );
+        name  = SMESH::toStdStr( myEnfVertex->GetName() );
+        isCompound = ( myEnfVertex->GetShapeType() == GEOM::COMPOUND );
+      }
+      addEnforcedVertex(x, y, z, size, name, entry, groupName, isCompound);
     }
     else {
       MESSAGE("0 GEOM object selected");
