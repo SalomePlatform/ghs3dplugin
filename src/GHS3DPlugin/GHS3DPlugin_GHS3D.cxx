@@ -426,7 +426,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
       else
         nNotOnSeamEdge = nodes[(i+1)%3];
     }
-    bool uvOK;
+    bool uvOK = true;
     gp_XY uv = helper.GetNodeUV( geomFace, nodes[i], nNotOnSeamEdge, &uvOK );
     // check that uv is correct
     if (uvOK) {
