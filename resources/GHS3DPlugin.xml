@@ -65,7 +65,7 @@
       <python-wrap>
         <algo>MG-Tetra=Tetrahedron(algo=smeshBuilder.MG_Tetra)</algo>
         <hypo>MG-Tetra Parameters=Parameters()</hypo>
-        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetIgnoreFaces())</hypo>
+        <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetFaces(1),SetFaces(2),SetMethod())</hypo>
       </python-wrap>
     </algorithm>
 
