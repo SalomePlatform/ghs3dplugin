@@ -76,28 +76,28 @@ namespace {
 #include <sys/sysinfo.h>
 #endif
 
-  int maxAvailableMemory()
+  long maxAvailableMemory()
   {
 #ifdef WIN32
     // See http://msdn.microsoft.com/en-us/library/aa366589.aspx
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof (statex);
-    int err = GlobalMemoryStatusEx (&statex);
+    long err = GlobalMemoryStatusEx (&statex);
     if (err != 0) {
-      int totMB = 
+      long totMB = 
         statex.ullTotalPhys / 1024 / 1024 +
         statex.ullTotalPageFile / 1024 / 1024 +
         statex.ullTotalVirtual / 1024 / 1024;
-      return (int) ( 0.7 * totMB );
+      return (long) ( 0.7 * totMB );
     }
 #else
     struct sysinfo si;
-    int err = sysinfo( &si );
+    long err = sysinfo( &si );
     if ( err == 0 ) {
-      int totMB =
+      long totMB =
         si.totalram * si.mem_unit / 1024 / 1024 +
         si.totalswap * si.mem_unit / 1024 / 1024 ;
-      return (int) ( 0.7 * totMB );
+      return (long) ( 0.7 * totMB );
     }
 #endif
     return 0;
@@ -416,11 +416,11 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myAdvWidget->maxMemoryCheck->setText(tr( "MAX_MEMORY_SIZE" ));
   myAdvWidget->initialMemoryCheck->setText(tr( "INIT_MEMORY_SIZE" ));
 
-  myAdvWidget->maxMemorySpin->RangeStepAndValidator(20.0, 1e6, 10.0);
-  myAdvWidget->maxMemorySpin->setValue( 128.0 );
+  myAdvWidget->maxMemorySpin->stepBy(10);
+  myAdvWidget->maxMemorySpin->setValue( 128 );
 
-  myAdvWidget->initialMemorySpin->RangeStepAndValidator(0.0, 1e6, 10.0);
-  myAdvWidget->initialMemorySpin->setValue( 100.0 );
+  myAdvWidget->initialMemorySpin->stepBy(10);
+  myAdvWidget->initialMemorySpin->setValue( 100 );
 
   myAdvWidget->initialMemoryLabel            ->setText (tr( "MEGABYTE" ));
   myAdvWidget->maxMemoryLabel                ->setText (tr( "MEGABYTE" ));
@@ -1422,10 +1422,10 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   myToMakeGroupsOfDomains                     ->setChecked    ( data.myToMakeGroupsOfDomains );
   myOptimizationLevelCombo                    ->setCurrentIndex( data.myOptimizationLevel );
   myAdvWidget->maxMemoryCheck                 ->setChecked    ( data.myMaximumMemory > 0 );
-  myAdvWidget->maxMemorySpin                  ->setValue      ( qMax( data.myMaximumMemory,
+  myAdvWidget->maxMemorySpin                  ->setValue      ( qMax( (int)data.myMaximumMemory,
                                                                       myAdvWidget->maxMemorySpin->minimum() ));
   myAdvWidget->initialMemoryCheck             ->setChecked    ( data.myInitialMemory > 0 );
-  myAdvWidget->initialMemorySpin              ->setValue      ( qMax( data.myInitialMemory,
+  myAdvWidget->initialMemorySpin              ->setValue      ( qMax( (int)data.myInitialMemory,
                                                                       myAdvWidget->initialMemorySpin->minimum() ));
   myAdvWidget->workingDirectoryLineEdit       ->setText       ( data.myWorkingDir );
   myAdvWidget->keepWorkingFilesCheck           ->setChecked    ( data.myKeepFiles );

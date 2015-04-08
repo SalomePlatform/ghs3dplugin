@@ -143,7 +143,8 @@ typedef struct
 {
   bool    myToMeshHoles,myToMakeGroupsOfDomains,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint,
           myLogInStandardOutput, myRemoveLogOnSuccess;
-  double  myMaximumMemory,myInitialMemory;
+  long    myMaximumMemory;
+  long    myInitialMemory;
   int     myOptimizationLevel;
   QString myName,myWorkingDir,myTextOption;
   double  myGradation;

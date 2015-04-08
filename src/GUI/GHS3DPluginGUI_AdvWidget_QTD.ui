@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>465</width>
+    <width>485</width>
     <height>477</height>
    </rect>
   </property>
@@ -58,22 +58,28 @@
        </widget>
       </item>
       <item row="0" column="2" colspan="2">
-       <widget class="SMESHGUI_SpinBox" name="initialMemorySpin">
+       <widget class="SalomeApp_IntSpinBox" name="initialMemorySpin">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
           <horstretch>1</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="maximum">
+         <number>999999999</number>
+        </property>
        </widget>
       </item>
       <item row="3" column="2" colspan="2">
-       <widget class="SMESHGUI_SpinBox" name="maxMemorySpin">
+       <widget class="SalomeApp_IntSpinBox" name="maxMemorySpin">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
           <horstretch>1</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="maximum">
+         <number>999999999</number>
         </property>
        </widget>
       </item>
@@ -218,6 +224,11 @@
    <class>SMESHGUI_SpinBox</class>
    <extends>QSpinBox</extends>
    <header>SMESHGUI_SpinBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>SalomeApp_IntSpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>SalomeApp_IntSpinBox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
