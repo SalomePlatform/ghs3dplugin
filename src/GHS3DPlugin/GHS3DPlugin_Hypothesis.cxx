@@ -1481,11 +1481,13 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   // so allow to use about all available memory
   if ( m ) {
     double aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
+    ostringstream tmpMaximumMemory;
     cmd += " -m ";
     if ( aMaximumMemory < 0 )
-      cmd += DefaultMaximumMemory();
+      tmpMaximumMemory << std::fixed << std::setprecision(0) << DefaultMaximumMemory();
     else
-      cmd += aMaximumMemory;
+      tmpMaximumMemory << std::fixed << std::setprecision(0) << aMaximumMemory;
+    cmd += tmpMaximumMemory.str().c_str();
   }
   if ( M && !useBndRecovery ) {
     double aInitialMemory = hyp ? hyp->myInitialMemory : -1;
