@@ -477,7 +477,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   shapeTypes.Add( TopAbs_COMPOUND );
 
   SMESH_NumberFilter* vertexFilter = new SMESH_NumberFilter("GEOM", TopAbs_SHAPE, 1, shapeTypes);
-  myEnfVertexWdg = new StdMeshersGUI_ObjectReferenceParamWdg( vertexFilter, 0, /*multiSel=*/true, /*stretch=*/false);
+  myEnfVertexWdg = new StdMeshersGUI_ObjectReferenceParamWdg( vertexFilter, 0, /*multiSel=*/true);
   myEnfVertexWdg->SetDefaultText(tr("GHS3D_ENF_SELECT_VERTEX"), "QLineEdit { color: grey }");
   
   QLabel* myXCoordLabel = new QLabel( tr( "GHS3D_ENF_VER_X_LABEL" ), myEnfGroup );
