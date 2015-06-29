@@ -91,9 +91,9 @@ void GHS3DPlugin_Hypothesis::SetToMeshHoles(bool toMesh)
 bool GHS3DPlugin_Hypothesis::GetToMeshHoles(bool checkFreeOption) const
 {
   if (checkFreeOption && !myTextOption.empty()) {
-    if ( myTextOption.find("-c 0"))
+    if ( myTextOption.find("--components all"))
       return true;
-    if ( myTextOption.find("-c 1"))
+    if ( myTextOption.find("--components outside_components"))
       return false;
   }
   return myToMeshHoles;
@@ -1460,15 +1460,15 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
 {
   TCollection_AsciiString cmd = GetExeName().c_str();
   // check if any option is overridden by hyp->myTextOption
-  bool m   = hyp ? ( hyp->myTextOption.find("-m")  == std::string::npos ) : true;
-  bool M   = hyp ? ( hyp->myTextOption.find("-M")  == std::string::npos ) : true;
-  bool c   = hyp ? ( hyp->myTextOption.find("-c")  == std::string::npos ) : true;
-  bool o   = hyp ? ( hyp->myTextOption.find("-o")  == std::string::npos ) : true;
-  bool p0  = hyp ? ( hyp->myTextOption.find("-p0") == std::string::npos ) : true;
+  bool max_memory   = hyp ? ( hyp->myTextOption.find("--max_memory")  == std::string::npos ) : true;
+  bool auto_memory   = hyp ? ( hyp->myTextOption.find("--automatic_memory")  == std::string::npos ) : true;
+  bool comp   = hyp ? ( hyp->myTextOption.find("--components")  == std::string::npos ) : true;
+  bool optim_level   = hyp ? ( hyp->myTextOption.find("--optimisation_level")  == std::string::npos ) : true;
+  bool no_int_points  = hyp ? ( hyp->myTextOption.find("--no_internal_points") == std::string::npos ) : true;
   bool C   = hyp ? ( hyp->myTextOption.find("-C")  == std::string::npos ) : true;
-  bool v   = hyp ? ( hyp->myTextOption.find("-v")  == std::string::npos ) : true;
+  bool verbose   = hyp ? ( hyp->myTextOption.find("--verbose")  == std::string::npos ) : true;
   bool fem = hyp ? ( hyp->myTextOption.find("-FEM")== std::string::npos ) : true;
-  bool rem = hyp ? ( hyp->myTextOption.find("-no_initial_central_point")== std::string::npos ) : true;
+  bool rem = hyp ? ( hyp->myTextOption.find("--no_initial_central_point")== std::string::npos ) : true;
   bool gra = hyp ? ( hyp->myTextOption.find("-Dcpropa")== std::string::npos ) : true;
 
   // if use boundary recovery version, few options are allowed
@@ -1479,61 +1479,60 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   // MG-Tetra needs to know amount of memory it may use (MB).
   // Default memory is defined at MG-Tetra installation but it may be not enough,
   // so allow to use about all available memory
-  if ( m ) {
+  if ( max_memory ) {
     long aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
     ostringstream tmpMaximumMemory;
-    cmd += " -m ";
+    cmd += " --max_memory ";
     if ( aMaximumMemory < 0 )
       tmpMaximumMemory << DefaultMaximumMemory();
     else
       tmpMaximumMemory << aMaximumMemory;
     cmd += tmpMaximumMemory.str().c_str();
   }
-  if ( M && !useBndRecovery ) {
+  if ( auto_memory && !useBndRecovery ) {
     long aInitialMemory = hyp ? hyp->myInitialMemory : -1;
-    cmd += " -M ";
+    cmd += " --automatic_memory ";
     if ( aInitialMemory > 0 )
       cmd += (int)aInitialMemory;
     else
       cmd += "100";
   }
   // component to mesh
-  // 0 , all components to be meshed
-  // 1 , only the main ( outermost ) component to be meshed
-  if ( c && !useBndRecovery ) {
+  if ( comp && !useBndRecovery ) {
     // We always run MG-Tetra with "to mesh holes'==TRUE (see PAL19680)
     if ( hasShapeToMesh )
-      cmd += " -c 0";
+      cmd += " --components all";
     else {
       bool aToMeshHoles = hyp ? hyp->myToMeshHoles : DefaultMeshHoles();
       if ( aToMeshHoles )
-        cmd += " -c 0";
+        cmd += " --components all";
       else
-        cmd += " -c 1";
+        cmd += " --components outside_components";
     }
   }
-  const bool toCreateNewNodes = ( p0 && ( !hyp || hyp->myToCreateNewNodes ));
+  const bool toCreateNewNodes = ( no_int_points && ( !hyp || hyp->myToCreateNewNodes ));
 
   // optimization level
-  if ( o && hyp && !useBndRecovery && toCreateNewNodes ) {
+  // This option need to be improved concerning new mg-tetra version
+  if ( optim_level && hyp && !useBndRecovery && toCreateNewNodes ) {
     if ( hyp->myOptimizationLevel >= 0 && hyp->myOptimizationLevel < 5 ) {
       const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
-      cmd += " -o ";
+      cmd += " --optimisation_level ";
       cmd += level[ hyp->myOptimizationLevel ];
     }
   }
   if ( !toCreateNewNodes ) {
-    cmd += " -o none"; // issue 22608
+    cmd += " --optimisation_level none"; // issue 22608
   }
 
   // to create internal nodes
-  if ( p0 && !toCreateNewNodes ) {
-    cmd += " -p0";
+  if ( no_int_points && !toCreateNewNodes ) {
+    cmd += " --no_internal_points";
   }
 
   // verbose mode
-  if ( v && hyp ) {
-    cmd += " -v ";
+  if ( verbose && hyp ) {
+    cmd += " --verbose ";
     cmd += hyp->myVerboseLevel;
   }
 
@@ -1549,7 +1548,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
 
   // to remove initial central point.
   if ( rem && hyp && hyp->myToRemoveCentralPoint) {
-    cmd += " -no_initial_central_point";
+    cmd += " --no_initial_central_point";
   }
 
   // options as text

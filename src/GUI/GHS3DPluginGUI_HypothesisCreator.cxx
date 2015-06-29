@@ -1595,29 +1595,29 @@ QString GHS3DPluginGUI_HypothesisCreator::storeParams() const
     QString valStr = "";
     
     if ( !data.myBoundaryRecovery )
-        valStr = "-c " + QString::number( !data.myToMeshHoles );
+        valStr = " --components " + ( QString::number( data.myToMeshHoles ) ? "all" : "outside_components" ) ;
     
     if ( data.myOptimizationLevel >= 0 && data.myOptimizationLevel < 5 && !data.myBoundaryRecovery) {
         const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
-        valStr += " -o ";
+        valStr += " --optimisation_level ";
         valStr += level[ data.myOptimizationLevel ];
     }
     if ( data.myMaximumMemory > 0 ) {
-        valStr += " -m ";
+        valStr += " --max_memory ";
         valStr += QString::number( data.myMaximumMemory );
     }
     if ( data.myInitialMemory > 0 && !data.myBoundaryRecovery ) {
-        valStr += " -M ";
+        valStr += " --automatic_memory ";
         valStr += QString::number( data.myInitialMemory );
     }
-    valStr += " -v ";
+    valStr += " --verbose ";
     valStr += QString::number( data.myVerboseLevel );
     
     if ( !data.myToCreateNewNodes )
-        valStr += " -p0";
+        valStr += " --no_internal_points";
     
     if ( data.myRemoveInitialCentralPoint )
-        valStr += " -no_initial_central_point";
+        valStr += " --no_initial_central_point";
     
     if ( data.myBoundaryRecovery )
         valStr += " -C";
