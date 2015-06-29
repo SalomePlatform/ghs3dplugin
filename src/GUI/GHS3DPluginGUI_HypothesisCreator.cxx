@@ -1595,7 +1595,7 @@ QString GHS3DPluginGUI_HypothesisCreator::storeParams() const
     QString valStr = "";
     
     if ( !data.myBoundaryRecovery )
-        valStr = " --components " + ( QString::number( data.myToMeshHoles ) ? "all" : "outside_components" ) ;
+        valStr = " --components " + data.myToMeshHoles ? "all" : "outside_components" ;
     
     if ( data.myOptimizationLevel >= 0 && data.myOptimizationLevel < 5 && !data.myBoundaryRecovery) {
         const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
