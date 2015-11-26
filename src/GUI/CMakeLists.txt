@@ -17,7 +17,7 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-INCLUDE(UseQt4Ext)
+INCLUDE(UseQtExt)
 
 # --- options ---
 # additional include directories
@@ -77,7 +77,7 @@ SET(GHS3DPluginGUI_HEADERS ${_moc_HEADERS} ${_other_HEADERS})
 # --- sources ---
 
 # sources / moc wrappings
-QT4_WRAP_CPP(_moc_SOURCES ${_moc_HEADERS})
+QT_WRAP_MOC(_moc_SOURCES ${_moc_HEADERS})
 
 # sources / static
 SET(_other_SOURCES
@@ -102,7 +102,7 @@ SET(_uic_files
 )
 
 # header files / uic wrappings
-QT4_WRAP_UI(_uic_HEADERS ${_uic_files})
+QT_WRAP_UIC(_uic_HEADERS ${_uic_files})
 
 # sources / to compile
 SET(GHS3DPluginGUI_SOURCES ${_other_SOURCES} ${_moc_SOURCES} ${_uic_HEADERS})
@@ -114,4 +114,4 @@ TARGET_LINK_LIBRARIES(GHS3DPluginGUI ${_link_LIBRARIES} )
 INSTALL(TARGETS GHS3DPluginGUI EXPORT ${PROJECT_NAME}TargetGroup DESTINATION ${SALOME_INSTALL_LIBS})
 
 INSTALL(FILES ${GHS3DPluginGUI_HEADERS} DESTINATION ${SALOME_INSTALL_HEADERS})
-QT4_INSTALL_TS_RESOURCES("${_ts_RESOURCES}" "${SALOME_GHS3DPLUGIN_INSTALL_RES_DATA}")
+QT_INSTALL_TS_RESOURCES("${_ts_RESOURCES}" "${SALOME_GHS3DPLUGIN_INSTALL_RES_DATA}")
