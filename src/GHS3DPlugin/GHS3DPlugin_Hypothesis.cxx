@@ -1252,9 +1252,11 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
     bool hasCoords = false;
     isOK = (load >> txt);  // __BEGIN_VERTEX__
     while (isOK) {
-      if (txt == "__ENFORCED_VERTICES_END__")
-        isOK = false;
-
+      if (txt == "__ENFORCED_VERTICES_END__") {
+        //isOK = false;
+        break;
+      }
+      
       TGHS3DEnforcedVertex *enfVertex = new TGHS3DEnforcedVertex();
       while (isOK) {
         isOK = (load >> txt);
