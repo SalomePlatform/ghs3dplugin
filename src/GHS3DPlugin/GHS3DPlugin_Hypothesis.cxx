@@ -46,15 +46,15 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen
   myMaximumMemory(-1),
   myInitialMemory(-1),
   myOptimizationLevel(DefaultOptimizationLevel()),
-  myWorkingDirectory(DefaultWorkingDirectory()),
   myKeepFiles(DefaultKeepFiles()),
+  myWorkingDirectory(DefaultWorkingDirectory()),
   myVerboseLevel(DefaultVerboseLevel()),
   myToCreateNewNodes(DefaultToCreateNewNodes()),
   myToUseBoundaryRecoveryVersion(DefaultToUseBoundaryRecoveryVersion()),
   myToUseFemCorrection(DefaultToUseFEMCorrection()),
   myToRemoveCentralPoint(DefaultToRemoveCentralPoint()),
-  myGradation(DefaultGradation()),
   myLogInStandardOutput(DefaultStandardOutputLog()),
+  myGradation(DefaultGradation()),
   _enfVertexList(DefaultGHS3DEnforcedVertexList()),
   _enfVertexCoordsSizeList(DefaultGHS3DEnforcedVertexCoordsValues()),
   _enfVertexEntrySizeList(DefaultGHS3DEnforcedVertexEntryValues()),
@@ -553,7 +553,7 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SME
   MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedGroup");
   TIDSortedElemSet theElemSet;
     if ( theIDs->length() == 0 ){MESSAGE("The source group is empty");}
-    for (int i=0; i < theIDs->length(); i++) {
+    for ( CORBA::ULong i=0; i < theIDs->length(); i++) {
       CORBA::Long ind = theIDs[i];
       if (elementType == SMESH::NODE)
       {
@@ -1059,7 +1059,7 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
       }
       if (enfVertex->coords.size()) {
         save << " " << "__BEGIN_COORDS__";
-        for (int i=0;i<enfVertex->coords.size();i++)
+        for ( size_t i = 0; i < enfVertex->coords.size(); i++ )
           save << " " << enfVertex->coords[i];
         save << " " << "__END_COORDS__";
       }
@@ -1115,31 +1115,31 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
   int i;
   double d;
 
-  isOK = (load >> i);
+  isOK = static_cast<bool>(load >> i);
   if (isOK)
     myToMeshHoles = i;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> d);
+  isOK = static_cast<bool>(load >> d);
   if (isOK)
     myMaximumMemory = d;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> d);
+  isOK = static_cast<bool>(load >> d);
   if (isOK)
     myInitialMemory = d;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> i);
+  isOK = static_cast<bool>(load >> i);
   if (isOK)
     myOptimizationLevel = i;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> myWorkingDirectory);
+  isOK = static_cast<bool>(load >> myWorkingDirectory);
   if (isOK) {
     if ( myWorkingDirectory == "0") { // myWorkingDirectory was empty
       myKeepFiles = false;
@@ -1154,44 +1154,44 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
     load.clear(ios::badbit | load.rdstate());
 
   if ( !myWorkingDirectory.empty() ) {
-    isOK = (load >> i);
+    isOK = static_cast<bool>(load >> i);
     if (isOK)
       myKeepFiles = i;
     else
       load.clear(ios::badbit | load.rdstate());
   }
 
-  isOK = (load >> i);
+  isOK = static_cast<bool>(load >> i);
   if (isOK)
     myVerboseLevel = (short) i;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> i);
+  isOK = static_cast<bool>(load >> i);
   if (isOK)
     myToCreateNewNodes = (bool) i;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> i);
+  isOK = static_cast<bool>(load >> i);
   if (isOK)
     myToUseBoundaryRecoveryVersion = (bool) i;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> i);
+  isOK = static_cast<bool>(load >> i);
   if (isOK)
     myToUseFemCorrection = (bool) i;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> i);
+  isOK = static_cast<bool>(load >> i);
   if (isOK)
     myToRemoveCentralPoint = (bool) i;
   else
     load.clear(ios::badbit | load.rdstate());
 
-  isOK = (load >> d);
+  isOK = static_cast<bool>(load >> d);
   if (isOK)
     myGradation = d;
   else
@@ -1201,12 +1201,12 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
   bool hasOptions = false;
   bool hasEnforcedVertices = false;
   bool hasEnforcedMeshes = false;
-  isOK = (load >> separator);
+  isOK = static_cast<bool>(load >> separator);
 
   if ( isOK && ( separator == "0" || separator == "1" ))
   {
     myToMakeGroupsOfDomains = ( separator == "1" );
-    isOK = (load >> separator);
+    isOK = static_cast<bool>(load >> separator);
   }
 
   if (isOK) {
@@ -1221,7 +1221,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
   if (hasOptions) {
     std::string txt;
     while (isOK) {
-      isOK = (load >> txt);
+      isOK = static_cast<bool>(load >> txt);
       if (isOK) {
         if (txt == "__OPTIONS_END__") {
           if (!myTextOption.empty()) {
@@ -1238,7 +1238,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
   }
 
   if (hasOptions) {
-    isOK = (load >> separator);
+    isOK = static_cast<bool>(load >> separator);
     if (isOK && separator == "__ENFORCED_VERTICES_BEGIN__")
       hasEnforcedVertices = true;
     if (isOK && separator == "__ENFORCED_MESHES_BEGIN__")
@@ -1250,7 +1250,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
     double size, coords[3];
     bool isCompound;
     bool hasCoords = false;
-    isOK = (load >> txt);  // __BEGIN_VERTEX__
+    isOK = static_cast<bool>(load >> txt);  // __BEGIN_VERTEX__
     while (isOK) {
       if (txt == "__ENFORCED_VERTICES_END__") {
         //isOK = false;
@@ -1259,7 +1259,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
       
       TGHS3DEnforcedVertex *enfVertex = new TGHS3DEnforcedVertex();
       while (isOK) {
-        isOK = (load >> txt);
+        isOK = static_cast<bool>(load >> txt);
         if (txt == "__END_VERTEX__") {
           enfVertex->name = name;
           enfVertex->geomEntry = entry;
@@ -1285,7 +1285,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 
         if (txt == "__BEGIN_NAME__") {  // __BEGIN_NAME__
           while (isOK && (txt != "__END_NAME__")) {
-            isOK = (load >> txt);
+            isOK = static_cast<bool>(load >> txt);
             if (txt != "__END_NAME__") {
               if (!name.empty())
                 name += " ";
@@ -1296,9 +1296,9 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
         }
 
         if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
-          isOK = (load >> entry);
-          isOK = (load >> isCompound);
-          isOK = (load >> txt); // __END_ENTRY__
+          isOK = static_cast<bool>(load >> entry);
+          isOK = static_cast<bool>(load >> isCompound);
+          isOK = static_cast<bool>(load >> txt); // __END_ENTRY__
           if (txt != "__END_ENTRY__")
             throw std::exception();
           MESSAGE("entry: " << entry);
@@ -1306,7 +1306,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 
         if (txt == "__BEGIN_GROUP__") {  // __BEGIN_GROUP__
           while (isOK && (txt != "__END_GROUP__")) {
-            isOK = (load >> txt);
+            isOK = static_cast<bool>(load >> txt);
             if (txt != "__END_GROUP__") {
               if (!groupName.empty())
                 groupName += " ";
@@ -1318,28 +1318,28 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 
         if (txt == "__BEGIN_COORDS__") {  // __BEGIN_COORDS__
           hasCoords = true;
-          isOK = (load >> coords[0] >> coords[1] >> coords[2]);
-          isOK = (load >> txt); // __END_COORDS__
+          isOK = static_cast<bool>(load >> coords[0] >> coords[1] >> coords[2]);
+          isOK = static_cast<bool>(load >> txt); // __END_COORDS__
           if (txt != "__END_COORDS__")
             throw std::exception();
           MESSAGE("coords: " << coords[0] <<","<< coords[1] <<","<< coords[2]);
         }
 
         if (txt == "__BEGIN_SIZE__") {  // __BEGIN_ENTRY__
-          isOK = (load >> size);
-          isOK = (load >> txt); // __END_ENTRY__
+          isOK = static_cast<bool>(load >> size);
+          isOK = static_cast<bool>(load >> txt); // __END_ENTRY__
           if (txt != "__END_SIZE__") {
             throw std::exception();
           }
           MESSAGE("size: " << size);
         }
       }
-      isOK = (load >> txt);  // __BEGIN_VERTEX__
+      isOK = static_cast<bool>(load >> txt);  // __BEGIN_VERTEX__
     }
   }
 
   if (hasEnforcedVertices) {
-    isOK = (load >> separator);
+    isOK = static_cast<bool>(load >> separator);
     if (isOK && separator == "__ENFORCED_MESHES_BEGIN__")
       hasEnforcedMeshes = true;
   }
@@ -1347,7 +1347,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
   if (hasEnforcedMeshes) {
     std::string txt, name, entry, groupName;
     int elementType = -1, persistID = -1;
-    isOK = (load >> txt);  // __BEGIN_ENF_MESH__
+    isOK = static_cast<bool>(load >> txt);  // __BEGIN_ENF_MESH__
     while (isOK) {
       //                if (isOK) {
       if (txt == "__ENFORCED_MESHES_END__")
@@ -1355,7 +1355,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 
       TGHS3DEnforcedMesh *enfMesh = new TGHS3DEnforcedMesh();
       while (isOK) {
-        isOK = (load >> txt);
+        isOK = static_cast<bool>(load >> txt);
         if (txt == "__END_ENF_MESH__") {
           enfMesh->name = name;
           enfMesh->entry = entry;
@@ -1376,7 +1376,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 
         if (txt == "__BEGIN_NAME__") {  // __BEGIN_NAME__
           while (isOK && (txt != "__END_NAME__")) {
-            isOK = (load >> txt);
+            isOK = static_cast<bool>(load >> txt);
             if (txt != "__END_NAME__") {
               if (!name.empty())
                 name += " ";
@@ -1387,16 +1387,16 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
         }
 
         if (txt == "__BEGIN_ENTRY__") {  // __BEGIN_ENTRY__
-          isOK = (load >> entry);
-          isOK = (load >> txt); // __END_ENTRY__
+          isOK = static_cast<bool>(load >> entry);
+          isOK = static_cast<bool>(load >> txt); // __END_ENTRY__
           if (txt != "__END_ENTRY__")
             throw std::exception();
           MESSAGE("entry: " << entry);
         }
 
         if (txt == "__BEGIN_ELEM_TYPE__") {  // __BEGIN_ELEM_TYPE__
-          isOK = (load >> elementType);
-          isOK = (load >> txt); // __END_ELEM_TYPE__
+          isOK = static_cast<bool>(load >> elementType);
+          isOK = static_cast<bool>(load >> txt); // __END_ELEM_TYPE__
           if (txt != "__END_ELEM_TYPE__")
             throw std::exception();
           MESSAGE("elementType: " << elementType);
@@ -1404,7 +1404,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 
         if (txt == "__BEGIN_GROUP__") {  // __BEGIN_GROUP__
           while (isOK && (txt != "__END_GROUP__")) {
-            isOK = (load >> txt);
+            isOK = static_cast<bool>(load >> txt);
             if (txt != "__END_GROUP__") {
               if (!groupName.empty())
                 groupName += " ";
@@ -1415,13 +1415,13 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
         } // if
 
         if (txt == "__PERSIST_ID__") {
-          isOK = (load >> persistID);
+          isOK = static_cast<bool>(load >> persistID);
           MESSAGE("persistID: " << persistID);
         }
         std::cout << "isOK: " << isOK << std::endl;
       } // while
       //                } // if
-      isOK = (load >> txt);  // __BEGIN_ENF_MESH__
+      isOK = static_cast<bool>(load >> txt);  // __BEGIN_ENF_MESH__
     } // while
   } // if
 
