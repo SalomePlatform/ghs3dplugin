@@ -464,7 +464,11 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myEnforcedTableWidget->setAlternatingRowColors(true);
   myEnforcedTableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
   myEnforcedTableWidget->setSelectionBehavior(QAbstractItemView::SelectItems);
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
   myEnforcedTableWidget->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
+#else
+  myEnforcedTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+#endif
   myEnforcedTableWidget->resizeColumnsToContents();
   myEnforcedTableWidget->hideColumn(ENF_VER_ENTRY_COLUMN);
   myEnforcedTableWidget->hideColumn(ENF_VER_COMPOUND_COLUMN);
@@ -551,7 +555,11 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
                       << tr( "GHS3D_ENF_GROUP_COLUMN" );
   myEnforcedMeshTableWidget->setHorizontalHeaderLabels(enforcedMeshHeaders);
   myEnforcedMeshTableWidget->horizontalHeader()->setStretchLastSection(true);
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
   myEnforcedMeshTableWidget->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
+#else
+  myEnforcedMeshTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+#endif
   myEnforcedMeshTableWidget->setAlternatingRowColors(true);
   myEnforcedMeshTableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
   myEnforcedMeshTableWidget->setSelectionBehavior(QAbstractItemView::SelectItems);
