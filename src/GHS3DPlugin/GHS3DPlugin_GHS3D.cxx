@@ -95,6 +95,29 @@ extern "C"
 
 #define HOLE_ID -1
 
+// flags returning state of enforced entities, returned from writeGMFFile
+enum InvalidEnforcedFlags { FLAG_BAD_ENF_VERT = 1,
+                            FLAG_BAD_ENF_NODE = 2,
+                            FLAG_BAD_ENF_EDGE = 4,
+                            FLAG_BAD_ENF_TRIA = 8
+};
+static std::string flagsToErrorStr( int anInvalidEnforcedFlags )
+{
+  std::string str;
+  if ( anInvalidEnforcedFlags != 0 )
+  {
+    if ( anInvalidEnforcedFlags & FLAG_BAD_ENF_VERT )
+      str = "There are enforced vertices incorrectly defined.\n";
+    if ( anInvalidEnforcedFlags & FLAG_BAD_ENF_NODE )
+      str += "There are enforced nodes incorrectly defined.\n";
+    if ( anInvalidEnforcedFlags & FLAG_BAD_ENF_EDGE )
+      str += "There are enforced edge incorrectly defined.\n";
+    if ( anInvalidEnforcedFlags & FLAG_BAD_ENF_TRIA )
+      str += "There are enforced triangles incorrectly defined.\n";
+  }
+  return str;
+}
+
 typedef const list<const SMDS_MeshFace*> TTriaList;
 
 static const char theDomainGroupNamePrefix[] = "Domain_";
@@ -1049,7 +1072,8 @@ static bool writeGMFFile(const char*                                     theMesh
                          GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap & theEnforcedEdges,
                          GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap & theEnforcedTriangles,
                          std::map<std::vector<double>, std::string> &    enfVerticesWithGroup,
-                         GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues & theEnforcedVertices)
+                         GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues & theEnforcedVertices,
+                         int &                                           theInvalidEnforcedFlags)
 {
   MESSAGE("writeGMFFile w/o geometry");
   std::string tmpStr;
@@ -1074,7 +1098,8 @@ static bool writeGMFFile(const char*                                     theMesh
     ( SMESH_MeshAlgos::GetElementSearcher(*theMesh->GetMeshDS()));
   
   int nbEnforcedVertices = theEnforcedVertices.size();
-  
+  theInvalidEnforcedFlags = 0;
+
   // count faces
   int nbFaces = theProxyMesh.NbFaces();
   int nbNodes;
@@ -1126,6 +1151,7 @@ static bool writeGMFFile(const char*                                     theMesh
       TopAbs_State result = pntCls->GetPointState( myPoint );
       if ( result == TopAbs_OUT ) {
         isOK = false;
+        theInvalidEnforcedFlags |= FLAG_BAD_ENF_EDGE;
         break;
       }
       aNodeToTopAbs_StateMap.insert( make_pair( node, result ));
@@ -1162,6 +1188,8 @@ static bool writeGMFFile(const char*                                     theMesh
       }
       if (isOK)
         theKeptEnforcedEdges.insert(elem);
+      else
+        theInvalidEnforcedFlags |= FLAG_BAD_ENF_EDGE;
     }
   }
   
@@ -1181,6 +1209,7 @@ static bool writeGMFFile(const char*                                     theMesh
       TopAbs_State result = pntCls->GetPointState( myPoint );
       if ( result == TopAbs_OUT ) {
         isOK = false;
+        theInvalidEnforcedFlags |= FLAG_BAD_ENF_TRIA;
         break;
       }
       aNodeToTopAbs_StateMap.insert( make_pair( node, result ));
@@ -1216,6 +1245,8 @@ static bool writeGMFFile(const char*                                     theMesh
       }
       if (isOK)
         theKeptEnforcedTriangles.insert(elem);
+      else
+        theInvalidEnforcedFlags |= FLAG_BAD_ENF_TRIA;
     }
   }
   
@@ -1344,6 +1375,7 @@ static bool writeGMFFile(const char*                                     theMesh
 #ifdef _DEBUG_
       std::cout << " out of volume" << std::endl;
 #endif
+      theInvalidEnforcedFlags |= FLAG_BAD_ENF_NODE;
       continue;
     }
     
@@ -1409,12 +1441,11 @@ static bool writeGMFFile(const char*                                     theMesh
       gp_Pnt myPoint(x,y,z);
       TopAbs_State result = pntCls->GetPointState( myPoint );
       if ( result == TopAbs_OUT )
-        continue;
-      //if (pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems) == 0)
-      //continue;
-
-//       if ( result != TopAbs_IN )
-//         continue;
+      {
+        std::cout << "Warning: enforced vertex at ( " << x << "," << y << "," << z << " ) is out of the meshed domain!!!" << std::endl;
+        theInvalidEnforcedFlags |= FLAG_BAD_ENF_VERT;
+        //continue;
+      }
       std::vector<double> coords;
       coords.push_back(x);
       coords.push_back(y);
@@ -1774,12 +1805,13 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     //       writeFaces ( aFacesFile, *proxyMesh, theShape, 
     //                    aSmdsToGhs3dIdMap, anEnforcedNodeIdToGhs3dIdMap,
     //                    enforcedEdges, enforcedTriangles ));
+    int anInvalidEnforcedFlags = 0;
     Ok = writeGMFFile(aGMFFileName.ToCString(), aRequiredVerticesFileName.ToCString(), aSolFileName.ToCString(),
                       *proxyMesh, helper,
                       aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
                       aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
                       enforcedNodes, enforcedEdges, enforcedTriangles, /*enforcedQuadrangles,*/
-                      enfVerticesWithGroup, coordsSizeMap);
+                      enfVerticesWithGroup, coordsSizeMap, anInvalidEnforcedFlags);
     //}
 
   // Write aSmdsToGhs3dIdMap to temp file
@@ -1892,9 +1924,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if ( Ok )
   {
+    if ( anInvalidEnforcedFlags )
+      error( COMPERR_WARNING, flagsToErrorStr( anInvalidEnforcedFlags ));
     if ( _removeLogOnSuccess )
       removeFile( aLogFileName );
-
     // if ( _hyp && _hyp->GetToMakeGroupsOfDomains() )
     //   error( COMPERR_WARNING, "'toMakeGroupsOfDomains' is ignored since the mesh is on shape" );
   }
@@ -2076,12 +2109,13 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
       proxyMesh.reset( aQuad2Trias );
     }
 
+    int anInvalidEnforcedFlags = 0;
     Ok = writeGMFFile(aGMFFileName.ToCString(), aRequiredVerticesFileName.ToCString(), aSolFileName.ToCString(),
                       *proxyMesh, *theHelper,
                       aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
                       aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
                       enforcedNodes, enforcedEdges, enforcedTriangles,
-                      enfVerticesWithGroup, coordsSizeMap);
+                      enfVerticesWithGroup, coordsSizeMap, anInvalidEnforcedFlags);
     //}
 
   // -----------------
@@ -2138,6 +2172,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if ( Ok )
   {
+    if ( anInvalidEnforcedFlags )
+      error( COMPERR_WARNING, flagsToErrorStr( anInvalidEnforcedFlags ));
     if ( _removeLogOnSuccess )
       removeFile( aLogFileName );
 
