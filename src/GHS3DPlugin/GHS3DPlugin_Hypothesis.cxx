@@ -35,6 +35,8 @@
 #define getpid _getpid
 #endif
 
+using namespace std;
+
 //=======================================================================
 //function : GHS3DPlugin_Hypothesis
 //=======================================================================
@@ -1364,7 +1366,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
           enfMesh->persistID = persistID;
 
           _enfMeshList.insert(enfMesh);
-          std::cout << "Restoring of enforced mesh " <<name  << " done" << std::endl;
+          //std::cout << "Restoring of enforced mesh " <<name  << " done" << std::endl;
 
           name.clear();
           entry.clear();
@@ -1418,7 +1420,7 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
           isOK = static_cast<bool>(load >> persistID);
           MESSAGE("persistID: " << persistID);
         }
-        std::cout << "isOK: " << isOK << std::endl;
+        //std::cout << "isOK: " << isOK << std::endl;
       } // while
       //                } // if
       isOK = static_cast<bool>(load >> txt);  // __BEGIN_ENF_MESH__

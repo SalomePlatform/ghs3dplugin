@@ -102,7 +102,7 @@ SMESH::SMESH_Mesh_ptr GHS3DPlugin_GHS3D_i::importGMFMesh(const char* theGMFFileN
 #else
 #define SEP '/'
 #endif
-  string strFileName (theGMFFileName);
+  std::string strFileName (theGMFFileName);
   strFileName = strFileName.substr(strFileName.rfind(SEP)+1);
   strFileName.erase(strFileName.rfind('.'));
   smeshGen->SetName(theSMesh, strFileName.c_str());

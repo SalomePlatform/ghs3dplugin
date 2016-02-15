@@ -93,6 +93,8 @@ extern "C"
 #include <fcntl.h>
 }
 
+using namespace std;
+
 #define HOLE_ID -1
 
 // flags returning state of enforced entities, returned from writeGMFFile

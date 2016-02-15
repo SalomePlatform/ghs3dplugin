@@ -44,6 +44,8 @@
 // #include <SALOMEconfig.h>
 // #include CORBA_SERVER_HEADER(SALOMEDS)
 
+using namespace std;
+
 //=======================================================================
 //function : GHS3DPlugin_Hypothesis_i
 //=======================================================================
@@ -748,7 +750,7 @@ GHS3DPlugin::GHS3DEnforcedVertexList* GHS3DPlugin_Hypothesis_i::GetEnforcedVerti
     // Coords
     GHS3DPlugin::TCoords_var coords = new GHS3DPlugin::TCoords();
     coords->length(currentVertex->coords.size());
-    for (int ind = 0; ind < currentVertex->coords.size(); ind++)
+    for ( size_t ind = 0; ind < currentVertex->coords.size(); ind++)
       coords[ind] = currentVertex->coords[ind];
     enfVertex->coords = coords;
     // Group Name
@@ -999,7 +1001,7 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
 //   MESSAGE("Required type is "<<theType);
   SMESH::array_of_ElementType_var types = theSource->GetTypes();
   MESSAGE("Available types:");
-  for (int i=0;i<types->length();i++){MESSAGE(types[i]);}
+  for ( CORBA::ULong i=0;i<types->length();i++){MESSAGE(types[i]);}
   if ( types->length() >= 1 && types[types->length()-1] <  theType)
   {
     MESSAGE("Required type not available");
@@ -1022,20 +1024,20 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
 
   string enfMeshName = theName;
   if (enfMeshName.empty())
-          enfMeshName = SObj->GetName();
+    enfMeshName = SObj->GetName();
 
   if (theMesh_i)
   {
     try {
-        bool res = this->GetImpl()->SetEnforcedMesh(theMesh_i->GetImpl(), theType, enfMeshName , SObj->GetID(), theGroupName);
-                if (theGroupName != "") {
-                  SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( "
-                                                                << theSource << ".GetMesh(), " << theType << ", \"" << theGroupName << "\" )";
-                }
-                else {
-                  SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMesh( "
-                                                                << theSource << ".GetMesh(), " << theType << " )";
-                }
+      bool res = this->GetImpl()->SetEnforcedMesh(theMesh_i->GetImpl(), theType, enfMeshName , SObj->GetID(), theGroupName);
+      if (theGroupName && theGroupName[0] ) {
+        SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( "
+                              << theSource << ".GetMesh(), " << theType << ", \"" << theGroupName << "\" )";
+      }
+      else {
+        SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMesh( "
+                              << theSource << ".GetMesh(), " << theType << " )";
+      }
 
       return res;
     }
@@ -1054,20 +1056,20 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
   else if (theGroup_i)// && types->length() == 1 && types[0] == theType)
   {
     MESSAGE("The source is a group")
-    try {
+      try {
         bool res = this->GetImpl()->SetEnforcedGroup(theGroup_i->GetGroupDS()->GetMesh(), theGroup_i->GetListOfID(), theType, enfMeshName , SObj->GetID(), theGroupName);
-        if (theGroupName != "") {
-          SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( " 
+        if ( theGroupName && theGroupName[0] ) {
+          SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( "
                                 << theSource << ", " << theType << ", \"" << theGroupName << "\" )";
         }
         else {
-          SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMesh( " 
+          SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMesh( "
                                 << theSource << ", " << theType << " )";
         }
-      return res;
-    }
-    catch (const std::invalid_argument& ex) {
-      SALOME::ExceptionStruct ExDescription;
+        return res;
+      }
+      catch (const std::invalid_argument& ex) {
+        SALOME::ExceptionStruct ExDescription;
       ExDescription.text = ex.what();
       ExDescription.type = SALOME::BAD_PARAM;
       ExDescription.sourceFile = "GHS3DPlugin_Hypothesis_i.cxx";
@@ -1083,7 +1085,7 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
     MESSAGE("The source is a group on geom")
     try {
         bool res = this->GetImpl()->SetEnforcedGroup(theGroupOnGeom_i->GetGroupDS()->GetMesh(),theGroupOnGeom_i->GetListOfID(), theType, enfMeshName , SObj->GetID(), theGroupName);
-        if (theGroupName != "") {
+        if ( theGroupName && theGroupName[0] ) {
           SMESH::TPythonDump () << "isDone = " << _this() << ".SetEnforcedMeshWithGroup( " 
                                 << theSource << ", " << theType << ", \"" << theGroupName << "\" )";
         }
