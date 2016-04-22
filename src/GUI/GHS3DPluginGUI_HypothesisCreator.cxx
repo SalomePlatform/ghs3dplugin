@@ -441,7 +441,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myAdvWidget->boundaryRecoveryCheck         ->setText (tr( "RECOVERY_VERSION" ));
   myAdvWidget->FEMCorrectionCheck            ->setText (tr( "FEM_CORRECTION" ));
   myAdvWidget->gradationLabel                ->setText (tr( "GHS3D_GRADATION" ));
-  myAdvWidget->gradationSpinBox->RangeStepAndValidator(1.05, 5.0, 0.05, "length_precision");
+  myAdvWidget->gradationSpinBox->RangeStepAndValidator(0.0, 5.0, 0.05, "length_precision");
   myAdvWidget->textOptionLabel->setText(tr( "TEXT_OPTION" ));
 
   // Enforced vertices parameters
