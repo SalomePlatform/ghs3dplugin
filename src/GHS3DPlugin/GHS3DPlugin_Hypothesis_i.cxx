@@ -380,8 +380,6 @@ char* GHS3DPlugin_Hypothesis_i::GetTextOption()
 
 void GHS3DPlugin_Hypothesis_i::SetGradation(CORBA::Double gradation)
 {
-  if (gradation <= 1)
-    THROW_SALOME_CORBA_EXCEPTION( "The volumic gradation must be > 1",SALOME::BAD_PARAM );
   ASSERT(myBaseImpl);
   if (gradation != GetGradation()) {
     this->GetImpl()->SetGradation(gradation);
