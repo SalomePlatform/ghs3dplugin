@@ -28,10 +28,12 @@
 #include "GHS3DPlugin_Hypothesis.hxx"
 
 #include <SMDS_FaceOfNodes.hxx>
+#include <SMDS_LinearEdge.hxx>
 #include <SMDS_MeshElement.hxx>
 #include <SMDS_MeshNode.hxx>
 #include <SMDS_VolumeOfNodes.hxx>
 #include <SMESHDS_Group.hxx>
+#include <SMESHDS_Mesh.hxx>
 #include <SMESH_Comment.hxx>
 #include <SMESH_Group.hxx>
 #include <SMESH_HypoFilter.hxx>

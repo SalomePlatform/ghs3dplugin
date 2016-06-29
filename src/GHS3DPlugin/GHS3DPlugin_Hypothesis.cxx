@@ -24,9 +24,8 @@
 //=============================================================================
 //
 #include "GHS3DPlugin_Hypothesis.hxx"
-#include <SMESH_ProxyMesh.hxx>
-#include <SMESH_Group.hxx>
-#include <StdMeshers_QuadToTriaAdaptor.hxx>
+
+#include <SMESHDS_Mesh.hxx>
 
 #include <TCollection_AsciiString.hxx>
 
