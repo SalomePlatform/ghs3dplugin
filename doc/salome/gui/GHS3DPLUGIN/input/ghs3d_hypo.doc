@@ -128,8 +128,11 @@ By default, the FEM correction is not used.
 - <b>Volumic gradation</b> - Defines the volumic ratio between 2 consecutive elements.
 WARNING: Changing the default value of this parameter may dramatically decrease the quality of the resulting mesh.
 
-- <b>Option as text</b> - allows to input in the command line any text
-for MG-Tetra, for example, advanced options.
+- A table at the page bottom allows to input in the command line any text
+for MG-Tetra, for example, advanced options. <br> 
+<b>Add option</b> - adds a line to the table where you can type an option and its value as text.
+A check box in the first column activates/deactivates the option of the current row. A deactivated option will be erased upon pressing \a Ok.
+
 
 \ref ghs3d_top "Back to top"
 

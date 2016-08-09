@@ -68,42 +68,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-namespace {
-
-#ifdef WIN32
-#include <windows.h>
-#else
-#include <sys/sysinfo.h>
-#endif
-
-  long maxAvailableMemory()
-  {
-#ifdef WIN32
-    // See http://msdn.microsoft.com/en-us/library/aa366589.aspx
-    MEMORYSTATUSEX statex;
-    statex.dwLength = sizeof (statex);
-    long err = GlobalMemoryStatusEx (&statex);
-    if (err != 0) {
-      long totMB = 
-        statex.ullTotalPhys / 1024 / 1024 +
-        statex.ullTotalPageFile / 1024 / 1024 +
-        statex.ullTotalVirtual / 1024 / 1024;
-      return (long) ( 0.7 * totMB );
-    }
-#else
-    struct sysinfo si;
-    long err = sysinfo( &si );
-    if ( err == 0 ) {
-      long totMB =
-        si.totalram * si.mem_unit / 1024 / 1024 +
-        si.totalswap * si.mem_unit / 1024 / 1024 ;
-      return (long) ( 0.7 * totMB );
-    }
-#endif
-    return 0;
-  }
-}
-
 //
 // BEGIN EnforcedVertexTableWidgetDelegate
 //
@@ -442,7 +406,6 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myAdvWidget->FEMCorrectionCheck            ->setText (tr( "FEM_CORRECTION" ));
   myAdvWidget->gradationLabel                ->setText (tr( "GHS3D_GRADATION" ));
   myAdvWidget->gradationSpinBox->RangeStepAndValidator(0.0, 5.0, 0.05, "length_precision");
-  myAdvWidget->textOptionLabel->setText(tr( "TEXT_OPTION" ));
 
   // Enforced vertices parameters
   myEnfGroup = new QWidget();
@@ -1443,7 +1406,7 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   myAdvWidget->boundaryRecoveryCheck          ->setChecked    ( data.myBoundaryRecovery );
   myAdvWidget->FEMCorrectionCheck             ->setChecked    ( data.myFEMCorrection );
   myAdvWidget->gradationSpinBox               ->setValue      ( data.myGradation );
-  myAdvWidget->textOptionLineEdit             ->setText       ( data.myTextOption );
+  myAdvWidget->advOptionTable                 ->SetCustomOptions( data.myTextOption );
   myAdvWidget->logInFileCheck                 ->setChecked    ( !data.myLogInStandardOutput );
   myAdvWidget->removeLogOnSuccessCheck        ->setChecked    ( data.myRemoveLogOnSuccess );
 
@@ -1687,14 +1650,14 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   h_data.myBoundaryRecovery           = h->GetToUseBoundaryRecoveryVersion();
   h_data.myFEMCorrection              = h->GetFEMCorrection();
   h_data.myGradation                  = h->GetGradation();
-  h_data.myTextOption                 = h->GetTextOption();
+  h_data.myTextOption                 = h->GetAdvancedOption();
   h_data.myLogInStandardOutput        = h->GetStandardOutputLog();
   h_data.myRemoveLogOnSuccess         = h->GetRemoveLogOnSuccess();
   
   GHS3DPlugin::GHS3DEnforcedVertexList_var vertices = h->GetEnforcedVertices();
   MESSAGE("vertices->length(): " << vertices->length());
   h_data.myEnforcedVertices.clear();
-  for (int i=0 ; i<vertices->length() ; i++) {
+  for (CORBA::ULong i=0 ; i<vertices->length() ; i++) {
     TEnfVertex* myVertex = new TEnfVertex();
     myVertex->name = CORBA::string_dup(vertices[i].name.in());
     myVertex->geomEntry = CORBA::string_dup(vertices[i].geomEntry.in());
@@ -1702,7 +1665,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
     myVertex->size = vertices[i].size;
     myVertex->isCompound = vertices[i].isCompound;
     if (vertices[i].coords.length()) {
-      for (int c = 0; c < vertices[i].coords.length() ; c++)
+      for (CORBA::ULong c = 0; c < vertices[i].coords.length() ; c++)
         myVertex->coords.push_back(vertices[i].coords[c]);
       MESSAGE("Add enforced vertex ("<< myVertex->coords.at(0) << ","<< myVertex->coords.at(1) << ","<< myVertex->coords.at(2) << ") ="<< myVertex->size);
     }
@@ -1712,7 +1675,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   GHS3DPlugin::GHS3DEnforcedMeshList_var enfMeshes = h->GetEnforcedMeshes();
   MESSAGE("enfMeshes->length(): " << enfMeshes->length());
   h_data.myEnforcedMeshes.clear();
-  for (int i=0 ; i<enfMeshes->length() ; i++) {
+  for (CORBA::ULong i=0 ; i<enfMeshes->length() ; i++) {
     TEnfMesh* myEnfMesh = new TEnfMesh();
     myEnfMesh->name = CORBA::string_dup(enfMeshes[i].name.in());
     myEnfMesh->entry = CORBA::string_dup(enfMeshes[i].entry.in());
@@ -1776,8 +1739,8 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       h->SetFEMCorrection    ( h_data.myFEMCorrection     );
     if ( h->GetGradation() != h_data.myGradation         )
       h->SetGradation        ( h_data.myGradation         );
-    if ( h->GetTextOption() != h_data.myTextOption       )
-      h->SetTextOption       ( h_data.myTextOption.toLatin1().constData() );
+    if ( h->GetAdvancedOption() != h_data.myTextOption       )
+      h->SetAdvancedOption       ( h_data.myTextOption.toLatin1().constData() );
     if ( h->GetStandardOutputLog() != h_data.myLogInStandardOutput   )
       h->SetStandardOutputLog( h_data.myLogInStandardOutput  );
      if ( h->GetRemoveLogOnSuccess() != h_data.myRemoveLogOnSuccess   )
@@ -1881,7 +1844,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
   h_data.myBoundaryRecovery           = myAdvWidget->boundaryRecoveryCheck->isChecked();
   h_data.myFEMCorrection              = myAdvWidget->FEMCorrectionCheck->isChecked();
   h_data.myGradation                  = myAdvWidget->gradationSpinBox->value();
-  h_data.myTextOption                 = myAdvWidget->textOptionLineEdit->text();
+  h_data.myTextOption                 = myAdvWidget->advOptionTable->GetCustomOptions();
   h_data.myLogInStandardOutput        = !myAdvWidget->logInFileCheck->isChecked();
   h_data.myRemoveLogOnSuccess         = myAdvWidget->removeLogOnSuccessCheck->isChecked();
   

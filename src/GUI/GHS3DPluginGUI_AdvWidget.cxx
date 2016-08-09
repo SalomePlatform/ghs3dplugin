@@ -38,6 +38,7 @@ GHS3DPluginGUI_AdvWidget::GHS3DPluginGUI_AdvWidget( QWidget* parent, Qt::WindowF
 : QWidget( parent, f )
 {
   setupUi( this );
+  advOptionTable->layout()->setMargin( 0 );
 }
 
 GHS3DPluginGUI_AdvWidget::~GHS3DPluginGUI_AdvWidget()

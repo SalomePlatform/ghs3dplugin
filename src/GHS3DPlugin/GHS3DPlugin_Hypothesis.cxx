@@ -345,10 +345,10 @@ bool GHS3DPlugin_Hypothesis::GetToRemoveCentralPoint() const
 }
 
 //=======================================================================
-//function : SetTextOption
+//function : SetAdvancedOption
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis::SetTextOption(const std::string& option)
+void GHS3DPlugin_Hypothesis::SetAdvancedOption(const std::string& option)
 {
   if ( myTextOption != option ) {
     myTextOption = option;
@@ -357,10 +357,10 @@ void GHS3DPlugin_Hypothesis::SetTextOption(const std::string& option)
 }
 
 //=======================================================================
-//function : GetTextOption
+//function : GetAdvancedOption
 //=======================================================================
 
-std::string GHS3DPlugin_Hypothesis::GetTextOption() const
+std::string GHS3DPlugin_Hypothesis::GetAdvancedOption() const
 {
   return myTextOption;
 }

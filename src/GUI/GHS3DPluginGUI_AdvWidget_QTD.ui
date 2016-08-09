@@ -65,7 +65,7 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="maximum">
+        <property name="maximum" stdset="0">
          <number>999999999</number>
         </property>
        </widget>
@@ -78,7 +78,7 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="maximum">
+        <property name="maximum" stdset="0">
          <number>999999999</number>
         </property>
        </widget>
@@ -166,30 +166,10 @@
       <string>Advanced meshing options</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="7" column="1">
-       <widget class="QLineEdit" name="textOptionLineEdit"/>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="gradationLabel">
+      <item row="1" column="1">
+       <widget class="QCheckBox" name="FEMCorrectionCheck">
         <property name="text">
-         <string>Volumic gradation</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
-       <widget class="QLabel" name="textOptionLabel">
-        <property name="text">
-         <string>Option as text</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="SMESHGUI_SpinBox" name="gradationSpinBox"/>
-      </item>
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="createNewNodesCheck">
-        <property name="text">
-         <string>Create new nodes</string>
+         <string>Use FEM correction</string>
         </property>
        </widget>
       </item>
@@ -200,10 +180,20 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QCheckBox" name="FEMCorrectionCheck">
+      <item row="6" column="1">
+       <widget class="SMESHGUI_SpinBox" name="gradationSpinBox"/>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="gradationLabel">
         <property name="text">
-         <string>Use FEM correction</string>
+         <string>Volumic gradation</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="createNewNodesCheck">
+        <property name="text">
+         <string>Create new nodes</string>
         </property>
        </widget>
       </item>
@@ -214,6 +204,9 @@
         </property>
        </widget>
       </item>
+      <item row="7" column="0" colspan="2">
+       <widget class="SMESH_AdvOptionsWdg" name="advOptionTable" native="true"/>
+      </item>
      </layout>
     </widget>
    </item>
@@ -222,13 +215,19 @@
  <customwidgets>
   <customwidget>
    <class>SMESHGUI_SpinBox</class>
-   <extends>QSpinBox</extends>
-   <header>SMESHGUI_SpinBox.h</header>
+   <extends>QDoubleSpinBox</extends>
+   <header location="global">SMESHGUI_SpinBox.h</header>
   </customwidget>
   <customwidget>
    <class>SalomeApp_IntSpinBox</class>
-   <extends>QSpinBox</extends>
-   <header>SalomeApp_IntSpinBox.h</header>
+   <extends>QLineEdit</extends>
+   <header location="global">SalomeApp_IntSpinBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>SMESH_AdvOptionsWdg</class>
+   <extends>QWidget</extends>
+   <header location="global">SMESH_AdvOptionsWdg.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

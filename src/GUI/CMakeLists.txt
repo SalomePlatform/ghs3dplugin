@@ -49,7 +49,7 @@ SET(_link_LIBRARIES
   ${KERNEL_SALOMELocalTrace}
   ${GEOM_GEOM}
   ${SMESH_SMESH}
-  ${SMESH_GeomSelectionTools}
+  ${SMESH_PluginUtils}
   ${SMESH_StdMeshersGUI}
   ${SMESH_SMESHFiltersSelection}
   ${GUI_suit}

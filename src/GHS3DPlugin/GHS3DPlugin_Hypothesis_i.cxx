@@ -360,8 +360,8 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToRemoveCentralPoint()
 void GHS3DPlugin_Hypothesis_i::SetTextOption(const char* option)
 {
   ASSERT(myBaseImpl);
-  this->GetImpl()->SetTextOption(option);
-  SMESH::TPythonDump() << _this() << ".SetTextOption( '" << option << "' )";
+  this->GetImpl()->SetAdvancedOption(option);
+  SMESH::TPythonDump() << _this() << ".SetAdvancedOption( '" << option << "' )";
 }
 
 //=======================================================================
@@ -371,7 +371,28 @@ void GHS3DPlugin_Hypothesis_i::SetTextOption(const char* option)
 char* GHS3DPlugin_Hypothesis_i::GetTextOption()
 {
   ASSERT(myBaseImpl);
-  return CORBA::string_dup( this->GetImpl()->GetTextOption().c_str() );
+  return CORBA::string_dup( this->GetImpl()->GetAdvancedOption().c_str() );
+}
+
+//=======================================================================
+//function : SetAdvancedOption
+//=======================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetAdvancedOption(const char* option)
+{
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetAdvancedOption(option);
+  SMESH::TPythonDump() << _this() << ".SetAdvancedOption( '" << option << "' )";
+}
+
+//=======================================================================
+//function : GetAdvancedOption
+//=======================================================================
+
+char* GHS3DPlugin_Hypothesis_i::GetAdvancedOption()
+{
+  ASSERT(myBaseImpl);
+  return CORBA::string_dup( this->GetImpl()->GetAdvancedOption().c_str() );
 }
 
 //=======================================================================

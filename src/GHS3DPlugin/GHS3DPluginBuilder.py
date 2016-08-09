@@ -260,7 +260,13 @@ class GHS3D_Algorithm(Mesh_Algorithm):
     ## Sets command line option as text.
     #  @param option command line option
     def SetTextOption(self, option):
-        self.Parameters().SetTextOption(option)
+        self.Parameters().SetAdvancedOption(option)
+        pass
+    
+    ## Sets command line option as text.
+    #  @param option command line option
+    def SetAdvancedOption(self, option):
+        self.Parameters().SetAdvancedOption(option)
         pass
     
     pass # end of GHS3D_Algorithm class

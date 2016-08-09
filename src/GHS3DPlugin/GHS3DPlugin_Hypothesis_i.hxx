@@ -127,7 +127,9 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   /*!
    * To set hiden/undocumented/advanced options
    */
-  void SetTextOption(const char* option);
+  void SetAdvancedOption(const char* option);
+  char* GetAdvancedOption();
+  void SetTextOption(const char* option); // obsolete
   char* GetTextOption();
   /*!
   * To define the volumic gradation

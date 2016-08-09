@@ -197,8 +197,8 @@ public:
   /*!
    * To set hiden/undocumented/advanced options
    */
-  void SetTextOption(const std::string& option);
-  std::string GetTextOption() const;
+  void SetAdvancedOption(const std::string& option);
+  std::string GetAdvancedOption() const;
   /*!
   * To define the volumic gradation
   */
