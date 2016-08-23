@@ -432,8 +432,12 @@ bool GHS3DPlugin_Hypothesis::GetRemoveLogOnSuccess() const
 //function : SetEnforcedVertex
 //=======================================================================
 
-bool GHS3DPlugin_Hypothesis::SetEnforcedVertex(std::string theName, std::string theEntry, std::string theGroupName,
-                                               double size, double x, double y, double z, bool isCompound)
+bool GHS3DPlugin_Hypothesis::SetEnforcedVertex(std::string theName,
+                                               std::string theEntry,
+                                               std::string theGroupName,
+                                               double      size,
+                                               double x, double y, double z,
+                                               bool        isCompound)
 {
   MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedVertex(\""<< theName << "\", \""<< theEntry << "\", \"" << theGroupName << "\", "
                                                       << size << ", " << x << ", " << y << ", " << z  << ", "<< isCompound << ")");
@@ -1459,9 +1463,10 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
 //================================================================================
 
 std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
-                                                 const bool         hasShapeToMesh)
+                                                 const bool                    hasShapeToMesh,
+                                                 const bool                    forExucutable)
 {
-  TCollection_AsciiString cmd = GetExeName().c_str();
+  std::string cmd = GetExeName();
   // check if any option is overridden by hyp->myTextOption
   bool max_memory   = hyp ? ( hyp->myTextOption.find("--max_memory")  == std::string::npos ) : true;
   bool auto_memory   = hyp ? ( hyp->myTextOption.find("--automatic_memory")  == std::string::npos ) : true;
@@ -1484,21 +1489,15 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   // so allow to use about all available memory
   if ( max_memory ) {
     long aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
-    ostringstream tmpMaximumMemory;
     cmd += " --max_memory ";
-    if ( aMaximumMemory < 0 )
-      tmpMaximumMemory << DefaultMaximumMemory();
-    else
-      tmpMaximumMemory << aMaximumMemory;
-    cmd += tmpMaximumMemory.str().c_str();
+    if ( aMaximumMemory < 0 ) cmd += SMESH_Comment( DefaultMaximumMemory() );
+    else                      cmd += SMESH_Comment( aMaximumMemory );
   }
   if ( auto_memory && !useBndRecovery ) {
     long aInitialMemory = hyp ? hyp->myInitialMemory : -1;
     cmd += " --automatic_memory ";
-    if ( aInitialMemory > 0 )
-      cmd += (int)aInitialMemory;
-    else
-      cmd += "100";
+    if ( aInitialMemory > 0 ) cmd += SMESH_Comment( aInitialMemory );
+    else                      cmd += "100";
   }
   // component to mesh
   if ( comp && !useBndRecovery ) {
@@ -1507,36 +1506,35 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
       cmd += " --components all";
     else {
       bool aToMeshHoles = hyp ? hyp->myToMeshHoles : DefaultMeshHoles();
-      if ( aToMeshHoles )
-        cmd += " --components all";
-      else
-        cmd += " --components outside_components";
+      if ( aToMeshHoles ) cmd += " --components all";
+      else                cmd += " --components outside_components";
     }
   }
   const bool toCreateNewNodes = ( no_int_points && ( !hyp || hyp->myToCreateNewNodes ));
 
   // optimization level
-  // This option need to be improved concerning new mg-tetra version
-  if ( optim_level && hyp && !useBndRecovery && toCreateNewNodes ) {
+  if ( !toCreateNewNodes ) {
+    cmd += " --optimisation_level none"; // issue 22608
+  }
+  else if ( optim_level && hyp && !useBndRecovery ) {
     if ( hyp->myOptimizationLevel >= 0 && hyp->myOptimizationLevel < 5 ) {
       const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
       cmd += " --optimisation_level ";
       cmd += level[ hyp->myOptimizationLevel ];
     }
   }
-  if ( !toCreateNewNodes ) {
-    cmd += " --optimisation_level none"; // issue 22608
-  }
 
   // to create internal nodes
   if ( no_int_points && !toCreateNewNodes ) {
-    cmd += " --no_internal_points";
+    if ( forExucutable )
+      cmd += " --no_internal_points";
+    else
+      cmd += " --internalpoints no";
   }
 
   // verbose mode
   if ( verbose && hyp ) {
-    cmd += " --verbose ";
-    cmd += hyp->myVerboseLevel;
+    cmd += " --verbose " + SMESH_Comment( hyp->myVerboseLevel );
   }
 
   // boundary recovery version
@@ -1551,26 +1549,30 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
 
   // to remove initial central point.
   if ( rem && hyp && hyp->myToRemoveCentralPoint) {
-    cmd += " --no_initial_central_point";
+    if ( forExucutable )
+      cmd += " --no_initial_central_point";
+    else
+      cmd += " --centralpoint no";
   }
 
   // options as text
   if ( hyp && !hyp->myTextOption.empty() ) {
-    cmd += " ";
-    cmd += (char*) hyp->myTextOption.c_str();
+    cmd += " " + hyp->myTextOption;
   }
 
   // to define volumic gradation.
-  if ( gra && hyp) {
-    cmd += " -Dcpropa=";
-    cmd += hyp->myGradation;
+  if ( gra && hyp ) {
+    if ( forExucutable )
+      cmd += " -Dcpropa=" + SMESH_Comment( hyp->myGradation );
+    else
+      cmd += " --gradation " + SMESH_Comment( hyp->myGradation );
   }
 
 #ifdef WIN32
   cmd += " < NUL";
 #endif
 
-  return cmd.ToCString();
+  return cmd;
 }
 
 //================================================================================

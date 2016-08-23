@@ -25,6 +25,7 @@ INCLUDE_DIRECTORIES(
   ${GEOM_INCLUDE_DIRS}
   ${SMESH_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
+  ${MESHGEMS_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${OMNIORB_INCLUDE_DIR}
   ${PROJECT_BINARY_DIR}/idl
@@ -46,6 +47,7 @@ SET(_link_LIBRARIES
   ${CAS_TKGeomBase}
   ${CAS_TKGeomAlgo}
   ${CAS_TKCDF}
+  ${MESHGEMS_TETRA_LIBRARY}
   ${SMESH_SMESHimpl}
   ${SMESH_SMESHEngine}
   ${SMESH_SMESHDS}
@@ -69,6 +71,7 @@ SET(GHS3DEngine_HEADERS
   GHS3DPlugin_GHS3D_i.hxx
   GHS3DPlugin_Hypothesis.hxx
   GHS3DPlugin_Hypothesis_i.hxx
+  MG_Tetra_API.hxx
 )
 
 # --- sources ---
@@ -80,6 +83,7 @@ SET(GHS3DEngine_SOURCES
   GHS3DPlugin_i.cxx
   GHS3DPlugin_Hypothesis.cxx
   GHS3DPlugin_Hypothesis_i.cxx
+  MG_Tetra_API.cxx
 )
 
 # --- scripts ---

@@ -228,7 +228,8 @@ public:
    * \brief Return command to run MG-Tetra mesher excluding file prefix (-f)
    */
   static std::string CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
-                                  const bool                    hasShapeToMesh=true);
+                                  const bool                    hasShapeToMesh,
+                                  const bool                    forExucutable);
   /*!
    * \brief Return a unique file name
    */
@@ -337,39 +338,39 @@ public:
 
 private:
 
-  bool   myToMeshHoles;
-  bool   myToMakeGroupsOfDomains;
-  long   myMaximumMemory;
-  long   myInitialMemory;
-  short  myOptimizationLevel;
-  bool   myKeepFiles;
+  bool        myToMeshHoles;
+  bool        myToMakeGroupsOfDomains;
+  long        myMaximumMemory;
+  long        myInitialMemory;
+  short       myOptimizationLevel;
+  bool        myKeepFiles;
   std::string myWorkingDirectory;
-  short  myVerboseLevel;
-  bool   myToCreateNewNodes;
-  bool   myToUseBoundaryRecoveryVersion;
-  bool   myToUseFemCorrection;
-  bool   myToRemoveCentralPoint;
-  bool   myLogInStandardOutput;
-  bool   myRemoveLogOnSuccess;
+  short       myVerboseLevel;
+  bool        myToCreateNewNodes;
+  bool        myToUseBoundaryRecoveryVersion;
+  bool        myToUseFemCorrection;
+  bool        myToRemoveCentralPoint;
+  bool        myLogInStandardOutput;
+  bool        myRemoveLogOnSuccess;
   std::string myTextOption;
-  double myGradation;
+  double      myGradation;
   
-  TGHS3DEnforcedVertexList _enfVertexList;
+  TGHS3DEnforcedVertexList         _enfVertexList;
   TGHS3DEnforcedVertexCoordsValues _enfVertexCoordsSizeList;
-  TGHS3DEnforcedVertexEntryValues _enfVertexEntrySizeList;
+  TGHS3DEnforcedVertexEntryValues  _enfVertexEntrySizeList;
   // map to get "manual" enf vertex (through the coordinates)
-  TCoordsGHS3DEnforcedVertexMap _coordsEnfVertexMap;
+  TCoordsGHS3DEnforcedVertexMap    _coordsEnfVertexMap;
   // map to get "geom" enf vertex (through the geom entries)
   TGeomEntryGHS3DEnforcedVertexMap _geomEntryEnfVertexMap;
   
   
-  TGHS3DEnforcedMeshList _enfMeshList;
+  TGHS3DEnforcedMeshList                   _enfMeshList;
   // map to get enf meshes through the entries
-  TEntryGHS3DEnforcedMeshListMap _entryEnfMeshMap;
-  TIDSortedNodeGroupMap _enfNodes;
-  TIDSortedElemGroupMap _enfEdges;
-  TIDSortedElemGroupMap _enfTriangles;
-  TID2SizeMap _nodeIDToSizeMap;
+  TEntryGHS3DEnforcedMeshListMap           _entryEnfMeshMap;
+  TIDSortedNodeGroupMap                    _enfNodes;
+  TIDSortedElemGroupMap                    _enfEdges;
+  TIDSortedElemGroupMap                    _enfTriangles;
+  TID2SizeMap                              _nodeIDToSizeMap;
   std::map<std::string, TIDSortedElemSet > _entryToElemsMap;
   
   TSetStrings _groupsToRemove;

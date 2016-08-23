@@ -34,11 +34,6 @@
 #include <map>
 #include <vector>
 
-extern "C"
-{
-  #include "libmesh5.h"
-}
-
 #ifndef GMFVERSION
 #define GMFVERSION GmfDouble
 #endif
@@ -82,6 +77,8 @@ public:
 
   static const char* Name() { return "MG-Tetra"; }
 
+  virtual double GetProgress() const;
+
 protected:
   const GHS3DPlugin_Hypothesis*   _hyp;
   const StdMeshers_ViscousLayers* _viscousLayersHyp;
@@ -89,19 +86,21 @@ protected:
    
 private:
 
-  bool         storeErrorDescription(const TCollection_AsciiString& logFile,
-                                     const _Ghs2smdsConvertor &     toSmdsConvertor );
+  bool         storeErrorDescription(const char*                logFile,
+                                     const std::string&         log,
+                                     const _Ghs2smdsConvertor & toSmdsConvertor );
   TopoDS_Shape entryToShape(std::string entry);
-  
-  int  _iShape;
-  int  _nbShape;
-  bool _keepFiles;
-  bool _removeLogOnSuccess;
-  bool _logInStandardOutput;
-  SALOMEDS::Study_var myStudy;
-  SMESH_Gen_i* smeshGen_i;
 
-  volatile bool _compute_canceled;
+  int                 _iShape;
+  int                 _nbShape;
+  bool                _keepFiles;
+  bool                _removeLogOnSuccess;
+  bool                _logInStandardOutput;
+  SALOMEDS::Study_var _study;
+  SMESH_Gen_i*        _smeshGen_i;
+
+  volatile bool       _compute_canceled;
+  bool                _isLibUsed;
 };
 
 /*!

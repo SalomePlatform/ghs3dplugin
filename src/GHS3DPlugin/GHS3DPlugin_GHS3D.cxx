@@ -26,6 +26,7 @@
 //
 #include "GHS3DPlugin_GHS3D.hxx"
 #include "GHS3DPlugin_Hypothesis.hxx"
+#include "MG_Tetra_API.hxx"
 
 #include <SMDS_FaceOfNodes.hxx>
 #include <SMDS_LinearEdge.hxx>
@@ -35,6 +36,7 @@
 #include <SMESHDS_Group.hxx>
 #include <SMESHDS_Mesh.hxx>
 #include <SMESH_Comment.hxx>
+#include <SMESH_File.hxx>
 #include <SMESH_Group.hxx>
 #include <SMESH_HypoFilter.hxx>
 #include <SMESH_Mesh.hxx>
@@ -58,7 +60,6 @@
 #include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
-#include <OSD_File.hxx>
 #include <Precision.hxx>
 #include <Standard_ErrorHandler.hxx>
 #include <Standard_Failure.hxx>
@@ -75,25 +76,14 @@
 #include <Basics_Utils.hxx>
 #include <utilities.h>
 
-#ifdef WIN32
-#include <io.h>
-#else
-#include <sys/sysinfo.h>
-#endif
 #include <algorithm>
 #include <errno.h>
 
-#define castToNode(n) static_cast<const SMDS_MeshNode *>( n );
-
-extern "C"
-{
-#ifndef WIN32
-#include <unistd.h>
-#include <sys/mman.h>
+#ifdef _DEBUG_
+//#define _MY_DEBUG_
 #endif
-#include <sys/stat.h>
-#include <fcntl.h>
-}
+
+#define castToNode(n) static_cast<const SMDS_MeshNode *>( n );
 
 using namespace std;
 
@@ -129,9 +119,9 @@ static const char theDomainGroupNamePrefix[] = "Domain_";
 static void removeFile( const TCollection_AsciiString& fileName )
 {
   try {
-    OSD_File( fileName ).Remove();
+    SMESH_File( fileName.ToCString() ).remove();
   }
-  catch ( Standard_ProgramError ) {
+  catch ( ... ) {
     MESSAGE("Can't remove file: " << fileName.ToCString() << " ; file does not exist or permission denied");
   }
 }
@@ -143,7 +133,7 @@ static void removeFile( const TCollection_AsciiString& fileName )
 //=============================================================================
 
 GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
-  : SMESH_3D_Algo(hypId, studyId, gen)
+  : SMESH_3D_Algo(hypId, studyId, gen), _isLibUsed( false )
 {
   MESSAGE("GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D");
   _name = Name();
@@ -155,16 +145,16 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   _compatibleHypothesis.push_back( StdMeshers_ViscousLayers::GetHypType() );
   _requireShape = false; // can work without shape_studyId
 
-  smeshGen_i = SMESH_Gen_i::GetSMESHGen();
-  CORBA::Object_var anObject = smeshGen_i->GetNS()->Resolve("/myStudyManager");
+  _smeshGen_i = SMESH_Gen_i::GetSMESHGen();
+  CORBA::Object_var anObject = _smeshGen_i->GetNS()->Resolve("/myStudyManager");
   SALOMEDS::StudyManager_var aStudyMgr = SALOMEDS::StudyManager::_narrow(anObject);
 
   MESSAGE("studyid = " << _studyId);
 
-  myStudy = NULL;
-  myStudy = aStudyMgr->GetStudyByID(_studyId);
-  if (myStudy)
-    MESSAGE("myStudy->StudyId() = " << myStudy->StudyId());
+  _study = NULL;
+  _study = aStudyMgr->GetStudyByID(_studyId);
+  if (!_study->_is_nil())
+    MESSAGE("_study->StudyId() = " << _study->StudyId());
   
   _compute_canceled = false;
 }
@@ -230,60 +220,20 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
 TopoDS_Shape GHS3DPlugin_GHS3D::entryToShape(std::string entry)
 {
   MESSAGE("GHS3DPlugin_GHS3D::entryToShape "<<entry );
+  if ( _study->_is_nil() )
+    throw SALOME_Exception("MG-Tetra plugin can't work w/o publishing in the study");
   GEOM::GEOM_Object_var aGeomObj;
   TopoDS_Shape S = TopoDS_Shape();
-  SALOMEDS::SObject_var aSObj = myStudy->FindObjectID( entry.c_str() );
+  SALOMEDS::SObject_var aSObj = _study->FindObjectID( entry.c_str() );
   if (!aSObj->_is_nil() ) {
     CORBA::Object_var obj = aSObj->GetObject();
     aGeomObj = GEOM::GEOM_Object::_narrow(obj);
     aSObj->UnRegister();
   }
   if ( !aGeomObj->_is_nil() )
-    S = smeshGen_i->GeomObjectToShape( aGeomObj.in() );
+    S = _smeshGen_i->GeomObjectToShape( aGeomObj.in() );
   return S;
 }
-
-//=======================================================================
-//function : findShape
-//purpose  : 
-//=======================================================================
-
-// static TopoDS_Shape findShape(const SMDS_MeshNode *aNode[],
-//                               TopoDS_Shape        aShape,
-//                               const TopoDS_Shape  shape[],
-//                               double**            box,
-//                               const int           nShape,
-//                               TopAbs_State *      state = 0)
-// {
-//   gp_XYZ aPnt(0,0,0);
-//   int j, iShape, nbNode = 4;
-
-//   for ( j=0; j<nbNode; j++ ) {
-//     gp_XYZ p ( aNode[j]->X(), aNode[j]->Y(), aNode[j]->Z() );
-//     if ( aNode[j]->GetPosition()->GetTypeOfPosition() == SMDS_TOP_3DSPACE ) {
-//       aPnt = p;
-//       break;
-//     }
-//     aPnt += p / nbNode;
-//   }
-
-//   BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
-//   if (state) *state = SC.State();
-//   if ( SC.State() != TopAbs_IN || aShape.IsNull() || aShape.ShapeType() != TopAbs_SOLID) {
-//     for (iShape = 0; iShape < nShape; iShape++) {
-//       aShape = shape[iShape];
-//       if ( !( aPnt.X() < box[iShape][0] || box[iShape][1] < aPnt.X() ||
-//               aPnt.Y() < box[iShape][2] || box[iShape][3] < aPnt.Y() ||
-//               aPnt.Z() < box[iShape][4] || box[iShape][5] < aPnt.Z()) ) {
-//         BRepClass3d_SolidClassifier SC (aShape, aPnt, Precision::Confusion());
-//         if (state) *state = SC.State();
-//         if (SC.State() == TopAbs_IN)
-//           break;
-//       }
-//     }
-//   }
-//   return aShape;
-// }
 
 //================================================================================
 /*!
@@ -630,7 +580,8 @@ static void makeDomainGroups( std::vector< std::vector< const SMDS_MeshElement* 
 //purpose  : read GMF file w/o geometry associated to mesh
 //=======================================================================
 
-static bool readGMFFile(const char*                     theFile,
+static bool readGMFFile(MG_Tetra_API*                   MGOutput,
+                        const char*                     theFile,
                         GHS3DPlugin_GHS3D*              theAlgo,
                         SMESH_MesherHelper*             theHelper,
                         std::vector <const SMDS_MeshNode*> &    theNodeByGhs3dId,
@@ -667,7 +618,7 @@ static bool readGMFFile(const char*                     theFile,
 
   int nbElem = 0, nbRef = 0;
   int aGMFNodeID = 0;
-  const SMDS_MeshNode** GMFNode;
+  std::vector< const SMDS_MeshNode*> GMFNode;
 #ifdef _DEBUG_
   std::map<int, std::set<int> > subdomainId2tetraId;
 #endif
@@ -686,7 +637,7 @@ static bool readGMFFile(const char*                     theFile,
 
   int ver, dim;
   MESSAGE("Read " << theFile << " file");
-  int InpMsh = GmfOpenMesh(theFile, GmfRead, &ver, &dim);
+  int InpMsh = MGOutput->GmfOpenMesh( theFile, GmfRead, &ver, &dim);
   if (!InpMsh)
     return false;
   MESSAGE("Done ");
@@ -702,17 +653,17 @@ static bool readGMFFile(const char*                     theFile,
       solid1 = theMeshDS->ShapeToIndex
         ( TopExp_Explorer( theHelper->GetSubShape(), TopAbs_SOLID ).Current() );
 
-    int nbDomains = GmfStatKwd( InpMsh, GmfSubDomainFromGeom );
+    int nbDomains = MGOutput->GmfStatKwd( InpMsh, GmfSubDomainFromGeom );
     if ( nbDomains > 1 )
     {
       solidIDByDomain.resize( nbDomains+1, theHelper->GetSubShapeID() );
       int faceNbNodes, faceIndex, orientation, domainNb;
-      GmfGotoKwd( InpMsh, GmfSubDomainFromGeom );
+      MGOutput->GmfGotoKwd( InpMsh, GmfSubDomainFromGeom );
       for ( int i = 0; i < nbDomains; ++i )
       {
         faceIndex = 0;
-        GmfGetLin( InpMsh, GmfSubDomainFromGeom,
-                   &faceNbNodes, &faceIndex, &orientation, &domainNb);
+        MGOutput->GmfGetLin( InpMsh, GmfSubDomainFromGeom,
+                   &faceNbNodes, &faceIndex, &orientation, &domainNb, i);
         solidIDByDomain[ domainNb ] = 1;
         if ( 0 < faceIndex && faceIndex-1 < (int)theFaceByGhs3dId.size() )
         {
@@ -751,24 +702,24 @@ static bool readGMFFile(const char*                     theFile,
   // IMP 0022172: [CEA 790] create the groups corresponding to domains
   std::vector< std::vector< const SMDS_MeshElement* > > elemsOfDomain;
 
-  int nbVertices = GmfStatKwd(InpMsh, GmfVertices) - nbInitialNodes;
-  GMFNode = new const SMDS_MeshNode*[ nbVertices + 1 ];
+  int nbVertices = MGOutput->GmfStatKwd( InpMsh, GmfVertices ) - nbInitialNodes;
+  if ( nbVertices < 0 )
+    return false;
+  GMFNode.resize( nbVertices + 1 );
 
   std::map <GmfKwdCod,int>::const_iterator it = tabRef.begin();
   for ( ; it != tabRef.end() ; ++it)
   {
     if(theAlgo->computeCanceled()) {
-      GmfCloseMesh(InpMsh);
-      delete [] GMFNode;
       return false;
     }
     int dummy, solidID;
     GmfKwdCod token = it->first;
     nbRef           = it->second;
 
-    nbElem = GmfStatKwd(InpMsh, token);
+    nbElem = MGOutput->GmfStatKwd( InpMsh, token);
     if (nbElem > 0) {
-      GmfGotoKwd(InpMsh, token);
+      MGOutput->GmfGotoKwd( InpMsh, token);
       std::cout << "Read " << nbElem;
     }
     else
@@ -802,18 +753,16 @@ static bool readGMFFile(const char*                     theFile,
 
       for ( int iElem = 0; iElem < nbElem; iElem++ ) {
         if(theAlgo->computeCanceled()) {
-          GmfCloseMesh(InpMsh);
-          delete [] GMFNode;
           return false;
         }
         if (ver == GmfFloat) {
-          GmfGetLin(InpMsh, token, &VerTab_f[0], &VerTab_f[1], &VerTab_f[2], &dummy);
+          MGOutput->GmfGetLin( InpMsh, token, &VerTab_f[0], &VerTab_f[1], &VerTab_f[2], &dummy);
           x = VerTab_f[0];
           y = VerTab_f[1];
           z = VerTab_f[2];
         }
         else {
-          GmfGetLin(InpMsh, token, &x, &y, &z, &dummy);
+          MGOutput->GmfGetLin( InpMsh, token, &x, &y, &z, &dummy);
         }
         if (iElem >= nbInitialNodes) {
           if ( elemSearcher &&
@@ -832,42 +781,41 @@ static bool readGMFFile(const char*                     theFile,
     else if (token == GmfCorners && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " corner" : tmpStr = " corners";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]]);
     }
     else if (token == GmfRidges && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " ridge" : tmpStr = " ridges";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]]);
     }
     else if (token == GmfEdges && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " edge" : tmpStr = " edges";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &domainID[iElem]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &domainID[iElem]);
     }
     else if (token == GmfTriangles && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " triangle" : tmpStr = " triangles";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &domainID[iElem]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &domainID[iElem]);
     }
     else if (token == GmfQuadrilaterals && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " Quadrilateral" : tmpStr = " Quadrilaterals";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &domainID[iElem]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &domainID[iElem]);
     }
     else if (token == GmfTetrahedra && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " Tetrahedron" : tmpStr = " Tetrahedra";
       for ( int iElem = 0; iElem < nbElem; iElem++ ) {
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &domainID[iElem]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &domainID[iElem]);
 #ifdef _DEBUG_
         subdomainId2tetraId[dummy].insert(iElem+1);
-//         MESSAGE("subdomainId2tetraId["<<dummy<<"].insert("<<iElem+1<<")");
 #endif
       }
     }
     else if (token == GmfHexahedra && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " Hexahedron" : tmpStr = " Hexahedra";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        GmfGetLin(InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3],
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3],
                   &id[iElem*tabRef[token]+4], &id[iElem*tabRef[token]+5], &id[iElem*tabRef[token]+6], &id[iElem*tabRef[token]+7], &domainID[iElem]);
     }
     std::cout << tmpStr << std::endl;
@@ -890,8 +838,6 @@ static bool readGMFFile(const char*                     theFile,
       for ( int iElem = 0; iElem < nbElem; iElem++ )
       {
         if(theAlgo->computeCanceled()) {
-          GmfCloseMesh(InpMsh);
-          delete [] GMFNode;
           return false;
         }
         // Check if elem is already in input mesh. If yes => skip
@@ -1028,8 +974,7 @@ static bool readGMFFile(const char*                     theFile,
         theMeshDS->RemoveFreeNode( GMFNode[i], /*sm=*/0, /*fromGroups=*/false );
   }
 
-  GmfCloseMesh(InpMsh);
-  delete [] GMFNode;
+  MGOutput->GmfCloseMesh( InpMsh);
 
   // 0022172: [CEA 790] create the groups corresponding to domains
   if ( toMakeGroupsOfDomains )
@@ -1061,7 +1006,8 @@ static bool readGMFFile(const char*                     theFile,
 }
 
 
-static bool writeGMFFile(const char*                                     theMeshFileName,
+static bool writeGMFFile(MG_Tetra_API*                                   MGInput,
+                         const char*                                     theMeshFileName,
                          const char*                                     theRequiredFileName,
                          const char*                                     theSolFileName,
                          const SMESH_ProxyMesh&                          theProxyMesh,
@@ -1116,7 +1062,7 @@ static bool writeGMFFile(const char*                                     theMesh
   if ( nbFaces == 0 )
     return false;
   
-  idx = GmfOpenMesh(theMeshFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
+  idx = MGInput->GmfOpenMesh( theMeshFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
   if (!idx)
     return false;
   
@@ -1169,7 +1115,7 @@ static bool writeGMFFile(const char*                                     theMesh
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         gp_Pnt myPoint(node->X(),node->Y(),node->Z());
         nbFoundElems = pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems);
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
         std::cout << "Node at "<<node->X()<<", "<<node->Y()<<", "<<node->Z()<<std::endl;
         std::cout << "Nb nodes found : "<<nbFoundElems<<std::endl;
 #endif
@@ -1186,7 +1132,7 @@ static bool writeGMFFile(const char*                                     theMesh
         }
         else
           isOK = false;
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
         std::cout << "MG-Tetra node ID: "<<newId<<std::endl;
 #endif
       }
@@ -1227,7 +1173,7 @@ static bool writeGMFFile(const char*                                     theMesh
         const SMDS_MeshNode* node = castToNode( nodeIt->next() );
         gp_Pnt myPoint(node->X(),node->Y(),node->Z());
         nbFoundElems = pntCls->FindElementsByPoint(myPoint, SMDSAbs_Node, foundElems);
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
         std::cout << "Nb nodes found : "<<nbFoundElems<<std::endl;
 #endif
         if (nbFoundElems ==0) {
@@ -1243,7 +1189,7 @@ static bool writeGMFFile(const char*                                     theMesh
         }
         else
           isOK = false;
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
         std::cout << "MG-Tetra node ID: "<<newId<<std::endl;
 #endif
       }
@@ -1255,7 +1201,7 @@ static bool writeGMFFile(const char*                                     theMesh
   }
   
   // put nodes to theNodeByGhs3dId vector
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
   std::cout << "aNodeToGhs3dIdMap.size(): "<<aNodeToGhs3dIdMap.size()<<std::endl;
 #endif
   theNodeByGhs3dId.resize( aNodeToGhs3dIdMap.size() );
@@ -1267,7 +1213,7 @@ static bool writeGMFFile(const char*                                     theMesh
   }
 
   // put nodes to anEnforcedNodeToGhs3dIdMap vector
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
   std::cout << "anEnforcedNodeToGhs3dIdMap.size(): "<<anEnforcedNodeToGhs3dIdMap.size()<<std::endl;
 #endif
   theEnforcedNodeByGhs3dId.resize( anEnforcedNodeToGhs3dIdMap.size());
@@ -1311,13 +1257,13 @@ static bool writeGMFFile(const char*                                     theMesh
     coords.push_back(node->X());
     coords.push_back(node->Y());
     coords.push_back(node->Z());
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
     std::cout << "Node at " << node->X()<<", " <<node->Y()<<", " <<node->Z();
 #endif
     
     if (nodesCoords.find(coords) != nodesCoords.end()) {
       // node already exists in original mesh
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
       std::cout << " found" << std::endl;
 #endif
       continue;
@@ -1325,7 +1271,7 @@ static bool writeGMFFile(const char*                                     theMesh
     
     if (theEnforcedVertices.find(coords) != theEnforcedVertices.end()) {
       // node already exists in enforced vertices
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
       std::cout << " found" << std::endl;
 #endif
       continue;
@@ -1347,7 +1293,7 @@ static bool writeGMFFile(const char*                                     theMesh
 //       theOrderedNodes.push_back(existingNode);
 //     }
     
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
     std::cout << " not found" << std::endl;
 #endif
     
@@ -1368,7 +1314,7 @@ static bool writeGMFFile(const char*                                     theMesh
     coords.push_back(node->X());
     coords.push_back(node->Y());
     coords.push_back(node->Z());
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
     std::cout << "Node at " << node->X()<<", " <<node->Y()<<", " <<node->Z();
 #endif
     
@@ -1376,7 +1322,7 @@ static bool writeGMFFile(const char*                                     theMesh
     gp_Pnt myPoint(node->X(),node->Y(),node->Z());
     TopAbs_State result = pntCls->GetPointState( myPoint );
     if ( result == TopAbs_OUT ) {
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
       std::cout << " out of volume" << std::endl;
 #endif
       theInvalidEnforcedFlags |= FLAG_BAD_ENF_NODE;
@@ -1384,7 +1330,7 @@ static bool writeGMFFile(const char*                                     theMesh
     }
     
     if (nodesCoords.find(coords) != nodesCoords.end()) {
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
       std::cout << " found in nodesCoords" << std::endl;
 #endif
 //       theRequiredNodes.push_back(node);
@@ -1392,7 +1338,7 @@ static bool writeGMFFile(const char*                                     theMesh
     }
 
     if (theEnforcedVertices.find(coords) != theEnforcedVertices.end()) {
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
       std::cout << " found in theEnforcedVertices" << std::endl;
 #endif
       continue;
@@ -1421,7 +1367,7 @@ static bool writeGMFFile(const char*                                     theMesh
 //     if ( result != TopAbs_IN )
 //       continue;
     
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
     std::cout << " not found" << std::endl;
 #endif
     nodesCoords.insert(coords);
@@ -1464,9 +1410,9 @@ static bool writeGMFFile(const char*                                     theMesh
   // GmfVertices
   std::cout << "Begin writting required nodes in GmfVertices" << std::endl;
   std::cout << "Nb vertices: " << theOrderedNodes.size() << std::endl;
-  GmfSetKwd(idx, GmfVertices, theOrderedNodes.size()/*+solSize*/);
+  MGInput->GmfSetKwd( idx, GmfVertices, theOrderedNodes.size()/*+solSize*/);
   for (ghs3dNodeIt = theOrderedNodes.begin();ghs3dNodeIt != theOrderedNodes.end();++ghs3dNodeIt) {
-    GmfSetLin(idx, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
+    MGInput->GmfSetLin( idx, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
   }
 
   std::cout << "End writting required nodes in GmfVertices" << std::endl;
@@ -1474,27 +1420,23 @@ static bool writeGMFFile(const char*                                     theMesh
   if (requiredNodes + solSize) {
     std::cout << "Begin writting in req and sol file" << std::endl;
     aNodeGroupByGhs3dId.resize( requiredNodes + solSize );
-    idxRequired = GmfOpenMesh(theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
+    idxRequired = MGInput->GmfOpenMesh( theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
     if (!idxRequired) {
-      GmfCloseMesh(idx);
       return false;
     }
-    idxSol = GmfOpenMesh(theSolFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
+    idxSol = MGInput->GmfOpenMesh( theSolFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
     if (!idxSol) {
-      GmfCloseMesh(idx);
-      if (idxRequired)
-        GmfCloseMesh(idxRequired);
       return false;
     }
     int TypTab[] = {GmfSca};
     double ValTab[] = {0.0};
-    GmfSetKwd(idxRequired, GmfVertices, requiredNodes + solSize);
-    GmfSetKwd(idxSol, GmfSolAtVertices, requiredNodes + solSize, 1, TypTab);
+    MGInput->GmfSetKwd( idxRequired, GmfVertices, requiredNodes + solSize);
+    MGInput->GmfSetKwd( idxSol, GmfSolAtVertices, requiredNodes + solSize, 1, TypTab);
 //     int usedEnforcedNodes = 0;
 //     std::string gn = "";
     for (ghs3dNodeIt = theRequiredNodes.begin();ghs3dNodeIt != theRequiredNodes.end();++ghs3dNodeIt) {
-      GmfSetLin(idxRequired, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
-      GmfSetLin(idxSol, GmfSolAtVertices, ValTab);
+      MGInput->GmfSetLin( idxRequired, GmfVertices, (*ghs3dNodeIt)->X(), (*ghs3dNodeIt)->Y(), (*ghs3dNodeIt)->Z(), dummyint);
+      MGInput->GmfSetLin( idxSol, GmfSolAtVertices, ValTab);
       if (theEnforcedNodes.find((*ghs3dNodeIt)) != theEnforcedNodes.end())
         gn = theEnforcedNodes.find((*ghs3dNodeIt))->second;
       aNodeGroupByGhs3dId[usedEnforcedNodes] = gn;
@@ -1503,14 +1445,14 @@ static bool writeGMFFile(const char*                                     theMesh
 
     for (int i=0;i<solSize;i++) {
       std::cout << ReqVerTab[i][0] <<" "<< ReqVerTab[i][1] << " "<< ReqVerTab[i][2] << std::endl;
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
       std::cout << "enfVertexSizes.at("<<i<<"): " << enfVertexSizes.at(i) << std::endl;
 #endif
       double solTab[] = {enfVertexSizes.at(i)};
-      GmfSetLin(idxRequired, GmfVertices, ReqVerTab[i][0], ReqVerTab[i][1], ReqVerTab[i][2], dummyint);
-      GmfSetLin(idxSol, GmfSolAtVertices, solTab);
+      MGInput->GmfSetLin( idxRequired, GmfVertices, ReqVerTab[i][0], ReqVerTab[i][1], ReqVerTab[i][2], dummyint);
+      MGInput->GmfSetLin( idxSol, GmfSolAtVertices, solTab);
       aNodeGroupByGhs3dId[usedEnforcedNodes] = enfVerticesWithGroup.find(ReqVerTab[i])->second;
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
       std::cout << "aNodeGroupByGhs3dId["<<usedEnforcedNodes<<"] = \""<<aNodeGroupByGhs3dId[usedEnforcedNodes]<<"\""<<std::endl;
 #endif
       usedEnforcedNodes++;
@@ -1524,11 +1466,11 @@ static bool writeGMFFile(const char*                                     theMesh
   int usedEnforcedEdges = 0;
   if (theKeptEnforcedEdges.size()) {
     anEdgeGroupByGhs3dId.resize( theKeptEnforcedEdges.size() );
-//    idxRequired = GmfOpenMesh(theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
+//    idxRequired = MGInput->GmfOpenMesh( theRequiredFileName, GmfWrite, GMFVERSION, GMFDIMENSION);
 //    if (!idxRequired)
 //      return false;
-    GmfSetKwd(idx, GmfEdges, theKeptEnforcedEdges.size());
-//    GmfSetKwd(idxRequired, GmfEdges, theKeptEnforcedEdges.size());
+    MGInput->GmfSetKwd( idx, GmfEdges, theKeptEnforcedEdges.size());
+//    MGInput->GmfSetKwd( idxRequired, GmfEdges, theKeptEnforcedEdges.size());
     for(elemSetIt = theKeptEnforcedEdges.begin() ; elemSetIt != theKeptEnforcedEdges.end() ; ++elemSetIt) {
       elem = (*elemSetIt);
       nodeIt = elem->nodesIterator();
@@ -1545,19 +1487,18 @@ static bool writeGMFFile(const char*                                     theMesh
         nedge[index] = it->second;
         index++;
       }
-      GmfSetLin(idx, GmfEdges, nedge[0], nedge[1], dummyint);
+      MGInput->GmfSetLin( idx, GmfEdges, nedge[0], nedge[1], dummyint);
       anEdgeGroupByGhs3dId[usedEnforcedEdges] = theEnforcedEdges.find(elem)->second;
-//      GmfSetLin(idxRequired, GmfEdges, nedge[0], nedge[1], dummyint);
+//      MGInput->GmfSetLin( idxRequired, GmfEdges, nedge[0], nedge[1], dummyint);
       usedEnforcedEdges++;
     }
-//    GmfCloseMesh(idxRequired);
   }
 
 
   if (usedEnforcedEdges) {
-    GmfSetKwd(idx, GmfRequiredEdges, usedEnforcedEdges);
+    MGInput->GmfSetKwd( idx, GmfRequiredEdges, usedEnforcedEdges);
     for (int enfID=1;enfID<=usedEnforcedEdges;enfID++) {
-      GmfSetLin(idx, GmfRequiredEdges, enfID);
+      MGInput->GmfSetLin( idx, GmfRequiredEdges, enfID);
     }
   }
 
@@ -1565,7 +1506,7 @@ static bool writeGMFFile(const char*                                     theMesh
   int usedEnforcedTriangles = 0;
   if (anElemSet.size()+theKeptEnforcedTriangles.size()) {
     aFaceGroupByGhs3dId.resize( anElemSet.size()+theKeptEnforcedTriangles.size() );
-    GmfSetKwd(idx, GmfTriangles, anElemSet.size()+theKeptEnforcedTriangles.size());
+    MGInput->GmfSetKwd( idx, GmfTriangles, anElemSet.size()+theKeptEnforcedTriangles.size());
     int k=0;
     for(elemSetIt = anElemSet.begin() ; elemSetIt != anElemSet.end() ; ++elemSetIt,++k) {
       elem = (*elemSetIt);
@@ -1581,7 +1522,7 @@ static bool writeGMFFile(const char*                                     theMesh
         ntri[index] = it->second;
         index++;
       }
-      GmfSetLin(idx, GmfTriangles, ntri[0], ntri[1], ntri[2], dummyint);
+      MGInput->GmfSetLin( idx, GmfTriangles, ntri[0], ntri[1], ntri[2], dummyint);
       aFaceGroupByGhs3dId[k] = "";
     }
     if ( !theHelper.GetMesh()->HasShapeToMesh() )
@@ -1603,7 +1544,7 @@ static bool writeGMFFile(const char*                                     theMesh
           ntri[index] = it->second;
           index++;
         }
-        GmfSetLin(idx, GmfTriangles, ntri[0], ntri[1], ntri[2], dummyint);
+        MGInput->GmfSetLin( idx, GmfTriangles, ntri[0], ntri[1], ntri[2], dummyint);
         aFaceGroupByGhs3dId[k] = theEnforcedTriangles.find(elem)->second;
         usedEnforcedTriangles++;
       }
@@ -1612,19 +1553,18 @@ static bool writeGMFFile(const char*                                     theMesh
 
   
   if (usedEnforcedTriangles) {
-    GmfSetKwd(idx, GmfRequiredTriangles, usedEnforcedTriangles);
+    MGInput->GmfSetKwd( idx, GmfRequiredTriangles, usedEnforcedTriangles);
     for (int enfID=1;enfID<=usedEnforcedTriangles;enfID++)
-      GmfSetLin(idx, GmfRequiredTriangles, anElemSet.size()+enfID);
+      MGInput->GmfSetLin( idx, GmfRequiredTriangles, anElemSet.size()+enfID);
   }
 
-  GmfCloseMesh(idx);
+  MGInput->GmfCloseMesh(idx);
   if (idxRequired)
-    GmfCloseMesh(idxRequired);
+    MGInput->GmfCloseMesh(idxRequired);
   if (idxSol)
-    GmfCloseMesh(idxSol);
-  
+    MGInput->GmfCloseMesh(idxSol);
+
   return true;
-  
 }
 
 //=============================================================================
@@ -1637,36 +1577,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                                 const TopoDS_Shape& theShape)
 {
   bool Ok(false);
-  //SMESHDS_Mesh* meshDS = theMesh.GetMeshDS();
-
-  // we count the number of shapes
-  // _nbShape = countShape( meshDS, TopAbs_SOLID ); -- 0020330: Pb with MG-Tetra as a submesh
-  // _nbShape = 0;
   TopExp_Explorer expBox ( theShape, TopAbs_SOLID );
-  // for ( ; expBox.More(); expBox.Next() )
-  //   _nbShape++;
-
-  // create bounding box for every shape inside the compound
-
-  // int iShape = 0;
-  // TopoDS_Shape* tabShape;
-  // double**      tabBox;
-  // tabShape = new TopoDS_Shape[_nbShape];
-  // tabBox   = new double*[_nbShape];
-  // for (int i=0; i<_nbShape; i++)
-  //   tabBox[i] = new double[6];
-  // Standard_Real Xmin, Ymin, Zmin, Xmax, Ymax, Zmax;
-
-  // for (expBox.ReInit(); expBox.More(); expBox.Next()) {
-  //   tabShape[iShape] = expBox.Current();
-  //   Bnd_Box BoundingBox;
-  //   BRepBndLib::Add(expBox.Current(), BoundingBox);
-  //   BoundingBox.Get(Xmin, Ymin, Zmin, Xmax, Ymax, Zmax);
-  //   tabBox[iShape][0] = Xmin; tabBox[iShape][1] = Xmax;
-  //   tabBox[iShape][2] = Ymin; tabBox[iShape][3] = Ymax;
-  //   tabBox[iShape][4] = Zmin; tabBox[iShape][5] = Zmax;
-  //   iShape++;
-  // }
 
   // a unique working file name
   // to avoid access to the same files by eg different users
@@ -1678,28 +1589,19 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   TCollection_AsciiString aResultFileName;
 
   TCollection_AsciiString aGMFFileName, aRequiredVerticesFileName, aSolFileName, aResSolFileName;
-//#ifdef _DEBUG_
   aGMFFileName              = aGenericName + ".mesh"; // GMF mesh file
   aResultFileName           = aGenericName + "Vol.mesh"; // GMF mesh file
   aResSolFileName           = aGenericName + "Vol.sol"; // GMF mesh file
   aRequiredVerticesFileName = aGenericNameRequired + ".mesh"; // GMF required vertices mesh file
   aSolFileName              = aGenericNameRequired + ".sol"; // GMF solution file
-//#else
-//  aGMFFileName    = aGenericName + ".meshb"; // GMF mesh file
-//  aResultFileName = aGenericName + "Vol.meshb"; // GMF mesh file
-//  aRequiredVerticesFileName    = aGenericNameRequired + ".meshb"; // GMF required vertices mesh file
-//  aSolFileName    = aGenericNameRequired + ".solb"; // GMF solution file
-//#endif
   
   std::map <int,int> aNodeId2NodeIndexMap, aSmdsToGhs3dIdMap, anEnforcedNodeIdToGhs3dIdMap;
-  //std::map <int,const SMDS_MeshNode*> aGhs3dIdToNodeMap;
   std::map <int, int> nodeID2nodeIndexMap;
   std::map<std::vector<double>, std::string> enfVerticesWithGroup;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues coordsSizeMap = GHS3DPlugin_Hypothesis::GetEnforcedVerticesCoordsSize(_hyp);
   GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap enforcedNodes = GHS3DPlugin_Hypothesis::GetEnforcedNodes(_hyp);
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap enforcedEdges = GHS3DPlugin_Hypothesis::GetEnforcedEdges(_hyp);
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap enforcedTriangles = GHS3DPlugin_Hypothesis::GetEnforcedTriangles(_hyp);
-//   TIDSortedElemSet enforcedQuadrangles = GHS3DPlugin_Hypothesis::GetEnforcedQuadrangles(_hyp);
   GHS3DPlugin_Hypothesis::TID2SizeMap nodeIDToSizeMap = GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(_hyp);
 
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList enfVertices = GHS3DPlugin_Hypothesis::GetEnforcedVertices(_hyp);
@@ -1709,59 +1611,36 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   for ( ; enfVerIt != enfVertices.end() ; ++enfVerIt)
   {
     GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* enfVertex = (*enfVerIt);
-//     if (enfVertex->geomEntry.empty() && enfVertex->coords.size()) {
     if (enfVertex->coords.size()) {
       coordsSizeMap.insert(make_pair(enfVertex->coords,enfVertex->size));
       enfVerticesWithGroup.insert(make_pair(enfVertex->coords,enfVertex->groupName));
-//       MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<enfVertex->coords[0]<<","<<enfVertex->coords[1]<<","<<enfVertex->coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
     }
     else {
-//     if (!enfVertex->geomEntry.empty()) {
       TopoDS_Shape GeomShape = entryToShape(enfVertex->geomEntry);
-//       GeomType = GeomShape.ShapeType();
-
-//       if (!enfVertex->isCompound) {
-// //       if (GeomType == TopAbs_VERTEX) {
-//         coords.clear();
-//         aPnt = BRep_Tool::Pnt(TopoDS::Vertex(GeomShape));
-//         coords.push_back(aPnt.X());
-//         coords.push_back(aPnt.Y());
-//         coords.push_back(aPnt.Z());
-//         if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
-//           coordsSizeMap.insert(make_pair(coords,enfVertex->size));
-//           enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
-//         }
-//       }
-//
-//       // Group Management
-//       else {
-//       if (GeomType == TopAbs_COMPOUND){
-        for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()){
-          coords.clear();
-          if (it.Value().ShapeType() == TopAbs_VERTEX){
-            gp_Pnt aPnt = BRep_Tool::Pnt(TopoDS::Vertex(it.Value()));
-            coords.push_back(aPnt.X());
-            coords.push_back(aPnt.Y());
-            coords.push_back(aPnt.Z());
-            if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
-              coordsSizeMap.insert(make_pair(coords,enfVertex->size));
-              enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
-//               MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<coords[0]<<","<<coords[1]<<","<<coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
-            }
+      for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()){
+        coords.clear();
+        if (it.Value().ShapeType() == TopAbs_VERTEX){
+          gp_Pnt aPnt = BRep_Tool::Pnt(TopoDS::Vertex(it.Value()));
+          coords.push_back(aPnt.X());
+          coords.push_back(aPnt.Y());
+          coords.push_back(aPnt.Z());
+          if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
+            coordsSizeMap.insert(make_pair(coords,enfVertex->size));
+            enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
           }
         }
-//       }
+      }
     }
   }
   int nbEnforcedVertices = coordsSizeMap.size();
   int nbEnforcedNodes = enforcedNodes.size();
-  
+
   std::string tmpStr;
   (nbEnforcedNodes <= 1) ? tmpStr = "node" : "nodes";
   std::cout << nbEnforcedNodes << " enforced " << tmpStr << " from hypo" << std::endl;
   (nbEnforcedVertices <= 1) ? tmpStr = "vertex" : "vertices";
   std::cout << nbEnforcedVertices << " enforced " << tmpStr << " from hypo" << std::endl;
-  
+
   SMESH_MesherHelper helper( theMesh );
   helper.SetSubShape( theShape );
 
@@ -1772,51 +1651,48 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   // proxyMesh must live till readGMFFile() as a proxy face can be used by
   // MG-Tetra for domain indication
-  //{
-    SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
+  SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
 
-    // make prisms on quadrangles
-    if ( theMesh.NbQuadrangles() > 0 )
+  // make prisms on quadrangles
+  if ( theMesh.NbQuadrangles() > 0 )
+  {
+    vector<SMESH_ProxyMesh::Ptr> components;
+    for (expBox.ReInit(); expBox.More(); expBox.Next())
     {
-      vector<SMESH_ProxyMesh::Ptr> components;
-      for (expBox.ReInit(); expBox.More(); expBox.Next())
+      if ( _viscousLayersHyp )
       {
-        if ( _viscousLayersHyp )
-        {
-          proxyMesh = _viscousLayersHyp->Compute( theMesh, expBox.Current() );
-          if ( !proxyMesh )
-            return false;
-        }
-        StdMeshers_QuadToTriaAdaptor* q2t = new StdMeshers_QuadToTriaAdaptor;
-        q2t->Compute( theMesh, expBox.Current(), proxyMesh.get() );
-        components.push_back( SMESH_ProxyMesh::Ptr( q2t ));
+        proxyMesh = _viscousLayersHyp->Compute( theMesh, expBox.Current() );
+        if ( !proxyMesh )
+          return false;
       }
-      proxyMesh.reset( new SMESH_ProxyMesh( components ));
+      StdMeshers_QuadToTriaAdaptor* q2t = new StdMeshers_QuadToTriaAdaptor;
+      q2t->Compute( theMesh, expBox.Current(), proxyMesh.get() );
+      components.push_back( SMESH_ProxyMesh::Ptr( q2t ));
     }
-    // build viscous layers
-    else if ( _viscousLayersHyp )
-    {
-      proxyMesh = _viscousLayersHyp->Compute( theMesh, theShape );
-      if ( !proxyMesh )
-        return false;
-    }
+    proxyMesh.reset( new SMESH_ProxyMesh( components ));
+  }
+  // build viscous layers
+  else if ( _viscousLayersHyp )
+  {
+    proxyMesh = _viscousLayersHyp->Compute( theMesh, theShape );
+    if ( !proxyMesh )
+      return false;
+  }
 
-    // Ok = (writePoints( aPointsFile, helper, 
-    //                    aSmdsToGhs3dIdMap, anEnforcedNodeIdToGhs3dIdMap, aGhs3dIdToNodeMap, 
-    //                    nodeIDToSizeMap,
-    //                    coordsSizeMap, enforcedNodes, enforcedEdges, enforcedTriangles)
-    //       &&
-    //       writeFaces ( aFacesFile, *proxyMesh, theShape, 
-    //                    aSmdsToGhs3dIdMap, anEnforcedNodeIdToGhs3dIdMap,
-    //                    enforcedEdges, enforcedTriangles ));
-    int anInvalidEnforcedFlags = 0;
-    Ok = writeGMFFile(aGMFFileName.ToCString(), aRequiredVerticesFileName.ToCString(), aSolFileName.ToCString(),
-                      *proxyMesh, helper,
-                      aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
-                      aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
-                      enforcedNodes, enforcedEdges, enforcedTriangles, /*enforcedQuadrangles,*/
-                      enfVerticesWithGroup, coordsSizeMap, anInvalidEnforcedFlags);
-    //}
+  MG_Tetra_API mgTetra( _compute_canceled, _progress );
+
+  _isLibUsed = mgTetra.IsLibrary();
+
+  int anInvalidEnforcedFlags = 0;
+  Ok = writeGMFFile(&mgTetra,
+                    aGMFFileName.ToCString(),
+                    aRequiredVerticesFileName.ToCString(),
+                    aSolFileName.ToCString(),
+                    *proxyMesh, helper,
+                    aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
+                    aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
+                    enforcedNodes, enforcedEdges, enforcedTriangles,
+                    enfVerticesWithGroup, coordsSizeMap, anInvalidEnforcedFlags);
 
   // Write aSmdsToGhs3dIdMap to temp file
   TCollection_AsciiString aSmdsToGhs3dIdMapFileName;
@@ -1835,7 +1711,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
 
   aIdsFile.close();
-  
+
   if ( ! Ok ) {
     if ( !_keepFiles ) {
       removeFile( aGMFFileName );
@@ -1851,74 +1727,54 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // run MG-Tetra mesher
   // -----------------
 
-  TCollection_AsciiString cmd( (char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp ).c_str() );
-  
-  cmd += TCollection_AsciiString(" --in ") + aGMFFileName;
-  if ( nbEnforcedVertices + nbEnforcedNodes)
-    cmd += TCollection_AsciiString(" --required_vertices ") + aGenericNameRequired;
-  cmd += TCollection_AsciiString(" --out ") + aResultFileName;
-  if ( !_logInStandardOutput )
-    cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
+  TCollection_AsciiString cmd = GHS3DPlugin_Hypothesis::CommandToRun( _hyp, true, mgTetra.IsExecutable() ).c_str();
 
+  if ( mgTetra.IsExecutable() )
+  {
+    cmd += TCollection_AsciiString(" --in ") + aGMFFileName;
+    if ( nbEnforcedVertices + nbEnforcedNodes)
+      cmd += TCollection_AsciiString(" --required_vertices ") + aGenericNameRequired;
+    cmd += TCollection_AsciiString(" --out ") + aResultFileName;
+  }
+  if ( !_logInStandardOutput )
+  {
+    mgTetra.SetLogFile( aLogFileName.ToCString() );
+    cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
+  }
   std::cout << std::endl;
   std::cout << "MG-Tetra execution..." << std::endl;
   std::cout << cmd << std::endl;
 
   _compute_canceled = false;
 
-  int err = system( cmd.ToCString() ); // run
-
   std::string errStr;
-  if ( err )
-    errStr = SMESH_Comment("system(mg-tetra.exe ...) command failed with error: ")
-      << strerror( errno );
-  else
+  Ok = mgTetra.Compute( cmd.ToCString(), errStr ); // run
+
+  if ( _logInStandardOutput && mgTetra.IsLibrary() )
+    std::cout << std::endl << mgTetra.GetLog() << std::endl;
+  if ( Ok )
     std::cout << std::endl << "End of MG-Tetra execution !" << std::endl;
 
   // --------------
   // read a result
   // --------------
 
-  // Mapping the result file
+  GHS3DPlugin_Hypothesis::TSetStrings groupsToRemove = GHS3DPlugin_Hypothesis::GetGroupsToRemove(_hyp);
+  bool toMeshHoles =
+    _hyp ? _hyp->GetToMeshHoles(true) : GHS3DPlugin_Hypothesis::DefaultMeshHoles();
+  const bool toMakeGroupsOfDomains = GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains( _hyp );
 
-  // int fileOpen;
-  // fileOpen = open( aResultFileName.ToCString(), O_RDONLY);
-  // if ( fileOpen < 0 ) {
-  //   std::cout << std::endl;
-  //   std::cout << "Can't open the " << aResultFileName.ToCString() << " MG-Tetra output file" << std::endl;
-  //   std::cout << "Log: " << aLogFileName << std::endl;
-  //   Ok = false;
-  // }
-  // else {
-    GHS3DPlugin_Hypothesis::TSetStrings groupsToRemove = GHS3DPlugin_Hypothesis::GetGroupsToRemove(_hyp);
-    bool toMeshHoles =
-      _hyp ? _hyp->GetToMeshHoles(true) : GHS3DPlugin_Hypothesis::DefaultMeshHoles();
-    const bool toMakeGroupsOfDomains = GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains( _hyp );
+  helper.IsQuadraticSubMesh( theShape );
+  helper.SetElementsOnShape( false );
 
-    helper.IsQuadraticSubMesh( theShape );
-    helper.SetElementsOnShape( false );
+  Ok = readGMFFile(&mgTetra,
+                   aResultFileName.ToCString(),
+                   this,
+                   &helper, aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
+                   aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
+                   groupsToRemove, toMakeGroupsOfDomains, toMeshHoles);
 
-//     Ok = readResultFile( fileOpen,
-// #ifdef WIN32
-//                          aResultFileName.ToCString(),
-// #endif
-//                          this,
-//                          /*theMesh, */helper, tabShape, tabBox, _nbShape, 
-//                          aGhs3dIdToNodeMap, aNodeId2NodeIndexMap,
-//                          toMeshHoles, 
-//                          nbEnforcedVertices, nbEnforcedNodes, 
-//                          enforcedEdges, enforcedTriangles,
-//                          toMakeGroupsOfDomains );
-                         
-    Ok = readGMFFile(aResultFileName.ToCString(),
-                     this,
-                     &helper, aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
-                     aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
-                     groupsToRemove, toMakeGroupsOfDomains, toMeshHoles);
-
-    removeEmptyGroupsOfDomains( helper.GetMesh(), /*notEmptyAsWell =*/ !toMakeGroupsOfDomains );
-    //}
-
+  removeEmptyGroupsOfDomains( helper.GetMesh(), /*notEmptyAsWell =*/ !toMakeGroupsOfDomains );
 
 
 
@@ -1935,13 +1791,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     // if ( _hyp && _hyp->GetToMakeGroupsOfDomains() )
     //   error( COMPERR_WARNING, "'toMakeGroupsOfDomains' is ignored since the mesh is on shape" );
   }
-  else if ( OSD_File( aLogFileName ).Size() > 0 )
+  else if ( mgTetra.HasLog() )
   {
     // get problem description from the log file
     _Ghs2smdsConvertor conv( aNodeByGhs3dId, proxyMesh );
-    storeErrorDescription( aLogFileName, conv );
+    storeErrorDescription( _logInStandardOutput ? 0 : aLogFileName.ToCString(),
+                           mgTetra.GetLog(), conv );
   }
-  else
+  else if ( !errStr.empty() )
   {
     // the log file is empty
     removeFile( aLogFileName );
@@ -1950,7 +1807,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
 
   if ( !_keepFiles ) {
-    if (! Ok && _compute_canceled)
+    if (! Ok && _compute_canceled )
       removeFile( aLogFileName );
     removeFile( aGMFFileName );
     removeFile( aRequiredVerticesFileName );
@@ -1959,16 +1816,18 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     removeFile( aResultFileName );
     removeFile( aSmdsToGhs3dIdMapFileName );
   }
-  std::cout << "<" << aResultFileName.ToCString() << "> MG-Tetra output file ";
-  if ( !Ok )
-    std::cout << "not ";
-  std::cout << "treated !" << std::endl;
-  std::cout << std::endl;
-
-  // _nbShape = 0;    // re-initializing _nbShape for the next Compute() method call
-  // delete [] tabShape;
-  // delete [] tabBox;
-
+  if ( mgTetra.IsExecutable() )
+  {
+    std::cout << "<" << aResultFileName.ToCString() << "> MG-Tetra output file ";
+    if ( !Ok )
+      std::cout << "not ";
+    std::cout << "treated !" << std::endl;
+    std::cout << std::endl;
+  }
+  else
+  {
+    std::cout << "MG-Tetra " << ( Ok ? "succeeded" : "failed") << std::endl;
+  }
   return Ok;
 }
 
@@ -1995,24 +1854,16 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   bool Ok;
 
   TCollection_AsciiString aGMFFileName, aRequiredVerticesFileName, aSolFileName, aResSolFileName;
-//#ifdef _DEBUG_
   aGMFFileName              = aGenericName + ".mesh"; // GMF mesh file
   aResultFileName           = aGenericName + "Vol.mesh"; // GMF mesh file
   aResSolFileName           = aGenericName + "Vol.sol"; // GMF mesh file
   aRequiredVerticesFileName = aGenericNameRequired + ".mesh"; // GMF required vertices mesh file
   aSolFileName              = aGenericNameRequired + ".sol"; // GMF solution file
-//#else
-//  aGMFFileName    = aGenericName + ".meshb"; // GMF mesh file
-//  aResultFileName = aGenericName + "Vol.meshb"; // GMF mesh file
-//  aRequiredVerticesFileName    = aGenericNameRequired + ".meshb"; // GMF required vertices mesh file
-//  aSolFileName    = aGenericNameRequired + ".solb"; // GMF solution file
-//#endif
 
   std::map <int, int> nodeID2nodeIndexMap;
   std::map<std::vector<double>, std::string> enfVerticesWithGroup;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues coordsSizeMap;
   TopoDS_Shape GeomShape;
-//   TopAbs_ShapeEnum GeomType;
   std::vector<double> coords;
   gp_Pnt aPnt;
   GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* enfVertex;
@@ -2023,70 +1874,32 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   for ( ; enfVerIt != enfVertices.end() ; ++enfVerIt)
   {
     enfVertex = (*enfVerIt);
-//     if (enfVertex->geomEntry.empty() && enfVertex->coords.size()) {
     if (enfVertex->coords.size()) {
       coordsSizeMap.insert(make_pair(enfVertex->coords,enfVertex->size));
       enfVerticesWithGroup.insert(make_pair(enfVertex->coords,enfVertex->groupName));
-//       MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<enfVertex->coords[0]<<","<<enfVertex->coords[1]<<","<<enfVertex->coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
     }
     else {
-//     if (!enfVertex->geomEntry.empty()) {
       GeomShape = entryToShape(enfVertex->geomEntry);
-//       GeomType = GeomShape.ShapeType();
-
-//       if (!enfVertex->isCompound) {
-// //       if (GeomType == TopAbs_VERTEX) {
-//         coords.clear();
-//         aPnt = BRep_Tool::Pnt(TopoDS::Vertex(GeomShape));
-//         coords.push_back(aPnt.X());
-//         coords.push_back(aPnt.Y());
-//         coords.push_back(aPnt.Z());
-//         if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
-//           coordsSizeMap.insert(make_pair(coords,enfVertex->size));
-//           enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
-//         }
-//       }
-//
-//       // Group Management
-//       else {
-//       if (GeomType == TopAbs_COMPOUND){
-        for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()){
-          coords.clear();
-          if (it.Value().ShapeType() == TopAbs_VERTEX){
-            aPnt = BRep_Tool::Pnt(TopoDS::Vertex(it.Value()));
-            coords.push_back(aPnt.X());
-            coords.push_back(aPnt.Y());
-            coords.push_back(aPnt.Z());
-            if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
-              coordsSizeMap.insert(make_pair(coords,enfVertex->size));
-              enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
-//               MESSAGE("enfVerticesWithGroup.insert(make_pair(("<<coords[0]<<","<<coords[1]<<","<<coords[2]<<"),\""<<enfVertex->groupName<<"\"))");
-            }
+      for (TopoDS_Iterator it (GeomShape); it.More(); it.Next()){
+        coords.clear();
+        if (it.Value().ShapeType() == TopAbs_VERTEX){
+          aPnt = BRep_Tool::Pnt(TopoDS::Vertex(it.Value()));
+          coords.push_back(aPnt.X());
+          coords.push_back(aPnt.Y());
+          coords.push_back(aPnt.Z());
+          if (coordsSizeMap.find(coords) == coordsSizeMap.end()) {
+            coordsSizeMap.insert(make_pair(coords,enfVertex->size));
+            enfVerticesWithGroup.insert(make_pair(coords,enfVertex->groupName));
           }
         }
-//       }
+      }
     }
   }
 
-//   const SMDS_MeshNode* enfNode;
-  GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap enforcedNodes = GHS3DPlugin_Hypothesis::GetEnforcedNodes(_hyp);
-//   GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap::const_iterator enfNodeIt = enforcedNodes.begin();
-//   for ( ; enfNodeIt != enforcedNodes.end() ; ++enfNodeIt)
-//   {
-//     enfNode = enfNodeIt->first;
-//     coords.clear();
-//     coords.push_back(enfNode->X());
-//     coords.push_back(enfNode->Y());
-//     coords.push_back(enfNode->Z());
-//     if (enfVerticesWithGro
-//       enfVerticesWithGroup.insert(make_pair(coords,enfNodeIt->second));
-//   }
-
-
-  GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap enforcedEdges = GHS3DPlugin_Hypothesis::GetEnforcedEdges(_hyp);
+  GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap     enforcedNodes = GHS3DPlugin_Hypothesis::GetEnforcedNodes(_hyp);
+  GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap     enforcedEdges = GHS3DPlugin_Hypothesis::GetEnforcedEdges(_hyp);
   GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap enforcedTriangles = GHS3DPlugin_Hypothesis::GetEnforcedTriangles(_hyp);
-//   TIDSortedElemSet enforcedQuadrangles = GHS3DPlugin_Hypothesis::GetEnforcedQuadrangles(_hyp);
-  GHS3DPlugin_Hypothesis::TID2SizeMap nodeIDToSizeMap = GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(_hyp);
+  GHS3DPlugin_Hypothesis::TID2SizeMap             nodeIDToSizeMap = GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(_hyp);
 
   std::string tmpStr;
 
@@ -2104,50 +1917,57 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   // proxyMesh must live till readGMFFile() as a proxy face can be used by
   // MG-Tetra for domain indication
-  //{
-    SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
-    if ( theMesh.NbQuadrangles() > 0 )
-    {
-      StdMeshers_QuadToTriaAdaptor* aQuad2Trias = new StdMeshers_QuadToTriaAdaptor;
-      aQuad2Trias->Compute( theMesh );
-      proxyMesh.reset( aQuad2Trias );
-    }
+  SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
+  if ( theMesh.NbQuadrangles() > 0 )
+  {
+    StdMeshers_QuadToTriaAdaptor* aQuad2Trias = new StdMeshers_QuadToTriaAdaptor;
+    aQuad2Trias->Compute( theMesh );
+    proxyMesh.reset( aQuad2Trias );
+  }
 
-    int anInvalidEnforcedFlags = 0;
-    Ok = writeGMFFile(aGMFFileName.ToCString(), aRequiredVerticesFileName.ToCString(), aSolFileName.ToCString(),
-                      *proxyMesh, *theHelper,
-                      aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
-                      aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
-                      enforcedNodes, enforcedEdges, enforcedTriangles,
-                      enfVerticesWithGroup, coordsSizeMap, anInvalidEnforcedFlags);
-    //}
+  MG_Tetra_API mgTetra( _compute_canceled, _progress );
+
+  _isLibUsed = mgTetra.IsLibrary();
+
+  int anInvalidEnforcedFlags = 0;
+  Ok = writeGMFFile(&mgTetra,
+                    aGMFFileName.ToCString(), aRequiredVerticesFileName.ToCString(), aSolFileName.ToCString(),
+                    *proxyMesh, *theHelper,
+                    aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
+                    aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
+                    enforcedNodes, enforcedEdges, enforcedTriangles,
+                    enfVerticesWithGroup, coordsSizeMap, anInvalidEnforcedFlags);
 
   // -----------------
   // run MG-Tetra mesher
   // -----------------
 
-  TCollection_AsciiString cmd = TCollection_AsciiString((char*)GHS3DPlugin_Hypothesis::CommandToRun( _hyp, false ).c_str());
+  TCollection_AsciiString cmd = GHS3DPlugin_Hypothesis::CommandToRun( _hyp, false, mgTetra.IsExecutable() ).c_str();
 
-  cmd += TCollection_AsciiString(" --in ") + aGMFFileName;
-  if ( nbEnforcedVertices + nbEnforcedNodes)
-    cmd += TCollection_AsciiString(" --required_vertices ") + aGenericNameRequired;
-  cmd += TCollection_AsciiString(" --out ") + aResultFileName;
+  if ( mgTetra.IsExecutable() )
+  {
+    cmd += TCollection_AsciiString(" --in ") + aGMFFileName;
+    if ( nbEnforcedVertices + nbEnforcedNodes)
+      cmd += TCollection_AsciiString(" --required_vertices ") + aGenericNameRequired;
+    cmd += TCollection_AsciiString(" --out ") + aResultFileName;
+  }
   if ( !_logInStandardOutput )
+  {
+    mgTetra.SetLogFile( aLogFileName.ToCString() );
     cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
-
+  }
   std::cout << std::endl;
   std::cout << "MG-Tetra execution..." << std::endl;
   std::cout << cmd << std::endl;
 
   _compute_canceled = false;
 
-  int err = system( cmd.ToCString() ); // run
-
   std::string errStr;
-  if ( err )
-    errStr = SMESH_Comment("system(mg-tetra.exe ...) command failed with error: ")
-      << strerror( errno );
-  else
+  Ok = mgTetra.Compute( cmd.ToCString(), errStr ); // run
+
+  if ( _logInStandardOutput && mgTetra.IsLibrary() )
+    std::cout << std::endl << mgTetra.GetLog() << std::endl;
+  if ( Ok )
     std::cout << std::endl << "End of MG-Tetra execution !" << std::endl;
 
   // --------------
@@ -2156,7 +1976,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   GHS3DPlugin_Hypothesis::TSetStrings groupsToRemove = GHS3DPlugin_Hypothesis::GetGroupsToRemove(_hyp);
   const bool toMakeGroupsOfDomains = GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains( _hyp );
 
-  Ok = readGMFFile(aResultFileName.ToCString(),
+  Ok = readGMFFile(&mgTetra,
+                   aResultFileName.ToCString(),
                    this,
                    theHelper, aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
                    aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
@@ -2184,11 +2005,12 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     //if ( !toMakeGroupsOfDomains && _hyp && _hyp->GetToMakeGroupsOfDomains() )
     //error( COMPERR_WARNING, "'toMakeGroupsOfDomains' is ignored since 'toMeshHoles' is OFF." );
   }
-  else if ( OSD_File( aLogFileName ).Size() > 0 )
+  else if ( mgTetra.HasLog() )
   {
     // get problem description from the log file
     _Ghs2smdsConvertor conv( aNodeByGhs3dId, proxyMesh );
-    storeErrorDescription( aLogFileName, conv );
+    storeErrorDescription( _logInStandardOutput ? 0 : aLogFileName.ToCString(),
+                           mgTetra.GetLog(), conv );
   }
   else {
     // the log file is empty
@@ -2544,30 +2366,21 @@ static char* getIds( char* ptr, int nbIds, vector<int>& ids )
  */
 //================================================================================
 
-bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& logFile,
-                                              const _Ghs2smdsConvertor &     toSmdsConvertor )
+bool GHS3DPlugin_GHS3D::storeErrorDescription(const char*                logFile,
+                                              const std::string&         log,
+                                              const _Ghs2smdsConvertor & toSmdsConvertor )
 {
   if(_compute_canceled)
     return error(SMESH_Comment("interruption initiated by user"));
-  // open file
-#ifdef WIN32
-  int file = ::_open (logFile.ToCString(), _O_RDONLY|_O_BINARY);
-#else
-  int file = ::open (logFile.ToCString(), O_RDONLY);
-#endif
-  if ( file < 0 )
-    return error( SMESH_Comment("See ") << logFile << " for problem description");
-
-  // get file size
-  off_t length = lseek( file, 0, SEEK_END);
-  lseek( file, 0, SEEK_SET);
 
   // read file
-  vector< char > buf( length );
-  int nBytesRead = ::read (file, & buf[0], length);
-  ::close (file);
-  char* ptr = & buf[0];
-  char* bufEnd = ptr + nBytesRead;
+  // SMESH_File file( logFile.ToCString() );
+  // if ( file.size() == 0 )
+  //   return error( SMESH_Comment("See ") << logFile << " for problem description");
+
+  char* ptr = const_cast<char*>( log.c_str() );
+  char* buf = ptr, * bufEnd = ptr + log.size();
+
 
   SMESH_Comment errDescription;
 
@@ -2806,11 +2619,13 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const TCollection_AsciiString& log
     }
   }
 
-  if ( errDescription.empty() )
-    errDescription << "See " << logFile << " for problem description";
-  else
-    errDescription << "\nSee " << logFile << " for more information";
-
+  if ( logFile && logFile[0] )
+  {
+    if ( errDescription.empty() )
+      errDescription << "See " << logFile << " for problem description";
+    else
+      errDescription << "\nSee " << logFile << " for more information";
+  }
   return error( errDescription );
 }
 
@@ -2966,19 +2781,11 @@ bool GHS3DPlugin_GHS3D::Evaluate(SMESH_Mesh& aMesh,
 
 bool GHS3DPlugin_GHS3D::importGMFMesh(const char* theGMFFileName, SMESH_Mesh& theMesh)
 {
-  SMESH_MesherHelper* helper  = new SMESH_MesherHelper(theMesh );
-  std::vector <const SMDS_MeshNode*> dummyNodeVector;
-  std::vector <const SMDS_MeshElement*> aFaceByGhs3dId;
-  std::map<const SMDS_MeshNode*,int> dummyNodeMap;
-  std::map<std::vector<double>, std::string> dummyEnfVertGroup;
-  std::vector<std::string> dummyElemGroup;
-  std::set<std::string> dummyGroupsToRemove;
+  SMESH_ComputeErrorPtr err = theMesh.GMFToMesh( theGMFFileName, /*makeRequiredGroups =*/ true );
 
-  bool ok = readGMFFile(theGMFFileName,
-                        this,
-                        helper, dummyNodeVector, aFaceByGhs3dId, dummyNodeMap, dummyElemGroup, dummyElemGroup, dummyElemGroup, dummyGroupsToRemove);
   theMesh.GetMeshDS()->Modified();
-  return ok;
+
+  return ( !err || err->IsOK());
 }
 
 namespace
@@ -3104,4 +2911,27 @@ void GHS3DPlugin_GHS3D::SubmeshRestored(SMESH_subMesh* subMesh)
 void GHS3DPlugin_GHS3D::SetEventListener(SMESH_subMesh* subMesh)
 {
   subMesh->SetEventListener( new _GroupsOfDomainsRemover(), 0, subMesh );
+}
+
+//================================================================================
+/*!
+ * \brief If possible, returns progress of computation [0.,1.]
+ */
+//================================================================================
+
+double GHS3DPlugin_GHS3D::GetProgress() const
+{
+  if ( _isLibUsed )
+  {
+    // this->_progress is advanced by MG_Tetra_API according to messages from MG library
+    // but sharply. Advanced it a bit to get smoother advancement.
+    GHS3DPlugin_GHS3D* me = const_cast<GHS3DPlugin_GHS3D*>( this );
+    if ( _progress < 0.1 ) // the first message is at 10%
+      me->_progress = GetProgressByTic();
+    else if ( _progress < 0.98 )
+      me->_progress += 1e-4;
+    return _progress;
+  }
+
+  return -1;
 }
