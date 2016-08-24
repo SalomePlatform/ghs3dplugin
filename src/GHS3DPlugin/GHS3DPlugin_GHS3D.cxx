@@ -1976,12 +1976,12 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   GHS3DPlugin_Hypothesis::TSetStrings groupsToRemove = GHS3DPlugin_Hypothesis::GetGroupsToRemove(_hyp);
   const bool toMakeGroupsOfDomains = GHS3DPlugin_Hypothesis::GetToMakeGroupsOfDomains( _hyp );
 
-  Ok = readGMFFile(&mgTetra,
-                   aResultFileName.ToCString(),
-                   this,
-                   theHelper, aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
-                   aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
-                   groupsToRemove, toMakeGroupsOfDomains);
+  Ok = Ok && readGMFFile(&mgTetra,
+                         aResultFileName.ToCString(),
+                         this,
+                         theHelper, aNodeByGhs3dId, aFaceByGhs3dId, aNodeToGhs3dIdMap,
+                         aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId,
+                         groupsToRemove, toMakeGroupsOfDomains);
 
   updateMeshGroups(theHelper->GetMesh(), groupsToRemove);
   removeEmptyGroupsOfDomains( theHelper->GetMesh(), /*notEmptyAsWell =*/ !toMakeGroupsOfDomains );

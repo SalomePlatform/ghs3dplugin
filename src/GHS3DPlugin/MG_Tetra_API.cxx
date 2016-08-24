@@ -398,12 +398,12 @@ struct MG_Tetra_API::LibData
 
   int IsVertexRequired( int iNode )
   {
-    return ! ( iNode < int( _xyz.size() - _nodeSize.size() ));
+    return ! ( iNode < int( NbNodes() - _nodeSize.size() ));
   }
 
   double GetSizeAtVertex( int iNode )
   {
-    return IsVertexRequired( iNode ) ? _nodeSize[ iNode - _xyz.size() + _nodeSize.size() ] : 0.;
+    return IsVertexRequired( iNode ) ? _nodeSize[ iNode - NbNodes() + _nodeSize.size() ] : 0.;
   }
 };
 
@@ -739,7 +739,12 @@ bool MG_Tetra_API::Compute( const std::string& cmdLine, std::string& errStr )
     }
 
     // compute
-    return _libData->Compute();
+    bool ok =  _libData->Compute();
+
+    GetLog(); // write a log file
+    _logFile = ""; // not to write it again
+
+    return ok;
 #endif
   }
 
@@ -748,9 +753,6 @@ bool MG_Tetra_API::Compute( const std::string& cmdLine, std::string& errStr )
   if ( err )
     errStr = SMESH_Comment("system(mg-tetra.exe ...) command failed with error: ")
       << strerror( errno );
-
-  GetLog(); // write a log file
-  _logFile = ""; // not to write it again
 
   return !err;
 
