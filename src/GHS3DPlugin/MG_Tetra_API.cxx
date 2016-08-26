@@ -634,10 +634,11 @@ bool MG_Tetra_API::LibData::Compute()
   if (ret != STATUS_OK) MG_Error( "unable to get resulting mesh");
 
   //////////////////////////////////////////////////////////////////////////////////////////
-  // file  =  "/tmp/ghs3d_OUT.mesh";
-  // mesh_write_mesh( _tetra_mesh,file);
-  // std::cout << std::endl << std::endl << "Write " << file << std::endl << std::endl << std::endl;
-
+  // {
+  //   const char* file  =  "/tmp/ghs3d_OUT.mesh";
+  //   mesh_write_mesh( _tetra_mesh,file);
+  //   std::cout << std::endl << std::endl << "Write " << file << std::endl << std::endl << std::endl;
+  // }
   return true;
 }
 
@@ -734,6 +735,8 @@ bool MG_Tetra_API::Compute( const std::string& cmdLine, std::string& errStr )
       value = "";
       while ( i+1 < args.size() && args[i+1][0] != '-' )
       {
+        if ( strncmp( "1>", args[i+1].c_str(), 2 ) == 0 )
+          break;
         if ( !value.empty() ) value += " ";
         value += args[++i];
       }
