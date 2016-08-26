@@ -156,7 +156,8 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   if (!_study->_is_nil())
     MESSAGE("_study->StudyId() = " << _study->StudyId());
   
-  _compute_canceled = false;
+  _computeCanceled = false;
+  _progressAdvance = 1e-4;
 }
 
 //=============================================================================
@@ -1649,6 +1650,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
   std::vector<std::string> aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId;
 
+  MG_Tetra_API mgTetra( _computeCanceled, _progress );
+
+  _isLibUsed = mgTetra.IsLibrary();
+  if ( theMesh.NbQuadrangles() > 0 )
+    _progressAdvance /= 10;
+  if ( _viscousLayersHyp )
+    _progressAdvance /= 10;
+
   // proxyMesh must live till readGMFFile() as a proxy face can be used by
   // MG-Tetra for domain indication
   SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
@@ -1666,8 +1675,10 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
           return false;
       }
       StdMeshers_QuadToTriaAdaptor* q2t = new StdMeshers_QuadToTriaAdaptor;
-      q2t->Compute( theMesh, expBox.Current(), proxyMesh.get() );
+      Ok = q2t->Compute( theMesh, expBox.Current(), proxyMesh.get() );
       components.push_back( SMESH_ProxyMesh::Ptr( q2t ));
+      if ( !Ok )
+        return false;
     }
     proxyMesh.reset( new SMESH_ProxyMesh( components ));
   }
@@ -1678,10 +1689,6 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     if ( !proxyMesh )
       return false;
   }
-
-  MG_Tetra_API mgTetra( _compute_canceled, _progress );
-
-  _isLibUsed = mgTetra.IsLibrary();
 
   int anInvalidEnforcedFlags = 0;
   Ok = writeGMFFile(&mgTetra,
@@ -1745,7 +1752,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::cout << "MG-Tetra execution..." << std::endl;
   std::cout << cmd << std::endl;
 
-  _compute_canceled = false;
+  _computeCanceled = false;
 
   std::string errStr;
   Ok = mgTetra.Compute( cmd.ToCString(), errStr ); // run
@@ -1807,7 +1814,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
 
   if ( !_keepFiles ) {
-    if (! Ok && _compute_canceled )
+    if (! Ok && _computeCanceled )
       removeFile( aLogFileName );
     removeFile( aGMFFileName );
     removeFile( aRequiredVerticesFileName );
@@ -1915,19 +1922,24 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::map<const SMDS_MeshNode*,int> aNodeToGhs3dIdMap;
   std::vector<std::string> aNodeGroupByGhs3dId, anEdgeGroupByGhs3dId, aFaceGroupByGhs3dId;
 
+
+  MG_Tetra_API mgTetra( _computeCanceled, _progress );
+
+  _isLibUsed = mgTetra.IsLibrary();
+  if ( theMesh.NbQuadrangles() > 0 )
+    _progressAdvance /= 10;
+
   // proxyMesh must live till readGMFFile() as a proxy face can be used by
   // MG-Tetra for domain indication
   SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
   if ( theMesh.NbQuadrangles() > 0 )
   {
     StdMeshers_QuadToTriaAdaptor* aQuad2Trias = new StdMeshers_QuadToTriaAdaptor;
-    aQuad2Trias->Compute( theMesh );
+    Ok = aQuad2Trias->Compute( theMesh );
     proxyMesh.reset( aQuad2Trias );
+    if ( !Ok )
+      return false;
   }
-
-  MG_Tetra_API mgTetra( _compute_canceled, _progress );
-
-  _isLibUsed = mgTetra.IsLibrary();
 
   int anInvalidEnforcedFlags = 0;
   Ok = writeGMFFile(&mgTetra,
@@ -1960,7 +1972,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   std::cout << "MG-Tetra execution..." << std::endl;
   std::cout << cmd << std::endl;
 
-  _compute_canceled = false;
+  _computeCanceled = false;
 
   std::string errStr;
   Ok = mgTetra.Compute( cmd.ToCString(), errStr ); // run
@@ -2021,7 +2033,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
   if ( !_keepFiles )
   {
-    if (! Ok && _compute_canceled)
+    if (! Ok && _computeCanceled)
       removeFile( aLogFileName );
     removeFile( aGMFFileName );
     removeFile( aResultFileName );
@@ -2034,7 +2046,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 
 void GHS3DPlugin_GHS3D::CancelCompute()
 {
-  _compute_canceled = true;
+  _computeCanceled = true;
 #ifdef WIN32
 #else
   std::string cmd = "ps xo pid,args | grep " + _genericName;
@@ -2370,7 +2382,7 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const char*                logFile
                                               const std::string&         log,
                                               const _Ghs2smdsConvertor & toSmdsConvertor )
 {
-  if(_compute_canceled)
+  if(_computeCanceled)
     return error(SMESH_Comment("interruption initiated by user"));
 
   // read file
@@ -2929,7 +2941,7 @@ double GHS3DPlugin_GHS3D::GetProgress() const
     if ( _progress < 0.1 ) // the first message is at 10%
       me->_progress = GetProgressByTic();
     else if ( _progress < 0.98 )
-      me->_progress += 1e-4;
+      me->_progress += _progressAdvance;
     return _progress;
   }
 
