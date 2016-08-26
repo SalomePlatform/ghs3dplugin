@@ -61,7 +61,7 @@ public:
                        const TopoDS_Shape& aShape);
 
   virtual void CancelCompute();
-  bool         computeCanceled() { return _compute_canceled;};
+  bool         computeCanceled() { return _computeCanceled; }
 
   virtual bool Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
@@ -99,8 +99,8 @@ private:
   SALOMEDS::Study_var _study;
   SMESH_Gen_i*        _smeshGen_i;
 
-  volatile bool       _compute_canceled;
   bool                _isLibUsed;
+  double              _progressAdvance;
 };
 
 /*!
