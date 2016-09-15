@@ -872,11 +872,8 @@ long  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
   statex.dwLength = sizeof (statex);
   long err = GlobalMemoryStatusEx (&statex);
   if (err != 0) {
-    long totMB = 
-      statex.ullTotalPhys / 1024 / 1024 +
-      statex.ullTotalPageFile / 1024 / 1024 +
-      statex.ullTotalVirtual / 1024 / 1024;
-    return ( 0.7 * totMB );
+    double totMB = (double)statex.ullAvailPhys / 1024. / 1024.;
+    return (long)( 0.7 * totMB );
   }
 #endif
   return 1024;
