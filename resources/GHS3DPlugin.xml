@@ -25,16 +25,16 @@
 
 <meshers>
 
-<meshers-group name="GHS3D"
-               resources="GHS3DPlugin"
+<meshers-group name      ="GHS3D"
+               resources ="GHS3DPlugin"
                idl-module="GHS3DPlugin"
                server-lib="GHS3DEngine"
-               gui-lib="GHS3DPluginGUI">
+               gui-lib   ="GHS3DPluginGUI">
   <hypotheses>
-    <hypothesis type="MG-Tetra Parameters"
+    <hypothesis type    ="MG-Tetra Parameters"
 		label-id="MG-Tetra Parameters"
-		icon-id="mesh_hypo_ghs3d.png"
-		dim="3">
+		icon-id ="mesh_hypo_ghs3d.png"
+		dim     ="3">
       <python-wrap>
         <accumulative-methods>
           SetEnforcedVertex,
@@ -54,14 +54,16 @@
   </hypotheses>
 
   <algorithms>
-    <algorithm type="MG-Tetra"
-               label-id="MG-Tetra"
-               icon-id="mesh_tree_hypo_ghs3d.png"
-               input="TRIA,QUAD"
-               output="TETRA,PYRAMID"
+    <algorithm type     ="MG-Tetra"
+               label-id ="MG-Tetra"
+               icon-id  ="mesh_tree_hypo_ghs3d.png"
+               group-id ="1"
+               priority ="30"
+               input    ="TRIA,QUAD"
+               output   ="TETRA,PYRAMID"
 	       need-geom="false"
                opt-hypos="MG-Tetra Parameters,ViscousLayers"
-               dim="3">
+               dim      ="3">
       <python-wrap>
         <algo>MG-Tetra=Tetrahedron(algo=smeshBuilder.MG_Tetra)</algo>
         <hypo>MG-Tetra Parameters=Parameters()</hypo>

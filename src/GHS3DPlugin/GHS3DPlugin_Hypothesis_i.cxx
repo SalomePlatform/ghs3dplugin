@@ -58,8 +58,8 @@ GHS3DPlugin_Hypothesis_i::GHS3DPlugin_Hypothesis_i (PortableServer::POA_ptr theP
 {
   MESSAGE( "GHS3DPlugin_Hypothesis_i::GHS3DPlugin_Hypothesis_i" );
   myBaseImpl = new ::GHS3DPlugin_Hypothesis (theGenImpl->GetANewId(),
-                                              theStudyId,
-                                              theGenImpl);
+                                             theStudyId,
+                                             theGenImpl);
 }
 
 //=======================================================================
