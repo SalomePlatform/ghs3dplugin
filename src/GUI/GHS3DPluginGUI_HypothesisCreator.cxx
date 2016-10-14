@@ -746,7 +746,7 @@ void GHS3DPluginGUI_HypothesisCreator::onSelectEnforcedVertex() {
       return;
     if (myEnfVertex->GetShapeType() == GEOM::VERTEX) {
       GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
-      GEOM::GEOM_IMeasureOperations_var measureOp = getGeomEngine()->GetIMeasureOperations( that->getGeomSelectionTool()->getMyStudy()->StudyId() );
+      GEOM::GEOM_IMeasureOperations_var measureOp = getGeomEngine()->GetIMeasureOperations( );
       if (CORBA::is_nil(measureOp))
         return;
       
@@ -1254,7 +1254,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
     if ( CORBA::is_nil(getGeomEngine()))
       return;
 
-    GEOM::GEOM_IMeasureOperations_var measureOp = getGeomEngine()->GetIMeasureOperations( that->getGeomSelectionTool()->getMyStudy()->StudyId() );
+    GEOM::GEOM_IMeasureOperations_var measureOp = getGeomEngine()->GetIMeasureOperations( );
     if (CORBA::is_nil(measureOp))
       return;
 

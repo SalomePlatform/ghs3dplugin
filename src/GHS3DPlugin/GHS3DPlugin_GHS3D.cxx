@@ -132,8 +132,8 @@ static void removeFile( const TCollection_AsciiString& fileName )
  */
 //=============================================================================
 
-GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
-  : SMESH_3D_Algo(hypId, studyId, gen), _isLibUsed( false )
+GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, SMESH_Gen* gen)
+  : SMESH_3D_Algo(hypId, gen), _isLibUsed( false )
 {
   MESSAGE("GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D");
   _name = Name();
@@ -143,18 +143,14 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   _nbShape=0;
   _compatibleHypothesis.push_back( GHS3DPlugin_Hypothesis::GetHypType());
   _compatibleHypothesis.push_back( StdMeshers_ViscousLayers::GetHypType() );
-  _requireShape = false; // can work without shape_studyId
+  _requireShape = false; // can work without shape
 
   _smeshGen_i = SMESH_Gen_i::GetSMESHGen();
-  CORBA::Object_var anObject = _smeshGen_i->GetNS()->Resolve("/myStudyManager");
-  SALOMEDS::StudyManager_var aStudyMgr = SALOMEDS::StudyManager::_narrow(anObject);
+  CORBA::Object_var anObject = _smeshGen_i->GetNS()->Resolve("/Study");
+  _study = SALOMEDS::Study::_narrow(anObject);
 
-  MESSAGE("studyid = " << _studyId);
-
-  _study = NULL;
-  _study = aStudyMgr->GetStudyByID(_studyId);
   if (!_study->_is_nil())
-    MESSAGE("_study->StudyId() = " << _study->StudyId());
+    MESSAGE("Study not empty");
   
   _computeCanceled = false;
   _progressAdvance = 1e-4;
