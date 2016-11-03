@@ -12,6 +12,10 @@
         <translation>MG-Tetra</translation>
     </message>
     <message>
+        <source>GHS3D_OPTIMIZATIOL_HYPOTHESIS</source>
+        <translation>MG-Tetra Optimization</translation>
+    </message>
+    <message>
         <source>GHS3D_OPTIMIZATIOL_LEVEL</source>
         <translation>Optimization level</translation>
     </message>
@@ -230,6 +234,50 @@
     <message>
         <source>GHS3D_ENF_MESH_INFO</source>
         <translation>&lt;b&gt;Warning&lt;/b&gt;: Enforced meshes are currently only taken into account for meshes w/o associated geometry.</translation>
+    </message>
+    <message>
+        <source>MODE_SAFE</source>
+        <translation>Safe</translation>
+    </message>
+    <message>
+        <source>MODE_AGGRESSIVE</source>
+        <translation>Aggressive</translation>
+    </message>
+    <message>
+        <source>MODE_NONE</source>
+        <translation>None</translation>
+    </message>
+    <message>
+        <source>MODE_NO</source>
+        <translation>No</translation>
+    </message>
+    <message>
+        <source>MODE_YES</source>
+        <translation>Yes</translation>
+    </message>
+    <message>
+        <source>MODE_ONLY</source>
+        <translation>Only</translation>
+    </message>
+    <message>
+        <source>GHS3D_OPTIMIZATION</source>
+        <translation>Optimization</translation>
+    </message>
+    <message>
+        <source>GHS3D_SPLIT_OVERCONSTRAINED</source>
+        <translation>Split overconstrained elements</translation>
+    </message>
+    <message>
+        <source>GHS3D_PTHREADS_MODE</source>
+        <translation>PThreads mode</translation>
+    </message>
+    <message>
+        <source>GHS3D_NB_THREADS</source>
+        <translation>Max number of threads</translation>
+    </message>
+    <message>
+        <source>GHS3D_SMOOTH_OFF_SLIVERS</source>
+        <translation>Smooth off sliver elements</translation>
     </message>
 </context>
 </TS>

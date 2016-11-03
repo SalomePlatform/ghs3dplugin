@@ -36,7 +36,8 @@ extern "C"
   {
     SMESHGUI_GenericHypothesisCreator* aCreator = NULL;
     if ( aHypType == "GHS3D_Parameters" ||
-         aHypType == "MG-Tetra Parameters" )
+         aHypType == "MG-Tetra Parameters" ||
+         aHypType == "MG-Tetra Optimization Parameters" )
       aCreator =  new GHS3DPluginGUI_HypothesisCreator( aHypType );
     return aCreator;
   }

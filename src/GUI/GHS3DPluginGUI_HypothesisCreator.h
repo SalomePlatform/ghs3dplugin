@@ -57,11 +57,12 @@ class QTableWidget;
 class QTableWidgetItem;
 class QHeaderView;
 
-class SMESHGUI_SpinBox;
-class StdMeshersGUI_ObjectReferenceParamWdg;
-class LightApp_SelectionMgr;
-class SUIT_SelectionFilter;
 class GHS3DPluginGUI_AdvWidget;
+class LightApp_SelectionMgr;
+class SMESHGUI_SpinBox;
+class SUIT_SelectionFilter;
+class SalomeApp_IntSpinBox;
+class StdMeshersGUI_ObjectReferenceParamWdg;
 
 class QTEnfVertex
 {
@@ -151,6 +152,10 @@ typedef struct
   short   myVerboseLevel;
   TEnfVertexList myEnforcedVertices;
   TEnfMeshList myEnforcedMeshes;
+
+  int myOptimization, mySplitOverConstrained, myPThreadsMode, myNumberOfThreads;
+  bool mySmoothOffSlivers;
+
 } GHS3DHypothesisData;
 
 /*!
@@ -209,46 +214,48 @@ private:
   bool                storeParamsToHypo( const GHS3DHypothesisData& ) const;
   GeomSelectionTools* getGeomSelectionTool();
   GEOM::GEOM_Gen_var  getGeomEngine();
+  bool                isOptimization() const;
 
 private:
-  QWidget*            myStdGroup;
-  QLineEdit*          myName;
-  QCheckBox*          myToMeshHolesCheck;
-  QCheckBox*          myToMakeGroupsOfDomains;
-  QComboBox*          myOptimizationLevelCombo;
+  QWidget*              myStdGroup;
+  QLineEdit*            myName;
+  QCheckBox*            myToMeshHolesCheck;
+  QCheckBox*            myToMakeGroupsOfDomains;
+  QComboBox*            myOptimizationLevelCombo;
+
+  QComboBox*            myOptimizationCombo;
+  QComboBox*            mySplitOverConstrainedCombo;
+  QComboBox*            myPThreadsModeCombo;
+  SalomeApp_IntSpinBox* myNumberOfThreadsSpin;
+  QCheckBox*            mySmoothOffSliversCheck;
+  QCheckBox*            myCreateNewNodesCheck;
 
   QWidget*                  myAdvGroup;
   GHS3DPluginGUI_AdvWidget* myAdvWidget;
   
-  QWidget*            myEnfGroup;
-  QPixmap             iconVertex, iconCompound;
+  QWidget*              myEnfGroup;
+  QPixmap               iconVertex, iconCompound;
   StdMeshersGUI_ObjectReferenceParamWdg *myEnfVertexWdg;
   GEOM::GEOM_Object_var myEnfVertex;
-  QTableWidget*       myEnforcedTableWidget;
-  SMESHGUI_SpinBox*   myXCoord;
-  SMESHGUI_SpinBox*   myYCoord;
-  SMESHGUI_SpinBox*   myZCoord;
-  SMESHGUI_SpinBox*   mySizeValue;
-  QLineEdit*          myGroupName;
-//   QGroupBox*          makeGroupsCheck;
-//   QCheckBox*          myGlobalGroupName;  
-  QPushButton*        addVertexButton;
-  QPushButton*        removeVertexButton;
+  QTableWidget*         myEnforcedTableWidget;
+  SMESHGUI_SpinBox*     myXCoord;
+  SMESHGUI_SpinBox*     myYCoord;
+  SMESHGUI_SpinBox*     myZCoord;
+  SMESHGUI_SpinBox*     mySizeValue;
+  QLineEdit*            myGroupName;
+  QPushButton*          addVertexButton;
+  QPushButton*          removeVertexButton;
   
-  QWidget*            myEnfMeshGroup;
+  QWidget*              myEnfMeshGroup;
   StdMeshersGUI_ObjectReferenceParamWdg *myEnfMeshWdg;
-//   SMESH::SMESH_IDSource_var myEnfMesh;
-  QComboBox*          myEnfMeshConstraint;
-  QStringList         myEnfMeshConstraintLabels;
-//   SMESH::mesh_array_var myEnfMeshArray;
-  QTableWidget*       myEnforcedMeshTableWidget;
-  QLineEdit*          myMeshGroupName;
-  QPushButton*        addEnfMeshButton;
-  QPushButton*        removeEnfMeshButton;
+  QComboBox*            myEnfMeshConstraint;
+  QStringList           myEnfMeshConstraintLabels;
+  QTableWidget*         myEnforcedMeshTableWidget;
+  QLineEdit*            myMeshGroupName;
+  QPushButton*          addEnfMeshButton;
+  QPushButton*          removeEnfMeshButton;
   
   GeomSelectionTools*     GeomToolSelected;
-//   SVTK_Selector*          mySelector;
-//   LightApp_SelectionMgr*  mySelectionMgr; /* User shape selection */
 };
 
 class EnforcedVertexTableWidgetDelegate : public QItemDelegate

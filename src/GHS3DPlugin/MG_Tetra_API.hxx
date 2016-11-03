@@ -51,6 +51,7 @@ public:
   void GmfSetLin(int iMesh, GmfKwdCod what, int node1, int node2, int domain ); // edge
   void GmfSetLin(int iMesh, GmfKwdCod what, int id ); // required
   void GmfSetLin(int iMesh, GmfKwdCod what, int node1, int node2, int node3, int domain ); // tria
+  void GmfSetLin(int iMesh, GmfKwdCod what, int node1, int node2, int node3, int node4, int domain ); // tetra
 
   bool Compute( const std::string& cmdLine, std::string& errStr );
 

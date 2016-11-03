@@ -1,0 +1,122 @@
+/*!
+
+\page optimization_page MG-Tetra Optimization Parameters hypothesis
+
+\anchor optimization_top
+MG-Tetra Optimization Parameters hypothesis works only
+with <b>MG-Tetra Optimization</b> 
+algorithm. This algorithm is a commercial software.
+
+To get a license, visit http://www.meshgems.com/meshgems-products.html
+
+\tableofcontents
+
+\section mgtetra_optim_gen_params General parameters
+
+\image html mgtetra_optim_gen_params.png
+
+- <b>Name</b> - allows to define the name of the hypothesis (MG-Tetra
+Parameters by default).
+
+- <b>Optimization</b> - sets the optimisation type. If <b>Optimization</b> is:
+  - No : no optimisation is applied
+  - Yes (default): optimisation is performed upon mesh generation using
+          the <b>Optimisation level</b> parameter 
+  - Only : only optimisation is performed to an existing mesh.
+
+- <b>Optimization level</b> - allows choosing the required
+optimization level (higher level of optimization provides better mesh,
+but can be time-consuming):
+  - none
+  - light
+  - medium (standard)
+  - standard+
+  - strong
+
+- <b>Split overconstrained elements</b> - sets treatment of element
+having all their vertices on the input surface. 
+If <b>Split overconstrained elements</b> is:
+  - No (default): no correction is applied
+  - Yes : correction is applied upon mesh generation
+  - Only : only correction is applied to an existing mesh.
+
+- <b>PThreads mode</b> - sets optimization mode when using multithread
+capabilities. Valid values are:
+  - Safe : slower but quality can only get better
+  - Aggressive : faster but quality may be altered
+  - None (default): not activated.
+
+- <b>Max number of threads</b> - sets the maximum number of threads to
+be used in parallel.
+
+- <b>Smooth off sliver elements</b> - activates elimination of sliver
+elements as much as possible.
+
+- <b>Create new nodes</b> - allows insertion of new nodes.
+
+\ref optimization_top "Back to top"
+
+
+\section ghs3d_advanced_parameters Advanced parameters
+
+\image html mgtetra_optim_adv_params.png
+
+\subsection memory_settings Memory settings
+
+- <b>Initial memory size</b> - starts MG-Tetra software with
+the specified amount of work space, in Mbytes. If this option is checked off, the
+software will be started with 100 Megabytes of working space.
+
+- <b>Maximum memory size</b> - launches MG-Tetra software with
+work space limited to the specified amount of RAM, in Mbytes. If this option is
+checked off, the software will be launched with 7O% of the total RAM space.
+
+\subsection log Logs and debug
+
+- <b>Working directory</b> - allows defining the folder for input and output
+files of MG-Tetra software, which are the files starting with "GHS3D_" prefix.
+
+- <b>Verbose level</b> - to choose verbosity level in the range from
+0 to 10.
+
+  - 0, no standard output,
+
+  - 2, prints the data, quality statistics of the skin and final
+  meshes and indicates when the final mesh is being saved. In addition
+  the software gives indication regarding the CPU time.
+
+  - 10, same as 2 plus the main steps in the computation, quality
+  statistics histogram of the skin mesh, quality statistics histogram
+  together with the characteristics of the final mesh.
+  
+- <b>Print log in a file</b> - if this option is checked on the log is
+printed in a file placed in the working directory, otherwise it is
+printed on the standard output.
+
+- <b>Remove log on success</b> - if this option is checked on the log
+file is kept only if an error occurs during the computation. This
+option is only available if <b>Print log in a file</b> is enabled
+(there must be a log file to delete it) and <b>Keep all working
+  files</b> is disabled (in this case the log file is always kept).
+
+- <b>Keep all working files</b> - allows checking input and output
+files of MG-Tetra software, while usually these files are removed
+after the launch of the mesher. The log file (if any) is also kept if
+this option is checked.
+
+\subsection advanced_meshing_options Advanced meshing options
+
+- A table allows to input in the command line any text for MG-Tetra,
+for example, advanced options.<br> 
+
+- <b>Add option</b> - adds a line to the table where you can type an
+option and its value as text. A check box in the first column
+activates/deactivates the option of the current row. A deactivated
+option will be erased upon pressing \a Ok.
+
+<br><b>See Also</b> a sample TUI Script of the 
+\ref tui_ghs3d "creation of a MG-Tetra Optimization hypothesis".
+
+\ref optimization_top "Back to top"
+
+*/

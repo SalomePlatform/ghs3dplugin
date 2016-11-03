@@ -50,6 +50,7 @@ class TopoDS_Shape;
 class GHS3DPlugin_GHS3D: public SMESH_3D_Algo
 {
 public:
+
   GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen);
   virtual ~GHS3DPlugin_GHS3D();
 
@@ -75,20 +76,23 @@ public:
 
   bool         importGMFMesh(const char* aGMFFileName, SMESH_Mesh& aMesh);
 
+  virtual double GetProgress() const;
+
+
   static const char* Name() { return "MG-Tetra"; }
 
-  virtual double GetProgress() const;
+  static SMESH_ComputeErrorPtr getErrorDescription(const char*                logFile,
+                                                   const std::string&         log,
+                                                   const _Ghs2smdsConvertor & toSmdsConvertor,
+                                                   const bool                 isOK = false);
 
 protected:
   const GHS3DPlugin_Hypothesis*   _hyp;
   const StdMeshers_ViscousLayers* _viscousLayersHyp;
   std::string                     _genericName;
-   
+
 private:
 
-  bool         storeErrorDescription(const char*                logFile,
-                                     const std::string&         log,
-                                     const _Ghs2smdsConvertor & toSmdsConvertor );
   TopoDS_Shape entryToShape(std::string entry);
 
   int                 _iShape;

@@ -54,7 +54,7 @@ module GHS3DPlugin
   typedef sequence<GHS3DEnforcedMesh> GHS3DEnforcedMeshList;
 
   /*!
-   * GHS3DPlugin_GHS3D: interface of "Tetrahedron (GHS3D)" algorithm
+   * GHS3DPlugin_GHS3D: interface of "MG-Tetra" algorithm
    */
   interface GHS3DPlugin_GHS3D : SMESH::SMESH_3D_Algo
   {
@@ -62,7 +62,7 @@ module GHS3DPlugin
   };
 
   /*!
-   * Parameters of "Tetrahedron (GHS3D)" algorithm
+   * Parameters of "MG-Tetra" algorithm
    */
   interface GHS3DPlugin_Hypothesis : SMESH::SMESH_Hypothesis
   {
@@ -202,6 +202,49 @@ module GHS3DPlugin
     */
     boolean p_SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in string name, in string groupName) raises (SALOME::SALOME_Exception);
   };
+
+  /*!
+   * GHS3DPlugin_Optimizer: interface of "MG-Tetra Optimization" algorithm
+   */
+  interface GHS3DPlugin_Optimizer : SMESH::SMESH_3D_Algo
+  {
+  };
+
+  enum PThreadsMode { SAFE, AGGRESSIVE, NONE };
+  enum Mode { NO, YES, ONLY };
+
+  /*!
+   * Parameters of "MG-Tetra Optimization" algorithm
+   *
+   * params inherited from GHS3DPlugin_Hypothesis:
+   * - create new nodes
+   * - optimization level
+   * - init and max memory
+   * - work dir
+   * - verbosity
+   * - log to file
+   * - keep work files
+   * - remove log file
+   * - advanced options
+   */
+  interface GHS3DPlugin_OptimizerHypothesis: GHS3DPlugin_Hypothesis
+  {
+    void SetOptimization( in Mode optMode );
+    Mode GetOptimization();
+
+    void SetSplitOverConstrained( in Mode ovcMode );
+    Mode GetSplitOverConstrained();
+
+    void SetSmoothOffSlivers( in boolean toSmooth );
+    boolean GetSmoothOffSlivers();
+
+    void SetPThreadsMode( in PThreadsMode mode );
+    PThreadsMode GetPThreadsMode();
+
+    void SetMaximalNumberOfThreads( in short nb );
+    short GetMaximalNumberOfThreads();
+  };
+
 };
 
 #endif

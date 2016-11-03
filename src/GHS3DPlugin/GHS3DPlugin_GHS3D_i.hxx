@@ -53,4 +53,18 @@ public:
   virtual SMESH::SMESH_Mesh_ptr importGMFMesh(const char* theGMFFileName);
 };
 
+// ======================================================
+// MG-Tetra Optimization 3d algorithm
+// ======================================================
+class GHS3DPlugin_Optimizer_i:
+  public virtual POA_GHS3DPlugin::GHS3DPlugin_Optimizer,
+  public virtual SMESH_3D_Algo_i
+{
+public:
+  // Constructor
+  GHS3DPlugin_Optimizer_i (PortableServer::POA_ptr thePOA,
+                           int                     theStudyId,
+                           ::SMESH_Gen*            theGenImpl );
+};
+
 #endif

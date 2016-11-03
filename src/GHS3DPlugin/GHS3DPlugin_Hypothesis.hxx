@@ -323,8 +323,6 @@ public:
   // Persistence
   virtual std::ostream & SaveTo(std::ostream & save);
   virtual std::istream & LoadFrom(std::istream & load);
-  friend GHS3DPLUGIN_EXPORT std::ostream & operator <<(std::ostream & save, GHS3DPlugin_Hypothesis & hyp);
-  friend GHS3DPLUGIN_EXPORT std::istream & operator >>(std::istream & load, GHS3DPlugin_Hypothesis & hyp);
 
   /*!
    * \brief Does nothing
@@ -336,7 +334,7 @@ public:
    */
   virtual bool SetParametersByDefaults(const TDefaults& dflts, const SMESH_Mesh* theMesh=0);
 
-private:
+protected:
 
   bool        myToMeshHoles;
   bool        myToMakeGroupsOfDomains;

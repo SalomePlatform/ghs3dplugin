@@ -25,6 +25,7 @@
 #include "GHS3DPluginGUI_HypothesisCreator.h"
 #include "GHS3DPluginGUI_Enums.h"
 #include "GHS3DPluginGUI_Dlg.h"
+#include "GHS3DPlugin_OptimizerHypothesis.hxx"
 
 #include <GeometryGUI.h>
 
@@ -36,50 +37,67 @@
 #include <StdMeshersGUI_ObjectReferenceParamWdg.h>
 
 #include <LightApp_SelectionMgr.h>
-#include <SUIT_Session.h>
+#include <SUIT_FileDlg.h>
 #include <SUIT_MessageBox.h>
 #include <SUIT_ResourceMgr.h>
-#include <SUIT_FileDlg.h>
+#include <SUIT_Session.h>
+#include <SalomeApp_IntSpinBox.h>
 #include <SalomeApp_Tools.h>
 #include <SalomeApp_TypeFilter.h>
 
-#include <TopoDS_Iterator.hxx>
-
-#include <QComboBox>
-#include <QPalette>
-#include <QLabel>
-#include <QFrame>
-#include <QVBoxLayout>
-#include <QGridLayout>
-#include <QLineEdit>
 #include <QCheckBox>
-#include <QTabWidget>
-#include <QSpinBox>
-#include <QPushButton>
+#include <QComboBox>
 #include <QFileInfo>
+#include <QFrame>
+#include <QGridLayout>
 #include <QGroupBox>
-
+#include <QHeaderView>
+#include <QLabel>
+#include <QLineEdit>
+#include <QPalette>
+#include <QPushButton>
+#include <QSpinBox>
+#include <QTabWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
-#include <QHeaderView>
+#include <QVBoxLayout>
 
 #include <stdexcept>
 #include <utilities.h>
 
-#include <boost/algorithm/string.hpp>
+namespace
+{
+  QComboBox* getModeCombo( QWidget* parent, bool isPThreadCombo )
+  {
+    QComboBox* combo = new QComboBox( parent );
+    if ( isPThreadCombo )
+    {
+      combo->insertItem((int) GHS3DPlugin_OptimizerHypothesis::SAFE, QObject::tr("MODE_SAFE"));
+      combo->insertItem((int) GHS3DPlugin_OptimizerHypothesis::AGGRESSIVE, QObject::tr("MODE_AGGRESSIVE"));
+      combo->insertItem((int) GHS3DPlugin_OptimizerHypothesis::NONE, QObject::tr("MODE_NONE"));
+    }
+    else
+    {
+      combo->insertItem((int) GHS3DPlugin_OptimizerHypothesis::NO, QObject::tr("MODE_NO"));
+      combo->insertItem((int) GHS3DPlugin_OptimizerHypothesis::YES, QObject::tr("MODE_YES"));
+      combo->insertItem((int) GHS3DPlugin_OptimizerHypothesis::ONLY, QObject::tr("MODE_ONLY"));
+    }
+    return combo;
+  }
+}
 
 //
 // BEGIN EnforcedVertexTableWidgetDelegate
 //
 
 EnforcedVertexTableWidgetDelegate::EnforcedVertexTableWidgetDelegate(QObject *parent)
-    : QItemDelegate(parent)
+  : QItemDelegate(parent)
 {
 }
 
 QWidget *EnforcedVertexTableWidgetDelegate::createEditor(QWidget *parent,
-                                                  const QStyleOptionViewItem & option ,
-                                                  const QModelIndex & index ) const
+                                                         const QStyleOptionViewItem & option ,
+                                                         const QModelIndex & index ) const
 {
   QModelIndex father = index.parent();
   QString entry = father.child(index.row(), ENF_VER_ENTRY_COLUMN).data().toString();
@@ -97,14 +115,9 @@ QWidget *EnforcedVertexTableWidgetDelegate::createEditor(QWidget *parent,
     editor->setDisabled(!entry.isEmpty());
     return editor;
   }
-//   else if (index.column() == ENF_VER_COMPOUND_COLUMN) {
-//     QCheckBox *editor = new QCheckBox(parent);
-//     editor->setDisabled(!entry.isEmpty());
-//     return editor;
-//   }
   else if (index.column() == ENF_VER_GROUP_COLUMN ||
            index.column() == ENF_VER_NAME_COLUMN) {
-//   else {
+    //   else {
     QLineEdit *editor = new QLineEdit(parent);
     if (index.column() != ENF_VER_GROUP_COLUMN) {
       editor->setReadOnly(!entry.isEmpty());
@@ -116,7 +129,7 @@ QWidget *EnforcedVertexTableWidgetDelegate::createEditor(QWidget *parent,
 }
 
 void EnforcedVertexTableWidgetDelegate::setEditorData(QWidget *editor,
-                                               const QModelIndex &index) const
+                                                      const QModelIndex &index) const
 {
   if (index.column() == ENF_VER_X_COLUMN ||
       index.column() == ENF_VER_Y_COLUMN ||
@@ -136,7 +149,7 @@ void EnforcedVertexTableWidgetDelegate::setEditorData(QWidget *editor,
 }
 
 void EnforcedVertexTableWidgetDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
-                                              const QModelIndex &index) const
+                                                     const QModelIndex &index) const
 {
   QModelIndex parent = index.parent();
   
@@ -179,14 +192,15 @@ void EnforcedVertexTableWidgetDelegate::setModelData(QWidget *editor, QAbstractI
 }
 
 void EnforcedVertexTableWidgetDelegate::updateEditorGeometry(QWidget *editor,
-    const QStyleOptionViewItem &option, const QModelIndex &/* index */) const
+                                                             const QStyleOptionViewItem &option,
+                                                             const QModelIndex &/* index */) const
 {
-    editor->setGeometry(option.rect);
+  editor->setGeometry(option.rect);
 }
 
 bool EnforcedVertexTableWidgetDelegate::vertexExists(QAbstractItemModel *model,
-                                              const QModelIndex &index, 
-                                              QString value) const
+                                                     const QModelIndex &index, 
+                                                     QString value) const
 {
   bool exists = false;
   QModelIndex parent = index.parent();
@@ -243,46 +257,36 @@ bool EnforcedVertexTableWidgetDelegate::vertexExists(QAbstractItemModel *model,
 //
 
 EnforcedMeshTableWidgetDelegate::EnforcedMeshTableWidgetDelegate(QObject *parent)
-    : QItemDelegate(parent)
+  : QItemDelegate(parent)
 {
 }
 
 QWidget *EnforcedMeshTableWidgetDelegate::createEditor(QWidget *parent,
-                                                  const QStyleOptionViewItem & option ,
-                                                  const QModelIndex & index ) const
+                                                       const QStyleOptionViewItem & option ,
+                                                       const QModelIndex & index ) const
 {
   return QItemDelegate::createEditor(parent, option, index);
 }
 
 void EnforcedMeshTableWidgetDelegate::setEditorData(QWidget *editor,
-                                               const QModelIndex &index) const
+                                                    const QModelIndex &index) const
 {
-        QItemDelegate::setEditorData(editor, index);
+  QItemDelegate::setEditorData(editor, index);
 }
 
 void EnforcedMeshTableWidgetDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
-                                              const QModelIndex &index) const
+                                                   const QModelIndex &index) const
 {  
   QItemDelegate::setModelData(editor, model, index);
 
 }
 
 void EnforcedMeshTableWidgetDelegate::updateEditorGeometry(QWidget *editor,
-    const QStyleOptionViewItem &option, const QModelIndex &/* index */) const
+                                                           const QStyleOptionViewItem &option,
+                                                           const QModelIndex &/* index */) const
 {
-    editor->setGeometry(option.rect);
+  editor->setGeometry(option.rect);
 }
-
-// bool EnforcedMeshTableWidgetDelegate::enfMeshExists(QAbstractItemModel *model,
-//                                               const QModelIndex &index, 
-//                                               QString value) const
-// {
-//   bool exists = false;
-//   QModelIndex parent = index.parent();
-//   int row = index.row();
-//   int col = index.column();
-//   return exists;
-// }
 
 //
 // END EnforcedMeshTableWidgetDelegate
@@ -290,14 +294,14 @@ void EnforcedMeshTableWidgetDelegate::updateEditorGeometry(QWidget *editor,
 
 
 GHS3DPluginGUI_HypothesisCreator::GHS3DPluginGUI_HypothesisCreator( const QString& theHypType )
-: SMESHGUI_GenericHypothesisCreator( theHypType )
+  : SMESHGUI_GenericHypothesisCreator( theHypType )
 {
   GeomToolSelected = NULL;
   GeomToolSelected = getGeomSelectionTool();
 
   iconVertex  = QPixmap(SUIT_Session::session()->resourceMgr()->loadPixmap("GEOM", tr("ICON_OBJBROWSER_VERTEX")));
   iconCompound  = QPixmap(SUIT_Session::session()->resourceMgr()->loadPixmap("GEOM", tr("ICON_OBJBROWSER_COMPOUND")));
-//   mySelectionMgr = SMESH::GetSelectionMgr(SMESHGUI::GetSMESHGUI());
+  //   mySelectionMgr = SMESH::GetSelectionMgr(SMESHGUI::GetSMESHGUI());
   myEnfMeshConstraintLabels << tr( "GHS3D_ENF_MESH_CONSTRAINT_NODE" ) << tr( "GHS3D_ENF_MESH_CONSTRAINT_EDGE" ) << tr("GHS3D_ENF_MESH_CONSTRAINT_FACE");
 }
 
@@ -326,6 +330,11 @@ GEOM::GEOM_Gen_var GHS3DPluginGUI_HypothesisCreator::getGeomEngine()
   return GeometryGUI::GetGeomGen();
 }
 
+bool GHS3DPluginGUI_HypothesisCreator::isOptimization() const
+{
+  return ( hypType() == GHS3DPlugin_OptimizerHypothesis::GetHypType() );
+}
+
 QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
 {
   QFrame* fr = new QFrame( 0 );
@@ -347,7 +356,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
 
   int row = 0;
   myName = 0;
-  if( isCreation() )
+  if ( isCreation() )
   {
     aStdLayout->addWidget( new QLabel( tr( "SMESH_NAME" ), myStdGroup ), row, 0, 1, 1 );
     myName = new QLineEdit( myStdGroup );
@@ -359,15 +368,60 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myToMakeGroupsOfDomains = new QCheckBox( tr( "GHS3D_TO_MAKE_DOMAIN_GROUPS" ), myStdGroup );
   aStdLayout->addWidget( myToMakeGroupsOfDomains, row++, 1, 1, 1 );
 
-  aStdLayout->addWidget( new QLabel( tr( "GHS3D_OPTIMIZATIOL_LEVEL" ), myStdGroup ), row, 0, 1, 1 );
+  QLabel* optimizationLbl = new QLabel( tr( "GHS3D_OPTIMIZATION" ), myStdGroup );
+  aStdLayout->addWidget( optimizationLbl, row, 0, 1, 1 );
+  myOptimizationCombo = getModeCombo( myStdGroup, false );
+  aStdLayout->addWidget( myOptimizationCombo, row++, 1, 1, 1 );
+
+  QLabel* optimizatiolLevelLbl = new QLabel( tr( "GHS3D_OPTIMIZATIOL_LEVEL" ), myStdGroup );
+  aStdLayout->addWidget( optimizatiolLevelLbl, row, 0, 1, 1 );
   myOptimizationLevelCombo = new QComboBox( myStdGroup );
   aStdLayout->addWidget( myOptimizationLevelCombo, row++, 1, 1, 1 );
 
-  QStringList types;
-  types << tr( "LEVEL_NONE" ) << tr( "LEVEL_LIGHT" ) << tr( "LEVEL_MEDIUM" ) << tr( "LEVEL_STANDARDPLUS" ) << tr( "LEVEL_STRONG" );
-  myOptimizationLevelCombo->addItems( types );
+  QLabel* splitOverconstrainedLbl = new QLabel( tr("GHS3D_SPLIT_OVERCONSTRAINED"), myStdGroup );
+  aStdLayout->addWidget( splitOverconstrainedLbl, row, 0, 1, 1 );
+  mySplitOverConstrainedCombo = getModeCombo( myStdGroup, false );
+  aStdLayout->addWidget( mySplitOverConstrainedCombo, row++, 1, 1, 1 );
 
+  QLabel* pthreadsModeLbl = new QLabel( tr( "GHS3D_PTHREADS_MODE" ), myStdGroup);
+  aStdLayout->addWidget( pthreadsModeLbl, row, 0, 1, 1 );
+  myPThreadsModeCombo = getModeCombo( myStdGroup, true );
+  aStdLayout->addWidget( myPThreadsModeCombo, row++, 1, 1, 1 );
+
+  QLabel* nbThreadsLbl = new QLabel( tr( "GHS3D_NB_THREADS" ), myStdGroup);
+  aStdLayout->addWidget( nbThreadsLbl, row, 0, 1, 1 );
+  myNumberOfThreadsSpin = new SalomeApp_IntSpinBox( 0, 1000, 1, myStdGroup );
+  aStdLayout->addWidget( myNumberOfThreadsSpin, row++, 1, 1, 1 );
+
+  mySmoothOffSliversCheck = new QCheckBox( tr( "GHS3D_SMOOTH_OFF_SLIVERS" ), myStdGroup );
+  aStdLayout->addWidget( mySmoothOffSliversCheck, row, 0, 1, 1 );
+  myCreateNewNodesCheck = new QCheckBox( tr( "TO_ADD_NODES" ), myStdGroup );
+  aStdLayout->addWidget( myCreateNewNodesCheck, row++, 1, 1, 1 );
+
+  myOptimizationLevelCombo->addItems( QStringList()
+                                      << tr( "LEVEL_NONE" )   << tr( "LEVEL_LIGHT" )
+                                      << tr( "LEVEL_MEDIUM" ) << tr( "LEVEL_STANDARDPLUS" )
+                                      << tr( "LEVEL_STRONG" ));
   aStdLayout->setRowStretch( row, 10 );
+
+  if ( isOptimization() )
+  {
+    myToMeshHolesCheck->hide();
+    myToMakeGroupsOfDomains->hide();
+  }
+  else
+  {
+    optimizationLbl->hide();
+    myOptimizationCombo->hide();
+    splitOverconstrainedLbl->hide();
+    mySplitOverConstrainedCombo->hide();
+    pthreadsModeLbl->hide();
+    myPThreadsModeCombo->hide();
+    nbThreadsLbl->hide();
+    myNumberOfThreadsSpin->hide();
+    mySmoothOffSliversCheck->hide();
+    myCreateNewNodesCheck->hide();
+  }
 
   // advanced parameters
   myAdvGroup = new QWidget();
@@ -388,7 +442,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
 
   myAdvWidget->initialMemoryLabel            ->setText (tr( "MEGABYTE" ));
   myAdvWidget->maxMemoryLabel                ->setText (tr( "MEGABYTE" ));
-  
+
   myAdvWidget->workingDirectoryLabel         ->setText (tr( "WORKING_DIR" ));
   myAdvWidget->workingDirectoryPushButton    ->setText (tr( "SELECT_DIR" ));
   myAdvWidget->keepWorkingFilesCheck         ->setText (tr( "KEEP_WORKING_FILES" ));
@@ -407,6 +461,16 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myAdvWidget->gradationLabel                ->setText (tr( "GHS3D_GRADATION" ));
   myAdvWidget->gradationSpinBox->RangeStepAndValidator(0.0, 5.0, 0.05, "length_precision");
 
+  if ( isOptimization() )
+  {
+    myAdvWidget->createNewNodesCheck->hide();
+    myAdvWidget->removeInitialCentralPointCheck->hide();
+    myAdvWidget->boundaryRecoveryCheck->hide();
+    myAdvWidget->FEMCorrectionCheck->hide();
+    myAdvWidget->gradationLabel->hide();
+    myAdvWidget->gradationSpinBox->hide();
+  }
+
   // Enforced vertices parameters
   myEnfGroup = new QWidget();
   QGridLayout* anEnfLayout = new QGridLayout(myEnfGroup);
@@ -416,12 +480,12 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myEnforcedTableWidget->setRowCount( 0 );
   myEnforcedTableWidget->setColumnCount( ENF_VER_NB_COLUMNS );
   myEnforcedTableWidget->setSortingEnabled(true);
-  QStringList enforcedHeaders;
-  enforcedHeaders << tr( "GHS3D_ENF_NAME_COLUMN" )
-                  << tr( "GHS3D_ENF_VER_X_COLUMN" )<< tr( "GHS3D_ENF_VER_Y_COLUMN" ) << tr( "GHS3D_ENF_VER_Z_COLUMN" )
-                  << tr( "GHS3D_ENF_SIZE_COLUMN" ) << tr("GHS3D_ENF_ENTRY_COLUMN") << tr("GHS3D_ENF_VER_COMPOUND_COLUMN") << tr( "GHS3D_ENF_GROUP_COLUMN" );
-
-  myEnforcedTableWidget->setHorizontalHeaderLabels(enforcedHeaders);
+  myEnforcedTableWidget->setHorizontalHeaderLabels
+    ( QStringList()
+      << tr( "GHS3D_ENF_NAME_COLUMN" ) << tr( "GHS3D_ENF_VER_X_COLUMN" )
+      << tr( "GHS3D_ENF_VER_Y_COLUMN" ) << tr( "GHS3D_ENF_VER_Z_COLUMN" )
+      << tr( "GHS3D_ENF_SIZE_COLUMN" ) << tr("GHS3D_ENF_ENTRY_COLUMN")
+      << tr("GHS3D_ENF_VER_COMPOUND_COLUMN") << tr( "GHS3D_ENF_GROUP_COLUMN" ));
   myEnforcedTableWidget->verticalHeader()->hide();
   myEnforcedTableWidget->horizontalHeader()->setStretchLastSection(true);
   myEnforcedTableWidget->setAlternatingRowColors(true);
@@ -438,7 +502,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   
   myEnforcedTableWidget->setItemDelegate(new EnforcedVertexTableWidgetDelegate());
   
-// VERTEX SELECTION
+  // VERTEX SELECTION
   TColStd_MapOfInteger shapeTypes;
   shapeTypes.Add( TopAbs_VERTEX );
   shapeTypes.Add( TopAbs_COMPOUND );
@@ -466,20 +530,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   addVertexButton = new QPushButton(tr("GHS3D_ENF_ADD"),myEnfGroup);
   addVertexButton->setEnabled(false);
   removeVertexButton = new QPushButton(tr("GHS3D_ENF_REMOVE"),myEnfGroup);
-//   myGlobalGroupName = new QCheckBox(tr("GHS3D_ENF_VER_GROUPS"), myEnfGroup);
-//   myGlobalGroupName->setChecked(false);
-  
-  // QGroupBox* GroupBox = new QGroupBox( myEnfGroup );
-  // QLabel* info = new QLabel( GroupBox );
-  // info->setText( tr( "GHS3D_ENF_VER_INFO" ) );
-  // info->setWordWrap( true );
-  // QVBoxLayout* GroupBoxVLayout = new QVBoxLayout( GroupBox );
-  // GroupBoxVLayout->setSpacing( 6 );
-  // GroupBoxVLayout->setMargin( 11 );
-  // GroupBoxVLayout->addWidget( info );
-  
 
-  //anEnfLayout->addWidget(GroupBox,                  ENF_VER_WARNING, 0, 1, 2 );
   anEnfLayout->addWidget(myEnforcedTableWidget,     ENF_VER_VERTEX, 0, ENF_VER_NB_LINES, 1);
   
   QGridLayout* anEnfLayout2 = new QGridLayout(myEnfGroup);
@@ -531,9 +582,6 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   
   myEnforcedMeshTableWidget->setItemDelegate(new EnforcedMeshTableWidgetDelegate());
   
-//   myEnfMesh = SMESH::SMESH_Mesh::_nil();
-//   myEnfMeshArray = new SMESH::mesh_array();
-
   myEnfMeshWdg = new StdMeshersGUI_ObjectReferenceParamWdg( SMESH::IDSOURCE, myEnfMeshGroup, /*multiSel=*/true);
   myEnfMeshWdg->SetDefaultText(tr("GHS3D_ENF_SELECT_MESH"), "QLineEdit { color: grey }");
   
@@ -549,19 +597,8 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   myMeshGroupName = new QLineEdit(myEnfMeshGroup);
 
   addEnfMeshButton = new QPushButton(tr("GHS3D_ENF_ADD"),myEnfMeshGroup);
-//   addEnfMeshButton->setEnabled(false);
   removeEnfMeshButton = new QPushButton(tr("GHS3D_ENF_REMOVE"),myEnfMeshGroup);
-    
-  // QGroupBox* GroupBox2 = new QGroupBox( myEnfMeshGroup );
-  // QLabel* info2 = new QLabel( GroupBox2 );
-  // info2->setText( tr( "GHS3D_ENF_MESH_INFO" ) );
-  // info2->setWordWrap( true );
-  // QVBoxLayout* GroupBox2VLayout = new QVBoxLayout( GroupBox2 );
-  // GroupBox2VLayout->setSpacing( 6 );
-  // GroupBox2VLayout->setMargin( 11 );
-  // GroupBox2VLayout->addWidget( info2 );
   
-  // anEnfMeshLayout->addWidget( GroupBox2,                ENF_MESH_WARNING, 0, 1, 2 );
   anEnfMeshLayout->addWidget(myEnforcedMeshTableWidget, ENF_MESH_MESH, 0, ENF_MESH_NB_LINES , 1);
   
   QGridLayout* anEnfMeshLayout2 = new QGridLayout(myEnfMeshGroup);
@@ -580,12 +617,13 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   // add tabs
   tab->insertTab( STD_TAB, myStdGroup, tr( "SMESH_ARGUMENTS" ) );
   tab->insertTab( ADV_TAB, myAdvGroup, tr( "GHS3D_ADV_ARGS" ) );
-  tab->insertTab( ENF_VER_TAB, myEnfGroup, tr( "GHS3D_ENFORCED_VERTICES" ) );
-  tab->insertTab( ENF_MESH_TAB, myEnfMeshGroup, tr( "GHS3D_ENFORCED_MESHES" ) );
+  if ( !isOptimization() )
+  {
+    tab->insertTab( ENF_VER_TAB, myEnfGroup, tr( "GHS3D_ENFORCED_VERTICES" ) );
+    tab->insertTab( ENF_MESH_TAB, myEnfMeshGroup, tr( "GHS3D_ENFORCED_MESHES" ) );
+  }
   tab->setCurrentIndex( STD_TAB );
 
-  // connections
-  //connect( myToMeshHolesCheck,      SIGNAL( toggled( bool ) ), this, SLOT( onToMeshHoles(bool)));
   connect( myAdvWidget->maxMemoryCheck,             SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myAdvWidget->initialMemoryCheck,         SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myAdvWidget->boundaryRecoveryCheck,      SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
@@ -612,16 +650,13 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   
   connect( addEnfMeshButton,        SIGNAL( clicked()),                       this, SLOT( onAddEnforcedMesh() ) );
   connect( removeEnfMeshButton,     SIGNAL( clicked()),                       this, SLOT( onRemoveEnforcedMesh() ) );
-//   connect( myEnfMeshWdg,            SIGNAL( contentModified()),              this,  SLOT( checkEnfMeshIsDefined() ) );
-//   connect( myEnfMeshConstraint,     SIGNAL( currentIndexChanged(int) ),      this,  SLOT( checkEnfMeshIsDefined() ) );
-//   connect( this,                    SIGNAL( enfMeshDefined(bool) ), addEnfMeshButton, SLOT( setEnabled(bool) ) );
   
   return fr;
 }
 
 /** 
  * This method checks if an enforced vertex is defined;
-**/
+ **/
 void GHS3DPluginGUI_HypothesisCreator::clearEnfVertexSelection()
 {
   if (myEnfVertexWdg->NbObjects() != 0) {
@@ -637,21 +672,21 @@ void GHS3DPluginGUI_HypothesisCreator::clearEnfVertexSelection()
 
 /** 
  * This method checks if an enforced vertex is defined;
-**/
+ **/
 void GHS3DPluginGUI_HypothesisCreator::checkVertexIsDefined()
 {
   bool enfVertexIsDefined = false;
   enfVertexIsDefined = (!mySizeValue->GetString().isEmpty() &&
-                       (!myEnfVertexWdg->NbObjects() == 0 ||
-                       (myEnfVertexWdg->NbObjects() == 0 && !myXCoord->GetString().isEmpty()
-                                                         && !myYCoord->GetString().isEmpty()
-                                                         && !myZCoord->GetString().isEmpty())));
+                        (!myEnfVertexWdg->NbObjects() == 0 ||
+                         (myEnfVertexWdg->NbObjects() == 0 && !myXCoord->GetString().isEmpty()
+                          && !myYCoord->GetString().isEmpty()
+                          && !myZCoord->GetString().isEmpty())));
   emit vertexDefined(enfVertexIsDefined);
 }
 
 /** 
  * This method checks if an enforced mesh is defined;
-**/
+ **/
 void GHS3DPluginGUI_HypothesisCreator::checkEnfMeshIsDefined()
 {
   emit enfMeshDefined( myEnfVertexWdg->NbObjects() != 0);
@@ -659,27 +694,24 @@ void GHS3DPluginGUI_HypothesisCreator::checkEnfMeshIsDefined()
 
 /** 
  * This method resets the content of the X, Y, Z, size and GroupName widgets;
-**/
+ **/
 void GHS3DPluginGUI_HypothesisCreator::clearEnforcedVertexWidgets()
 {
   myXCoord->setCleared(true);
   myYCoord->setCleared(true);
   myZCoord->setCleared(true);
-//   mySizeValue->setCleared(true);
   myXCoord->setText("");
   myYCoord->setText("");
   myZCoord->setText("");
-//   mySizeValue->setText("");
-//   myGroupName->setText("");
   addVertexButton->setEnabled(false);
 }
 
 /** GHS3DPluginGUI_HypothesisCreator::updateEnforcedVertexValues(item)
-This method updates the tooltip of a modified item. The QLineEdit widgets content
-is synchronized with the coordinates of the enforced vertex clicked in the tree widget.
+    This method updates the tooltip of a modified item. The QLineEdit widgets content
+    is synchronized with the coordinates of the enforced vertex clicked in the tree widget.
 */
-void GHS3DPluginGUI_HypothesisCreator::updateEnforcedVertexValues(QTableWidgetItem* item) {
-//   MESSAGE("GHS3DPluginGUI_HypothesisCreator::updateEnforcedVertexValues");
+void GHS3DPluginGUI_HypothesisCreator::updateEnforcedVertexValues(QTableWidgetItem* item)
+{
   int row = myEnforcedTableWidget->row(item);
       
   QVariant vertexName = myEnforcedTableWidget->item(row,ENF_VER_NAME_COLUMN)->data(Qt::EditRole);
@@ -710,7 +742,6 @@ void GHS3DPluginGUI_HypothesisCreator::updateEnforcedVertexValues(QTableWidgetIt
     if (!groupName.isEmpty())
       toolTip += QString(" [") + groupName + QString("]");
 
-//     MESSAGE("Tooltip: " << toolTip.toStdString());
     for (int col=0;col<ENF_VER_NB_COLUMNS;col++)
       myEnforcedTableWidget->item(row,col)->setToolTip(toolTip);
 
@@ -733,13 +764,14 @@ void GHS3DPluginGUI_HypothesisCreator::updateEnforcedVertexValues(QTableWidgetIt
   }
 }
 
-void GHS3DPluginGUI_HypothesisCreator::onSelectEnforcedVertex() {
+void GHS3DPluginGUI_HypothesisCreator::onSelectEnforcedVertex()
+{
   int nbSelEnfVertex = myEnfVertexWdg->NbObjects();
   clearEnforcedVertexWidgets();
   if (nbSelEnfVertex == 1)
   {
     if ( CORBA::is_nil( getGeomEngine() ) && !GeometryGUI::InitGeomGen() )
-    return ;
+      return ;
 
     myEnfVertex = myEnfVertexWdg->GetObject< GEOM::GEOM_Object >(nbSelEnfVertex-1);
     if (myEnfVertex == GEOM::GEOM_Object::_nil())
@@ -769,13 +801,13 @@ void GHS3DPluginGUI_HypothesisCreator::onSelectEnforcedVertex() {
 }
 
 /** GHS3DPluginGUI_HypothesisCreator::synchronizeCoords()
-This method synchronizes the QLineEdit/SMESHGUI_SpinBox widgets content with the coordinates
-of the enforced vertex clicked in the tree widget.
+    This method synchronizes the QLineEdit/SMESHGUI_SpinBox widgets content with the coordinates
+    of the enforced vertex clicked in the tree widget.
 */
-void GHS3DPluginGUI_HypothesisCreator::synchronizeCoords() {
+void GHS3DPluginGUI_HypothesisCreator::synchronizeCoords()
+{
   clearEnforcedVertexWidgets();
   QList<QTableWidgetItem *> items = myEnforcedTableWidget->selectedItems();
-//   myEnfVertexWdg->disconnect(SIGNAL(contentModified()));
   disconnect( myEnfVertexWdg, SIGNAL( contentModified()), this, SLOT( onSelectEnforcedVertex() ) );
   if (! items.isEmpty()) {
     QTableWidgetItem *item;
@@ -800,7 +832,7 @@ void GHS3DPluginGUI_HypothesisCreator::synchronizeCoords() {
       }
       QVariant group = myEnforcedTableWidget->item(row,ENF_VER_GROUP_COLUMN)->data( Qt::EditRole);
       if (!x.isNull()/* && entry.isNull()*/) {
-//         disconnect( myXCoord, SIGNAL( textChanged(const QString &)), this, SLOT( onSelectEnforcedVertex() ) );
+        //         disconnect( myXCoord, SIGNAL( textChanged(const QString &)), this, SLOT( onSelectEnforcedVertex() ) );
         disconnect( myXCoord, SIGNAL( textChanged(const QString&) ), this, SLOT( clearEnfVertexSelection() ) );
         disconnect( myYCoord, SIGNAL( textChanged(const QString&) ), this, SLOT( clearEnfVertexSelection() ) );
         disconnect( myZCoord, SIGNAL( textChanged(const QString&) ), this, SLOT( clearEnfVertexSelection() ) );
@@ -847,11 +879,13 @@ void GHS3DPluginGUI_HypothesisCreator::synchronizeCoords() {
 }
 
 /** GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh( meshName, geomEntry, elemType, size, groupName)
-This method adds in the tree widget an enforced mesh from mesh, submesh or group with optionally size and and groupName.
+    This method adds in the tree widget an enforced mesh from mesh, submesh or group with optionally size and and groupName.
 */
-void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::string entry, int elementType, std::string groupName)
+void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name,
+                                                       std::string entry,
+                                                       int elementType,
+                                                       std::string groupName)
 {
-  MESSAGE("addEnforcedMesh(\"" << name << ", \"" << entry << "\", " << elementType << ", \"" << groupName << "\")");
   bool okToCreate = true;
   QString itemEntry = "";
   int itemElementType = 0;
@@ -859,23 +893,19 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::st
   bool allColumns = true;
   for (int row = 0;row<rowCount;row++) {
     for (int col = 0 ; col < ENF_MESH_NB_COLUMNS ; col++) {
-      MESSAGE("col: " << col);
       if (col == ENF_MESH_CONSTRAINT_COLUMN){
         if (qobject_cast<QComboBox*>(myEnforcedMeshTableWidget->cellWidget(row, col)) == 0) {
           allColumns = false;
-          MESSAGE("allColumns = false");
           break;
         }
       }
       else if (myEnforcedMeshTableWidget->item(row, col) == 0) {
         allColumns = false;
-        MESSAGE("allColumns = false");
         break;
       }
       if (col == ENF_MESH_CONSTRAINT_COLUMN) {
         QComboBox* itemComboBox = qobject_cast<QComboBox*>(myEnforcedMeshTableWidget->cellWidget(row, col));
         itemElementType = itemComboBox->currentIndex();
-        MESSAGE("itemElementType: " << itemElementType);
       }
       else if (col == ENF_MESH_ENTRY_COLUMN)
         itemEntry = myEnforcedMeshTableWidget->item(row, col)->data(Qt::EditRole).toString();
@@ -885,11 +915,6 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::st
       break;
   
     if (itemEntry == QString(entry.c_str()) && itemElementType == elementType) { 
-//       // update group name
-//       if (itemGroupName.toStdString() != groupName) {
-//         MESSAGE("Group is updated from \"" << itemGroupName.toStdString() << "\" to \"" << groupName << "\"");
-//         myEnforcedMeshTableWidget->item(row, ENF_MESH_GROUP_COLUMN)->setData( Qt::EditRole, QVariant(groupName.c_str()));
-//       }
       okToCreate = false;
       break;
     } // if
@@ -899,13 +924,10 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::st
   if (!okToCreate)
     return;
   
-  MESSAGE("Creation of enforced mesh");
-
   myEnforcedMeshTableWidget->setRowCount(rowCount+1);
   myEnforcedMeshTableWidget->setSortingEnabled(false);
   
   for (int col=0;col<ENF_MESH_NB_COLUMNS;col++) {
-    MESSAGE("Column: " << col);
     if (col == ENF_MESH_CONSTRAINT_COLUMN) {
       QComboBox* comboBox = new QComboBox();
       QPalette pal = comboBox->palette();
@@ -914,56 +936,44 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedMesh(std::string name, std::st
       comboBox->insertItems(0,myEnfMeshConstraintLabels);
       comboBox->setEditable(false);
       comboBox->setCurrentIndex(elementType);
-      MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << comboBox->currentText().toStdString());
       myEnforcedMeshTableWidget->setCellWidget(rowCount,col,comboBox);
     }
     else {
       QTableWidgetItem* item = new QTableWidgetItem();
       item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
       switch (col) {
-        case ENF_MESH_NAME_COLUMN:
-          item->setData( 0, name.c_str() );
-          item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-          MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          myEnforcedMeshTableWidget->setItem(rowCount,col,item);
-          break;
-        case ENF_MESH_ENTRY_COLUMN:
-          item->setData( 0, entry.c_str() );
-          item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-          MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          myEnforcedMeshTableWidget->setItem(rowCount,col,item);
-          break;
-        case ENF_MESH_GROUP_COLUMN:
-          item->setData( 0, groupName.c_str() );
-          MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          myEnforcedMeshTableWidget->setItem(rowCount,col,item);
-          break;
-        default:
-          break;
+      case ENF_MESH_NAME_COLUMN:
+        item->setData( 0, name.c_str() );
+        item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        myEnforcedMeshTableWidget->setItem(rowCount,col,item);
+        break;
+      case ENF_MESH_ENTRY_COLUMN:
+        item->setData( 0, entry.c_str() );
+        item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        myEnforcedMeshTableWidget->setItem(rowCount,col,item);
+        break;
+      case ENF_MESH_GROUP_COLUMN:
+        item->setData( 0, groupName.c_str() );
+        myEnforcedMeshTableWidget->setItem(rowCount,col,item);
+        break;
+      default:
+        break;
       }
     }
-    MESSAGE("Done");
   }
-
-//   connect( myEnforcedMeshTableWidget,SIGNAL( itemChanged(QTableWidgetItem *)), this,  SLOT( updateEnforcedVertexValues(QTableWidgetItem *) ) );
-  
   myEnforcedMeshTableWidget->setSortingEnabled(true);
-//   myEnforcedTableWidget->setCurrentItem(myEnforcedTableWidget->item(rowCount,ENF_VER_NAME_COLUMN));
-//   updateEnforcedVertexValues(myEnforcedTableWidget->item(rowCount,ENF_VER_NAME_COLUMN));
-    
 }
 
 /** GHS3DPluginGUI_HypothesisCreator::addEnforcedVertex( x, y, z, size, vertexName, geomEntry, groupName)
-This method adds in the tree widget an enforced vertex with given size and coords (x,y,z) or GEOM vertex or compound and with optionally groupName.
+    This method adds in the tree widget an enforced vertex with given size and coords (x,y,z) or GEOM vertex or compound and with optionally groupName.
 */
 void GHS3DPluginGUI_HypothesisCreator::addEnforcedVertex(double x, double y, double z, double size, std::string vertexName, std::string geomEntry, std::string groupName, bool isCompound)
 {
-  MESSAGE("addEnforcedVertex(" << x << ", " << y << ", " << z << ", " << size << ", \"" << vertexName << ", \"" << geomEntry << "\", \"" << groupName << "\", " << isCompound << ")");
   myEnforcedTableWidget->disconnect(SIGNAL( itemChanged(QTableWidgetItem *)));
   bool okToCreate = true;
   double itemX,itemY,itemZ,itemSize = 0;
   QString itemEntry, itemGroupName = QString("");
-//   bool itemIsCompound;
+  //   bool itemIsCompound;
   int rowCount = myEnforcedTableWidget->rowCount();
   QVariant data;
   bool allColumns;
@@ -978,29 +988,26 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedVertex(double x, double y, dou
       data = myEnforcedTableWidget->item(row, col)->data(Qt::EditRole);
       if (!data.isNull()) {
         switch (col) {
-          case ENF_VER_GROUP_COLUMN:
-            itemGroupName = data.toString();
-            break;
-          case ENF_VER_ENTRY_COLUMN:
-            itemEntry = data.toString();
-            break;
-//           case ENF_VER_COMPOUND_COLUMN:
-//             itemIsCompound = data.toBool();
-//             break;
-          case ENF_VER_X_COLUMN:
-            itemX = data.toDouble();
-            break;
-          case ENF_VER_Y_COLUMN:
-            itemY = data.toDouble();
-            break;
-          case ENF_VER_Z_COLUMN:
-            itemZ = data.toDouble();
-            break;
-          case ENF_VER_SIZE_COLUMN:
-            itemSize = data.toDouble();
-            break;
-          default:
-            break;
+        case ENF_VER_GROUP_COLUMN:
+          itemGroupName = data.toString();
+          break;
+        case ENF_VER_ENTRY_COLUMN:
+          itemEntry = data.toString();
+          break;
+        case ENF_VER_X_COLUMN:
+          itemX = data.toDouble();
+          break;
+        case ENF_VER_Y_COLUMN:
+          itemY = data.toDouble();
+          break;
+        case ENF_VER_Z_COLUMN:
+          itemZ = data.toDouble();
+          break;
+        case ENF_VER_SIZE_COLUMN:
+          itemSize = data.toDouble();
+          break;
+        default:
+          break;
         }
       }
     }
@@ -1014,12 +1021,10 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedVertex(double x, double y, dou
     {
       // update size
       if (itemSize != size) {
-        MESSAGE("Size is updated from \"" << itemSize << "\" to \"" << size << "\"");
         myEnforcedTableWidget->item(row, ENF_VER_SIZE_COLUMN)->setData( Qt::EditRole, QVariant(size));
       }
       // update group name
       if (itemGroupName.toStdString() != groupName) {
-        MESSAGE("Group is updated from \"" << itemGroupName.toStdString() << "\" to \"" << groupName << "\"");
         myEnforcedTableWidget->item(row, ENF_VER_GROUP_COLUMN)->setData( Qt::EditRole, QVariant(groupName.c_str()));
       }
       okToCreate = false;
@@ -1028,21 +1033,12 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedVertex(double x, double y, dou
   } // for
   if (!okToCreate) {
     if (geomEntry.empty()) {
-      MESSAGE("Vertex with coords " << x << ", " << y << ", " << z << " already exist: dont create again");
     }
     else {
-      MESSAGE("Vertex with entry " << geomEntry << " already exist: dont create again");
     }
     return;
   }
     
-  if (geomEntry.empty()) {
-    MESSAGE("Vertex with coords " << x << ", " << y << ", " << z<< " is created");
-  }
-  else {
-    MESSAGE("Vertex with geom entry " << geomEntry << " is created");
-  }
-
   int vertexIndex=0;
   int indexRef = -1;
   QString myVertexName;
@@ -1062,73 +1058,67 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedVertex(double x, double y, dou
     }
   }
   
-  MESSAGE("myVertexName is \"" << myVertexName.toStdString() << "\"");
   myEnforcedTableWidget->setRowCount(rowCount+1);
   myEnforcedTableWidget->setSortingEnabled(false);
   for (int col=0;col<ENF_VER_NB_COLUMNS;col++) {
-    MESSAGE("Column: " << col);
     QTableWidgetItem* item = new QTableWidgetItem();
     item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
     switch (col) {
-      case ENF_VER_NAME_COLUMN:
-        item->setData( Qt::EditRole, myVertexName );
-        if (!geomEntry.empty()) {
-          if (isCompound)
-            item->setIcon(QIcon(iconCompound.scaled(iconCompound.size()*0.7,Qt::KeepAspectRatio,Qt::SmoothTransformation)));
-          else
-            item->setIcon(QIcon(iconVertex.scaled(iconVertex.size()*0.7,Qt::KeepAspectRatio,Qt::SmoothTransformation)));
-        }
-        break;
-      case ENF_VER_X_COLUMN:
-        if (!isCompound)
-          item->setData( 0, QVariant(x) );
-        break;
-      case ENF_VER_Y_COLUMN:
-        if (!isCompound)
-          item->setData( 0, QVariant(y) );
-        break;
-      case ENF_VER_Z_COLUMN:
-        if (!isCompound)
-          item->setData( 0, QVariant(z) );
-        break;
-      case ENF_VER_SIZE_COLUMN:
-        item->setData( 0, QVariant(size) );
-        break;
-      case ENF_VER_ENTRY_COLUMN:
-        if (!geomEntry.empty())
-          item->setData( 0, QString(geomEntry.c_str()) );
-        break;
-      case ENF_VER_COMPOUND_COLUMN:
-        item->setData( Qt::CheckStateRole, isCompound );
-        item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable);
-        break;
-      case ENF_VER_GROUP_COLUMN:
-        if (!groupName.empty())
-          item->setData( 0, QString(groupName.c_str()) );
-        break;
-      default:
-        break;
+    case ENF_VER_NAME_COLUMN:
+      item->setData( Qt::EditRole, myVertexName );
+      if (!geomEntry.empty()) {
+        if (isCompound)
+          item->setIcon(QIcon(iconCompound.scaled(iconCompound.size()*0.7,Qt::KeepAspectRatio,Qt::SmoothTransformation)));
+        else
+          item->setIcon(QIcon(iconVertex.scaled(iconVertex.size()*0.7,Qt::KeepAspectRatio,Qt::SmoothTransformation)));
+      }
+      break;
+    case ENF_VER_X_COLUMN:
+      if (!isCompound)
+        item->setData( 0, QVariant(x) );
+      break;
+    case ENF_VER_Y_COLUMN:
+      if (!isCompound)
+        item->setData( 0, QVariant(y) );
+      break;
+    case ENF_VER_Z_COLUMN:
+      if (!isCompound)
+        item->setData( 0, QVariant(z) );
+      break;
+    case ENF_VER_SIZE_COLUMN:
+      item->setData( 0, QVariant(size) );
+      break;
+    case ENF_VER_ENTRY_COLUMN:
+      if (!geomEntry.empty())
+        item->setData( 0, QString(geomEntry.c_str()) );
+      break;
+    case ENF_VER_COMPOUND_COLUMN:
+      item->setData( Qt::CheckStateRole, isCompound );
+      item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable);
+      break;
+    case ENF_VER_GROUP_COLUMN:
+      if (!groupName.empty())
+        item->setData( 0, QString(groupName.c_str()) );
+      break;
+    default:
+      break;
     }
     
-    MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
     myEnforcedTableWidget->setItem(rowCount,col,item);
-    MESSAGE("Done");
   }
 
   connect( myEnforcedTableWidget,SIGNAL( itemChanged(QTableWidgetItem *)), this,  SLOT( updateEnforcedVertexValues(QTableWidgetItem *) ) );
   
   myEnforcedTableWidget->setSortingEnabled(true);
-//   myEnforcedTableWidget->setCurrentItem(myEnforcedTableWidget->item(rowCount,ENF_VER_NAME_COLUMN));
+  //   myEnforcedTableWidget->setCurrentItem(myEnforcedTableWidget->item(rowCount,ENF_VER_NAME_COLUMN));
   updateEnforcedVertexValues(myEnforcedTableWidget->item(rowCount,ENF_VER_NAME_COLUMN));
 }
 
 /** GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
-This method is called when a item is added into the enforced meshes tree widget
+    This method is called when a item is added into the enforced meshes tree widget
 */
 void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
 {
-  MESSAGE("GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()");
-
   GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
   
   that->getGeomSelectionTool()->selectionMgr()->clearFilters();
@@ -1142,44 +1132,30 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
   if (selEnfMeshes == 0)
     return;
 
-  std::string groupName = myMeshGroupName->text().toStdString();
-//   if (myGlobalGroupName->isChecked())
-//     groupName = myGlobalGroupName->text().toStdString();
-
-  if (boost::trim_copy(groupName).empty())
-    groupName = "";
-
+  std::string groupName = myMeshGroupName->text().simplified().toStdString();
   
   int elementType = myEnfMeshConstraint->currentIndex();
   
   
   _PTR(Study) aStudy = SMESH::GetActiveStudyDocument();
-  _PTR(SObject) aSObj; //SMESH::SMESH_IDSource::_nil;
+  _PTR(SObject) aSObj;
   QString meshEntry = myEnfMeshWdg->GetValue();
-  MESSAGE("myEnfMeshWdg->GetValue()" << meshEntry.toStdString());
   
   if (selEnfMeshes == 1)
   {
-    MESSAGE("1 SMESH object selected");
-//     myEnfMesh = myEnfMeshWdg->GetObject< SMESH::SMESH_IDSource >();
-//     std::string entry = myEnfMeshWdg->GetValue();
     aSObj = aStudy->FindObjectID(meshEntry.toStdString().c_str());
     CORBA::Object_var anObj = SMESH::SObjectToObject(aSObj,aStudy);
-    if (!CORBA::is_nil(anObj)) {
-//       SMESH::SMESH_IDSource_var theSource = SMESH::SObjectToInterface<SMESH::SMESH_IDSource>( aSObj );
+    if (!CORBA::is_nil(anObj))
       addEnforcedMesh( aSObj->GetName(), aSObj->GetID(), elementType, groupName);
-    }
   }
   else
   {
-    MESSAGE(selEnfMeshes << " SMESH objects selected");
     QStringList meshEntries = meshEntry.split(" ", QString::SkipEmptyParts);
     QStringListIterator meshEntriesIt (meshEntries);
     while (meshEntriesIt.hasNext()) {
       aSObj = aStudy->FindObjectID(meshEntriesIt.next().toStdString().c_str());
       CORBA::Object_var anObj = SMESH::SObjectToObject(aSObj,aStudy);
       if (!CORBA::is_nil(anObj)) {
-//         SMESH::SMESH_IDSource_var theSource = SMESH::SObjectToInterface<SMESH::SMESH_IDSource>( aSObj );
         addEnforcedMesh( aSObj->GetName(), aSObj->GetID(), elementType, groupName);
       }
     }
@@ -1193,12 +1169,10 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
 
 
 /** GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
-This method is called when a item is added into the enforced vertices tree widget
+    This method is called when a item is added into the enforced vertices tree widget
 */
 void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
 {
-  MESSAGE("GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()");
-
   GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
   
   that->getGeomSelectionTool()->selectionMgr()->clearFilters();
@@ -1213,18 +1187,12 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
   if ((selEnfVertex == 0) && coordsEmpty)
     return;
 
-  std::string groupName = myGroupName->text().toStdString();
-//   if (myGlobalGroupName->isChecked())
-//     groupName = myGlobalGroupName->text().toStdString();
-
-  if (boost::trim_copy(groupName).empty())
-    groupName = "";
+  std::string groupName = myGroupName->text().simplified().toStdString();
 
   double size = mySizeValue->GetValue();
   
   if (selEnfVertex <= 1)
   {
-    MESSAGE("0 or 1 GEOM object selected");
     double x = 0, y = 0, z=0;
     if (myXCoord->GetString() != "") {
       x = myXCoord->GetValue();
@@ -1232,7 +1200,6 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
       z = myZCoord->GetValue();
     }
     if (selEnfVertex == 1) {
-      MESSAGE("1 GEOM object selected");
       myEnfVertex = myEnfVertexWdg->GetObject< GEOM::GEOM_Object >();
       std::string entry = "", name = "";
       bool isCompound = false;
@@ -1244,8 +1211,6 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
       addEnforcedVertex(x, y, z, size, name, entry, groupName, isCompound);
     }
     else {
-      MESSAGE("0 GEOM object selected");
-      MESSAGE("Coords: ("<<x<<","<<y<<","<<z<<")");
       addEnforcedVertex(x, y, z, size, "", "", groupName);
     }
   }
@@ -1269,7 +1234,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
         if ( measureOp->IsDone() )
           addEnforcedVertex(x, y, z, size, myEnfVertex->GetName(),myEnfVertex->GetStudyEntry(), groupName);
       } else if (myEnfVertex->GetShapeType() == GEOM::COMPOUND) {
-          addEnforcedVertex(0., 0., 0., size, myEnfVertex->GetName(),myEnfVertex->GetStudyEntry(), groupName, true);
+        addEnforcedVertex(0., 0., 0., size, myEnfVertex->GetName(),myEnfVertex->GetStudyEntry(), groupName, true);
       }
     }
   }
@@ -1281,7 +1246,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
 }
 
 /** GHS3DPluginGUI_HypothesisCreator::onRemoveEnforcedMesh()
-This method is called when a item is removed from the enforced meshes tree widget
+    This method is called when a item is removed from the enforced meshes tree widget
 */
 void GHS3DPluginGUI_HypothesisCreator::onRemoveEnforcedMesh()
 {
@@ -1294,21 +1259,20 @@ void GHS3DPluginGUI_HypothesisCreator::onRemoveEnforcedMesh()
     if (!selectedRows.contains( row ) )
       selectedRows.append(row);
   }
-  
+
   qSort( selectedRows );
   QListIterator<int> it( selectedRows );
   it.toBack();
   while ( it.hasPrevious() ) {
-      row = it.previous();
-      MESSAGE("delete row #"<< row);
-      myEnforcedMeshTableWidget->removeRow(row );
+    row = it.previous();
+    myEnforcedMeshTableWidget->removeRow(row );
   }
 
   myEnforcedMeshTableWidget->selectionModel()->clearSelection();
 }
 
 /** GHS3DPluginGUI_HypothesisCreator::onRemoveEnforcedVertex()
-This method is called when a item is removed from the enforced vertices tree widget
+    This method is called when a item is removed from the enforced vertices tree widget
 */
 void GHS3DPluginGUI_HypothesisCreator::onRemoveEnforcedVertex()
 {
@@ -1326,9 +1290,8 @@ void GHS3DPluginGUI_HypothesisCreator::onRemoveEnforcedVertex()
   QListIterator<int> it( selectedRows );
   it.toBack();
   while ( it.hasPrevious() ) {
-      row = it.previous();
-      MESSAGE("delete row #"<< row);
-      myEnforcedTableWidget->removeRow(row );
+    row = it.previous();
+    myEnforcedTableWidget->removeRow(row );
   }
 
   myEnforcedTableWidget->selectionModel()->clearSelection();
@@ -1359,16 +1322,14 @@ void GHS3DPluginGUI_HypothesisCreator::updateWidgets()
        sender() == myAdvWidget->keepWorkingFilesCheck )
   {
     bool logFileRemovable = myAdvWidget->logInFileCheck->isChecked() &&
-                            !myAdvWidget->keepWorkingFilesCheck->isChecked();
-                             
+      !myAdvWidget->keepWorkingFilesCheck->isChecked();
+
     myAdvWidget->removeLogOnSuccessCheck->setEnabled( logFileRemovable );
   }
 }
 
 bool GHS3DPluginGUI_HypothesisCreator::checkParams(QString& msg) const
 {
-  MESSAGE("GHS3DPluginGUI_HypothesisCreator::checkParams");
-
   if ( !QFileInfo( myAdvWidget->workingDirectoryLineEdit->text().trimmed() ).isWritable() ) {
     SUIT_MessageBox::warning( dlg(),
                               tr( "SMESH_WRN_WARNING" ),
@@ -1381,17 +1342,28 @@ bool GHS3DPluginGUI_HypothesisCreator::checkParams(QString& msg) const
 
 void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
 {
-  MESSAGE("GHS3DPluginGUI_HypothesisCreator::retrieveParams");
   GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
   GHS3DHypothesisData data;
   readParamsFromHypo( data );
 
   if ( myName )
+  {
     myName->setText( data.myName );
-  
+
+    int width = QFontMetrics( myName->font() ).width( data.myName );
+    QGridLayout* aStdLayout = (QGridLayout*) myStdGroup->layout();
+    aStdLayout->setColumnMinimumWidth( 1, width + 10 );
+  }
   myToMeshHolesCheck                          ->setChecked    ( data.myToMeshHoles );
   myToMakeGroupsOfDomains                     ->setChecked    ( data.myToMakeGroupsOfDomains );
   myOptimizationLevelCombo                    ->setCurrentIndex( data.myOptimizationLevel );
+  myOptimizationCombo                         ->setCurrentIndex( data.myOptimization );
+  mySplitOverConstrainedCombo                 ->setCurrentIndex( data.mySplitOverConstrained );
+  myPThreadsModeCombo                         ->setCurrentIndex( data.myPThreadsMode );
+  myNumberOfThreadsSpin                       ->setValue      ( data.myNumberOfThreads );
+  mySmoothOffSliversCheck                     ->setChecked    ( data.mySmoothOffSlivers );
+  myCreateNewNodesCheck                       ->setChecked    ( data.myToCreateNewNodes );
+
   myAdvWidget->maxMemoryCheck                 ->setChecked    ( data.myMaximumMemory > 0 );
   myAdvWidget->maxMemorySpin                  ->setValue      ( qMax( (int)data.myMaximumMemory,
                                                                       myAdvWidget->maxMemorySpin->minimum() ));
@@ -1421,63 +1393,52 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
     myEnforcedTableWidget->setRowCount(rowCount+1);
 
     for (int col=0;col<ENF_VER_NB_COLUMNS;col++) {
-      MESSAGE("Column: " << col);
-//       MESSAGE("enfVertex->isCompound: " << enfVertex->isCompound);
       QTableWidgetItem* item = new QTableWidgetItem();
       item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
       switch (col) {
-        case ENF_VER_NAME_COLUMN:
-          item->setData( 0, enfVertex->name.c_str() );
-          if (!enfVertex->geomEntry.empty()) {
-            if (enfVertex->isCompound)
-              item->setIcon(QIcon(iconCompound.scaled(iconCompound.size()*0.7,Qt::KeepAspectRatio,Qt::SmoothTransformation)));
-            else
-              item->setIcon(QIcon(iconVertex.scaled(iconVertex.size()*0.7,Qt::KeepAspectRatio,Qt::SmoothTransformation)));
+      case ENF_VER_NAME_COLUMN:
+        item->setData( 0, enfVertex->name.c_str() );
+        if (!enfVertex->geomEntry.empty()) {
+          if (enfVertex->isCompound)
+            item->setIcon(QIcon(iconCompound.scaled(iconCompound.size()*0.7,Qt::KeepAspectRatio,Qt::SmoothTransformation)));
+          else
+            item->setIcon(QIcon(iconVertex.scaled(iconVertex.size()*0.7,Qt::KeepAspectRatio,Qt::SmoothTransformation)));
             
-            MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          }
-          break;
-        case ENF_VER_X_COLUMN:
-          if (!enfVertex->isCompound) {
-            item->setData( 0, enfVertex->coords.at(0) );
-            MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          }
-          break;
-        case ENF_VER_Y_COLUMN:
-          if (!enfVertex->isCompound) {
-            item->setData( 0, enfVertex->coords.at(1) );
-            MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          }
-          break;
-        case ENF_VER_Z_COLUMN:
-          if (!enfVertex->isCompound) {
-            item->setData( 0, enfVertex->coords.at(2) );
-            MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          }
-          break;
-        case ENF_VER_SIZE_COLUMN:
-          item->setData( 0, enfVertex->size );
-          MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          break;
-        case ENF_VER_ENTRY_COLUMN:
-          item->setData( 0, enfVertex->geomEntry.c_str() );
-          MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          break;
-        case ENF_VER_COMPOUND_COLUMN:
-          item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable);
-          item->setData( Qt::CheckStateRole, enfVertex->isCompound );
-          MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << enfVertex->isCompound);
-          break;
-        case ENF_VER_GROUP_COLUMN:
-          item->setData( 0, enfVertex->groupName.c_str() );
-          MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-          break;
-        default:
-          break;
+        }
+        break;
+      case ENF_VER_X_COLUMN:
+        if (!enfVertex->isCompound) {
+          item->setData( 0, enfVertex->coords.at(0) );
+        }
+        break;
+      case ENF_VER_Y_COLUMN:
+        if (!enfVertex->isCompound) {
+          item->setData( 0, enfVertex->coords.at(1) );
+        }
+        break;
+      case ENF_VER_Z_COLUMN:
+        if (!enfVertex->isCompound) {
+          item->setData( 0, enfVertex->coords.at(2) );
+        }
+        break;
+      case ENF_VER_SIZE_COLUMN:
+        item->setData( 0, enfVertex->size );
+        break;
+      case ENF_VER_ENTRY_COLUMN:
+        item->setData( 0, enfVertex->geomEntry.c_str() );
+        break;
+      case ENF_VER_COMPOUND_COLUMN:
+        item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable);
+        item->setData( Qt::CheckStateRole, enfVertex->isCompound );
+        break;
+      case ENF_VER_GROUP_COLUMN:
+        item->setData( 0, enfVertex->groupName.c_str() );
+        break;
+      default:
+        break;
       }
       
       myEnforcedTableWidget->setItem(rowCount,col,item);
-      MESSAGE("Done");
     }
     that->updateEnforcedVertexValues(myEnforcedTableWidget->item(rowCount,ENF_VER_NAME_COLUMN));
     rowCount++;
@@ -1494,14 +1455,13 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   rowCount = 0;
   myEnforcedMeshTableWidget->clearContents();
   myEnforcedMeshTableWidget->setSortingEnabled(false);
-//   myEnforcedMeshTableWidget->disconnect(SIGNAL( itemChanged(QTableWidgetItem *)));
+  //   myEnforcedMeshTableWidget->disconnect(SIGNAL( itemChanged(QTableWidgetItem *)));
   for(itMesh = data.myEnforcedMeshes.begin() ; itMesh != data.myEnforcedMeshes.end(); itMesh++ )
   {
     TEnfMesh* enfMesh = (*itMesh);
     myEnforcedMeshTableWidget->setRowCount(rowCount+1);
 
     for (int col=0;col<ENF_MESH_NB_COLUMNS;col++) {
-      MESSAGE("Column: " << col);
       if (col == ENF_MESH_CONSTRAINT_COLUMN) {
         QComboBox* comboBox = new QComboBox();
         QPalette pal = comboBox->palette();
@@ -1510,43 +1470,35 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
         comboBox->insertItems(0,myEnfMeshConstraintLabels);
         comboBox->setEditable(false);
         comboBox->setCurrentIndex(enfMesh->elementType);
-        MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << comboBox->currentText().toStdString());
         myEnforcedMeshTableWidget->setCellWidget(rowCount,col,comboBox);
       }
       else {
         QTableWidgetItem* item = new QTableWidgetItem();
         item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled);
         switch (col) {
-          case ENF_MESH_NAME_COLUMN:
-            item->setData( 0, enfMesh->name.c_str() );
-            item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-            MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-            myEnforcedMeshTableWidget->setItem(rowCount,col,item);
-            break;
-          case ENF_MESH_ENTRY_COLUMN:
-            item->setData( 0, enfMesh->entry.c_str() );
-            item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-            MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-            myEnforcedMeshTableWidget->setItem(rowCount,col,item);
-            break;
-          case ENF_MESH_GROUP_COLUMN:
-            item->setData( 0, enfMesh->groupName.c_str() );
-            MESSAGE("Add item in table at (" << rowCount << "," << col << "): " << item->text().toStdString());
-            myEnforcedMeshTableWidget->setItem(rowCount,col,item);
-            break;
-          default:
-            break;
+        case ENF_MESH_NAME_COLUMN:
+          item->setData( 0, enfMesh->name.c_str() );
+          item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+          myEnforcedMeshTableWidget->setItem(rowCount,col,item);
+          break;
+        case ENF_MESH_ENTRY_COLUMN:
+          item->setData( 0, enfMesh->entry.c_str() );
+          item->setFlags( Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+          myEnforcedMeshTableWidget->setItem(rowCount,col,item);
+          break;
+        case ENF_MESH_GROUP_COLUMN:
+          item->setData( 0, enfMesh->groupName.c_str() );
+          myEnforcedMeshTableWidget->setItem(rowCount,col,item);
+          break;
+        default:
+          break;
         }
       }
       
-//       myEnforcedMeshTableWidget->setItem(rowCount,col,item);
-      MESSAGE("Done");
     }
-//     that->updateEnforcedVertexValues(myEnforcedTableWidget->item(rowCount,ENF_VER_NAME_COLUMN));
     rowCount++;
   }
 
-//   connect( myEnforcedMeshTableWidget,SIGNAL( itemChanged(QTableWidgetItem *)), this,  SLOT( updateEnforcedVertexValues(QTableWidgetItem *) ) );
   myEnforcedMeshTableWidget->setSortingEnabled(true);
   
   for (int col=0;col<ENF_MESH_NB_COLUMNS;col++)
@@ -1558,86 +1510,74 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
 
 QString GHS3DPluginGUI_HypothesisCreator::storeParams() const
 {
-    MESSAGE("GHS3DPluginGUI_HypothesisCreator::storeParams");
-    GHS3DHypothesisData data;
-    readParamsFromWidgets( data );
-    storeParamsToHypo( data );
+  GHS3DHypothesisData data;
+  readParamsFromWidgets( data );
+  storeParamsToHypo( data );
     
-    QString valStr = "";
+  QString valStr = "";
     
-    if ( !data.myBoundaryRecovery )
-        valStr = " --components " + data.myToMeshHoles ? "all" : "outside_components" ;
+  if ( !data.myBoundaryRecovery )
+    valStr = " --components " + data.myToMeshHoles ? "all" : "outside_components" ;
     
-    if ( data.myOptimizationLevel >= 0 && data.myOptimizationLevel < 5 && !data.myBoundaryRecovery) {
-        const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
-        valStr += " --optimisation_level ";
-        valStr += level[ data.myOptimizationLevel ];
-    }
-    if ( data.myMaximumMemory > 0 ) {
-        valStr += " --max_memory ";
-        valStr += QString::number( data.myMaximumMemory );
-    }
-    if ( data.myInitialMemory > 0 && !data.myBoundaryRecovery ) {
-        valStr += " --automatic_memory ";
-        valStr += QString::number( data.myInitialMemory );
-    }
-    valStr += " --verbose ";
-    valStr += QString::number( data.myVerboseLevel );
+  if ( data.myOptimizationLevel >= 0 && data.myOptimizationLevel < 5 && !data.myBoundaryRecovery) {
+    const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
+    valStr += " --optimisation_level ";
+    valStr += level[ data.myOptimizationLevel ];
+  }
+  if ( data.myMaximumMemory > 0 ) {
+    valStr += " --max_memory ";
+    valStr += QString::number( data.myMaximumMemory );
+  }
+  if ( data.myInitialMemory > 0 && !data.myBoundaryRecovery ) {
+    valStr += " --automatic_memory ";
+    valStr += QString::number( data.myInitialMemory );
+  }
+  valStr += " --verbose ";
+  valStr += QString::number( data.myVerboseLevel );
     
-    if ( !data.myToCreateNewNodes )
-        valStr += " --no_internal_points";
+  if ( !data.myToCreateNewNodes )
+    valStr += " --no_internal_points";
     
-    if ( data.myRemoveInitialCentralPoint )
-        valStr += " --no_initial_central_point";
+  if ( data.myRemoveInitialCentralPoint )
+    valStr += " --no_initial_central_point";
     
-    if ( data.myBoundaryRecovery )
-        valStr += " -C";
+  if ( data.myBoundaryRecovery )
+    valStr += " -C";
     
-    if ( data.myFEMCorrection )
-        valStr += " -FEM";
+  if ( data.myFEMCorrection )
+    valStr += " -FEM";
     
-    if ( data.myGradation != 1.05 ) {
-      valStr += " -Dcpropa=";
-      valStr += QString::number( data.myGradation );
-    }
+  if ( data.myGradation != 1.05 ) {
+    valStr += " -Dcpropa=";
+    valStr += QString::number( data.myGradation );
+  }
     
-    valStr += " ";
-    valStr += data.myTextOption;
-    
-//     valStr += " #BEGIN ENFORCED VERTICES#";
-//     // Add size map parameters storage
-//     for (int i=0 ; i<mySmpModel->rowCount() ; i++) {
-//         valStr += " (";
-//         double x = mySmpModel->data(mySmpModel->index(i,ENF_VER_X_COLUMN)).toDouble();
-//         double y = mySmpModel->data(mySmpModel->index(i,ENF_VER_Y_COLUMN)).toDouble();
-//         double z = mySmpModel->data(mySmpModel->index(i,ENF_VER_Z_COLUMN)).toDouble();
-//         double size = mySmpModel->data(mySmpModel->index(i,ENF_VER_SIZE_COLUMN)).toDouble();
-//         valStr += QString::number( x );
-//         valStr += ",";
-//         valStr += QString::number( y );
-//         valStr += ",";
-//         valStr += QString::number( z );
-//         valStr += ")=";
-//         valStr += QString::number( size );
-//         if (i!=mySmpModel->rowCount()-1)
-//             valStr += ";";
-//     }
-//     valStr += " #END ENFORCED VERTICES#";
-//     MESSAGE(valStr.toStdString());
+  valStr += " ";
+  valStr += data.myTextOption;
+
   return valStr;
 }
 
 bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& h_data ) const
 {
-  MESSAGE("GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo");
   GHS3DPlugin::GHS3DPlugin_Hypothesis_var h =
     GHS3DPlugin::GHS3DPlugin_Hypothesis::_narrow( initParamsHypothesis() );
+  GHS3DPlugin::GHS3DPlugin_OptimizerHypothesis_var opt =
+    GHS3DPlugin::GHS3DPlugin_OptimizerHypothesis::_narrow( initParamsHypothesis() );
 
   HypothesisData* data = SMESH::GetHypothesisData( hypType() );
   h_data.myName = isCreation() && data ? hypName() : "";
 
+  if ( !opt->_is_nil() )
+  {
+    h_data.myOptimization         = opt->GetOptimization();
+    h_data.mySplitOverConstrained = opt->GetSplitOverConstrained();
+    h_data.myPThreadsMode         = opt->GetPThreadsMode();
+    h_data.myNumberOfThreads      = opt->GetMaximalNumberOfThreads();
+    h_data.mySmoothOffSlivers     = opt->GetSmoothOffSlivers();
+  }
   h_data.myToMeshHoles                = h->GetToMeshHoles();
-  h_data.myToMakeGroupsOfDomains      = /*h->GetToMeshHoles() &&*/ h->GetToMakeGroupsOfDomains();
+  h_data.myToMakeGroupsOfDomains      = h->GetToMakeGroupsOfDomains();
   h_data.myMaximumMemory              = h->GetMaximumMemory();
   h_data.myInitialMemory              = h->GetInitialMemory();
   h_data.myInitialMemory              = h->GetInitialMemory();
@@ -1655,7 +1595,6 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   h_data.myRemoveLogOnSuccess         = h->GetRemoveLogOnSuccess();
   
   GHS3DPlugin::GHS3DEnforcedVertexList_var vertices = h->GetEnforcedVertices();
-  MESSAGE("vertices->length(): " << vertices->length());
   h_data.myEnforcedVertices.clear();
   for (CORBA::ULong i=0 ; i<vertices->length() ; i++) {
     TEnfVertex* myVertex = new TEnfVertex();
@@ -1667,13 +1606,11 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
     if (vertices[i].coords.length()) {
       for (CORBA::ULong c = 0; c < vertices[i].coords.length() ; c++)
         myVertex->coords.push_back(vertices[i].coords[c]);
-      MESSAGE("Add enforced vertex ("<< myVertex->coords.at(0) << ","<< myVertex->coords.at(1) << ","<< myVertex->coords.at(2) << ") ="<< myVertex->size);
     }
     h_data.myEnforcedVertices.insert(myVertex);
   }
   
   GHS3DPlugin::GHS3DEnforcedMeshList_var enfMeshes = h->GetEnforcedMeshes();
-  MESSAGE("enfMeshes->length(): " << enfMeshes->length());
   h_data.myEnforcedMeshes.clear();
   for (CORBA::ULong i=0 ; i<enfMeshes->length() ; i++) {
     TEnfMesh* myEnfMesh = new TEnfMesh();
@@ -1681,19 +1618,19 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
     myEnfMesh->entry = CORBA::string_dup(enfMeshes[i].entry.in());
     myEnfMesh->groupName = CORBA::string_dup(enfMeshes[i].groupName.in());
     switch (enfMeshes[i].elementType) {
-      case SMESH::NODE:
-        myEnfMesh->elementType = 0;
-        break;
-      case SMESH::EDGE:
-        myEnfMesh->elementType = 1;
-        break;
-      case SMESH::FACE:
-        myEnfMesh->elementType = 2;
-        break;
-      default:
-        break;
+    case SMESH::NODE:
+      myEnfMesh->elementType = 0;
+      break;
+    case SMESH::EDGE:
+      myEnfMesh->elementType = 1;
+      break;
+    case SMESH::FACE:
+      myEnfMesh->elementType = 2;
+      break;
+    default:
+      break;
     }
-//     myEnfMesh->elementType = enfMeshes[i].elementType;
+    //     myEnfMesh->elementType = enfMeshes[i].elementType;
     h_data.myEnforcedMeshes.insert(myEnfMesh);
   }
   return true;
@@ -1701,9 +1638,10 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
 
 bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisData& h_data ) const
 {
-  MESSAGE("GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo");
   GHS3DPlugin::GHS3DPlugin_Hypothesis_var h =
     GHS3DPlugin::GHS3DPlugin_Hypothesis::_narrow( hypothesis() );
+  GHS3DPlugin::GHS3DPlugin_OptimizerHypothesis_var opt =
+    GHS3DPlugin::GHS3DPlugin_OptimizerHypothesis::_narrow( initParamsHypothesis() );
 
   bool ok = true;
   try
@@ -1743,22 +1681,27 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       h->SetAdvancedOption       ( h_data.myTextOption.toLatin1().constData() );
     if ( h->GetStandardOutputLog() != h_data.myLogInStandardOutput   )
       h->SetStandardOutputLog( h_data.myLogInStandardOutput  );
-     if ( h->GetRemoveLogOnSuccess() != h_data.myRemoveLogOnSuccess   )
+    if ( h->GetRemoveLogOnSuccess() != h_data.myRemoveLogOnSuccess   )
       h->SetRemoveLogOnSuccess( h_data.myRemoveLogOnSuccess  );
-    
+
+    if ( !opt->_is_nil() )
+    {
+      opt->SetOptimization          ( (GHS3DPlugin::Mode) h_data.myOptimization );
+      opt->SetSplitOverConstrained  ( (GHS3DPlugin::Mode) h_data.mySplitOverConstrained );
+      opt->SetPThreadsMode          ( (GHS3DPlugin::PThreadsMode) h_data.myPThreadsMode );
+      opt->SetSmoothOffSlivers      ( h_data.mySmoothOffSlivers );
+      opt->SetMaximalNumberOfThreads( h_data.myNumberOfThreads );
+    }
+
     // Enforced vertices
-    int nbVertex = (int) h_data.myEnforcedVertices.size();
     GHS3DPlugin::GHS3DEnforcedVertexList_var vertexHyp = h->GetEnforcedVertices();
     int nbVertexHyp = vertexHyp->length();
-    
-    MESSAGE("Store params for size maps: " << nbVertex << " enforced vertices");
-    MESSAGE("h->GetEnforcedVertices()->length(): " << nbVertexHyp);
-    
+
     // 1. Clear all enforced vertices in hypothesis
     // 2. Add new enforced vertex according to h_data
     if ( nbVertexHyp > 0)
       h->ClearEnforcedVertices();
-    
+
     TEnfVertexList::const_iterator it;
     double x = 0, y = 0, z = 0;
     for(it = h_data.myEnforcedVertices.begin() ; it != h_data.myEnforcedVertices.end(); it++ ) {
@@ -1771,20 +1714,16 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       }
       ok = h->p_SetEnforcedVertex( enfVertex->size, x, y, z, enfVertex->name.c_str(), enfVertex->geomEntry.c_str(), enfVertex->groupName.c_str(), enfVertex->isCompound);
     } // for
-    
+
     // Enforced Meshes
-    int nbEnfMeshes = (int) h_data.myEnforcedMeshes.size();
     GHS3DPlugin::GHS3DEnforcedMeshList_var enfMeshListHyp = h->GetEnforcedMeshes();
     int nbEnfMeshListHyp = enfMeshListHyp->length();
-    
-    MESSAGE("Store params for size maps: " << nbEnfMeshes << " enforced meshes");
-    MESSAGE("h->GetEnforcedMeshes()->length(): " << nbEnfMeshListHyp);
-    
+
     // 1. Clear all enforced vertices in hypothesis
     // 2. Add new enforced vertex according to h_data
     if ( nbEnfMeshListHyp > 0)
       h->ClearEnforcedMeshes();
-    
+
     TEnfMeshList::const_iterator itEnfMesh;
 
     _PTR(Study) aStudy = SMESH::GetActiveStudyDocument();
@@ -1795,30 +1734,24 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       _PTR(SObject) aSObj = aStudy->FindObjectID(enfMesh->entry.c_str());
       SMESH::SMESH_IDSource_var theSource = SMESH::SObjectToInterface<SMESH::SMESH_IDSource>( aSObj );
 
-      MESSAGE("enfMesh->elementType: " << enfMesh->elementType);
       SMESH::ElementType elementType;
       switch(enfMesh->elementType) {
-        case 0:
-          elementType = SMESH::NODE;
-          break;
-        case 1:
-          elementType = SMESH::EDGE;
-          break;
-        case 2:
-          elementType = SMESH::FACE;
-          break;
-        default:
-          break;
+      case 0:
+        elementType = SMESH::NODE;
+        break;
+      case 1:
+        elementType = SMESH::EDGE;
+        break;
+      case 2:
+        elementType = SMESH::FACE;
+        break;
+      default:
+        break;
       }
     
-      std::cout << "h->p_SetEnforcedMesh(theSource, "<< elementType <<", \""<< enfMesh->name << "\", \"" << enfMesh->groupName.c_str() <<"\")"<<std::endl;
       ok = h->p_SetEnforcedMesh(theSource, elementType, enfMesh->name.c_str(), enfMesh->groupName.c_str());
     } // for
   } // try
-//   catch(const std::exception& ex) {
-//     std::cout << "Exception: " << ex.what() << std::endl;
-//     throw ex;
-//   }
   catch ( const SALOME::SALOME_Exception& ex )
   {
     SalomeApp_Tools::QtCatchCorbaException( ex );
@@ -1829,17 +1762,20 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
 
 bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisData& h_data ) const
 {
-  MESSAGE("GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets");
   h_data.myName                       = myName ? myName->text() : "";
   h_data.myToMeshHoles                = myToMeshHolesCheck->isChecked();
   h_data.myToMakeGroupsOfDomains      = myToMakeGroupsOfDomains->isChecked();
+  h_data.myOptimization               = myOptimizationCombo->currentIndex();
+  h_data.myOptimizationLevel          = myOptimizationLevelCombo->currentIndex();
+  h_data.mySplitOverConstrained       = mySplitOverConstrainedCombo->currentIndex();
+  h_data.myPThreadsMode               = myPThreadsModeCombo->currentIndex();
+  h_data.myNumberOfThreads            = myNumberOfThreadsSpin->value();
+  h_data.mySmoothOffSlivers           = mySmoothOffSliversCheck->isChecked();
   h_data.myMaximumMemory              = myAdvWidget->maxMemoryCheck->isChecked() ? myAdvWidget->maxMemorySpin->value() : -1;
   h_data.myInitialMemory              = myAdvWidget->initialMemoryCheck->isChecked() ? myAdvWidget->initialMemorySpin->value() : -1;
-  h_data.myOptimizationLevel          = myOptimizationLevelCombo->currentIndex();
   h_data.myKeepFiles                  = myAdvWidget->keepWorkingFilesCheck->isChecked();
   h_data.myWorkingDir                 = myAdvWidget->workingDirectoryLineEdit->text().trimmed();
   h_data.myVerboseLevel               = myAdvWidget->verboseLevelSpin->value();
-  h_data.myToCreateNewNodes           = myAdvWidget->createNewNodesCheck->isChecked();
   h_data.myRemoveInitialCentralPoint  = myAdvWidget->removeInitialCentralPointCheck->isChecked();
   h_data.myBoundaryRecovery           = myAdvWidget->boundaryRecoveryCheck->isChecked();
   h_data.myFEMCorrection              = myAdvWidget->FEMCorrectionCheck->isChecked();
@@ -1847,21 +1783,20 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
   h_data.myTextOption                 = myAdvWidget->advOptionTable->GetCustomOptions();
   h_data.myLogInStandardOutput        = !myAdvWidget->logInFileCheck->isChecked();
   h_data.myRemoveLogOnSuccess         = myAdvWidget->removeLogOnSuccessCheck->isChecked();
+  if ( isOptimization() )
+    h_data.myToCreateNewNodes         = myCreateNewNodesCheck->isChecked();
+  else
+    h_data.myToCreateNewNodes         = myAdvWidget->createNewNodesCheck->isChecked();
   
   // Enforced vertices
   h_data.myEnforcedVertices.clear();
   QVariant valueX, valueY, valueZ;
-  for (int row=0 ; row<myEnforcedTableWidget->rowCount() ; row++) {
-    
+  for (int row=0 ; row<myEnforcedTableWidget->rowCount() ; row++)
+  {
     TEnfVertex *myVertex = new TEnfVertex();
     myVertex->name = myEnforcedTableWidget->item(row,ENF_VER_NAME_COLUMN)->data(Qt::EditRole).toString().toStdString();
-    MESSAGE("Add new enforced vertex \"" << myVertex->name << "\"" );
     myVertex->geomEntry = myEnforcedTableWidget->item(row,ENF_VER_ENTRY_COLUMN)->data(Qt::EditRole).toString().toStdString();
-    if (myVertex->geomEntry.size())
-      MESSAGE("Geom entry is \"" << myVertex->geomEntry << "\"" );
     myVertex->groupName = myEnforcedTableWidget->item(row,ENF_VER_GROUP_COLUMN)->data(Qt::EditRole).toString().toStdString();
-    if (myVertex->groupName.size())
-      MESSAGE("Group name is \"" << myVertex->groupName << "\"" );
     valueX = myEnforcedTableWidget->item(row,ENF_VER_X_COLUMN)->data(Qt::EditRole);
     valueY = myEnforcedTableWidget->item(row,ENF_VER_Y_COLUMN)->data(Qt::EditRole);
     valueZ = myEnforcedTableWidget->item(row,ENF_VER_Z_COLUMN)->data(Qt::EditRole);
@@ -1869,34 +1804,24 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
       myVertex->coords.push_back(valueX.toDouble());
       myVertex->coords.push_back(valueY.toDouble());
       myVertex->coords.push_back(valueZ.toDouble());
-      MESSAGE("Coords are (" << myVertex->coords.at(0) << ", "
-                             << myVertex->coords.at(1) << ", "
-                             << myVertex->coords.at(2) << ")");
     }
     myVertex->size = myEnforcedTableWidget->item(row,ENF_VER_SIZE_COLUMN)->data(Qt::EditRole).toDouble();
-    MESSAGE("Size is " << myVertex->size);
     myVertex->isCompound = myEnforcedTableWidget->item(row,ENF_VER_COMPOUND_COLUMN)->data(Qt::CheckStateRole).toBool();
-    MESSAGE("Is compound ? " << myVertex->isCompound);
     h_data.myEnforcedVertices.insert(myVertex);
   }
   
   // Enforced meshes
   h_data.myEnforcedMeshes.clear();
 
-  for (int row=0 ; row<myEnforcedMeshTableWidget->rowCount() ; row++) {
-    
+  for (int row=0 ; row<myEnforcedMeshTableWidget->rowCount() ; row++)
+  {
     TEnfMesh *myEnfMesh = new TEnfMesh();
     myEnfMesh->name = myEnforcedMeshTableWidget->item(row,ENF_MESH_NAME_COLUMN)->data(Qt::EditRole).toString().toStdString();
-    MESSAGE("Add new enforced mesh \"" << myEnfMesh->name << "\"" );
     myEnfMesh->entry = myEnforcedMeshTableWidget->item(row,ENF_MESH_ENTRY_COLUMN)->data(Qt::EditRole).toString().toStdString();
-    MESSAGE("Entry is \"" << myEnfMesh->entry << "\"" );
     myEnfMesh->groupName = myEnforcedMeshTableWidget->item(row,ENF_MESH_GROUP_COLUMN)->data(Qt::EditRole).toString().toStdString();
-    MESSAGE("Group name is \"" << myEnfMesh->groupName << "\"" );
     QComboBox* combo = qobject_cast<QComboBox*>(myEnforcedMeshTableWidget->cellWidget(row,ENF_MESH_CONSTRAINT_COLUMN));
     myEnfMesh->elementType = combo->currentIndex();
-    MESSAGE("Element type: " << myEnfMesh->elementType);
     h_data.myEnforcedMeshes.insert(myEnfMesh);
-    std::cout << "h_data.myEnforcedMeshes.size(): " << h_data.myEnforcedMeshes.size() << std::endl;
   }
 
   return true;
@@ -1914,10 +1839,10 @@ QPixmap GHS3DPluginGUI_HypothesisCreator::icon() const
 
 QString GHS3DPluginGUI_HypothesisCreator::type() const
 {
-  return tr( "GHS3D_HYPOTHESIS" );
+  return tr( isOptimization() ? "GHS3D_OPTIMIZATIOL_HYPOTHESIS" : "GHS3D_HYPOTHESIS" );
 }
 
 QString GHS3DPluginGUI_HypothesisCreator::helpPage() const
 {
-  return "ghs3d_hypo_page.html";
+  return isOptimization() ? "optimization_page.html" : "ghs3d_hypo_page.html";
 }

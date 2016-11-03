@@ -51,6 +51,13 @@
         </accumulative-methods>
       </python-wrap>
     </hypothesis>
+
+    <hypothesis type    ="MG-Tetra Optimization Parameters"
+                label-id="MG-Tetra Optimization Parameters"
+                icon-id ="mesh_hypo_ghs3d.png"
+                dim     ="3">
+    </hypothesis>
+
   </hypotheses>
 
   <algorithms>
@@ -68,6 +75,21 @@
         <algo>MG-Tetra=Tetrahedron(algo=smeshBuilder.MG_Tetra)</algo>
         <hypo>MG-Tetra Parameters=Parameters()</hypo>
         <hypo>ViscousLayers=ViscousLayers(SetTotalThickness(),SetNumberLayers(),SetStretchFactor(),SetFaces(1),SetFaces(2),SetMethod())</hypo>
+      </python-wrap>
+    </algorithm>
+
+    <algorithm type     ="MG-Tetra Optimization"
+               label-id ="MG-Tetra Optimization"
+               icon-id  ="mesh_tree_hypo_ghs3d.png"
+               group-id ="2"
+               input    ="TETRA"
+               output   ="TETRA"
+               need-geom="never"
+               opt-hypos="MG-Tetra Optimization Parameters"
+               dim      ="3">
+      <python-wrap>
+        <algo>MG-Tetra Optimization=Tetrahedron(algo=smeshBuilder.MG_Tetra_Optimization)</algo>
+        <hypo>MG-Tetra Optimization Parameters=Parameters()</hypo>
       </python-wrap>
     </algorithm>
 

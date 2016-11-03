@@ -53,16 +53,18 @@ struct MG_Tetra_API::LibData
   int                 _nbRequiredEdges;
   std::vector<int>    _triaNodes;
   int                 _nbRequiredTria;
+  std::vector<int>    _tetraNodes;
 
   int                 _count;
   volatile bool&      _cancelled_flag;
   std::string         _errorStr;
   double&             _progress;
+  bool                _progressInCallBack;
 
   LibData( volatile bool & cancelled_flag, double& progress )
     : _context(0), _session(0), _tria_mesh(0), _sizemap(0), _tetra_mesh(0),
       _nbRequiredEdges(0), _nbRequiredTria(0),
-      _cancelled_flag( cancelled_flag ), _progress( progress )
+      _cancelled_flag( cancelled_flag ), _progress( progress ), _progressInCallBack( false )
   {
   }
   // methods setting callbacks implemented after callback definitions
@@ -329,6 +331,11 @@ struct MG_Tetra_API::LibData
     _triaNodes.reserve( nb * 3 );
   }
 
+  void SetNbTetra( int nb )
+  {
+    _tetraNodes.reserve( nb * 4 );
+  }
+
   void SetNbReqVertices( int nb )
   {
     _nodeSize.reserve( nb );
@@ -369,6 +376,14 @@ struct MG_Tetra_API::LibData
     _triaNodes.push_back( node3 );
   }
 
+  void AddTetraNodes( int node1, int node2, int node3, int node4, int domain )
+  {
+    _tetraNodes.push_back( node1 );
+    _tetraNodes.push_back( node2 );
+    _tetraNodes.push_back( node3 );
+    _tetraNodes.push_back( node4 );
+  }
+
   int NbNodes()
   {
     return _xyz.size() / 3;
@@ -394,9 +409,19 @@ struct MG_Tetra_API::LibData
     return _triaNodes.size() / 3;
   }
 
+  int NbTetra()
+  {
+    return _tetraNodes.size() / 4;
+  }
+
   int * GetTriaNodes( int iTria )
   {
     return & _triaNodes[ iTria * 3 ];
+  }
+
+  int * GetTetraNodes( int iTet )
+  {
+    return & _tetraNodes[ iTet * 4 ];
   }
 
   int IsVertexRequired( int iNode )
@@ -485,26 +510,25 @@ namespace // functions called by MG library to exchange with the application
   //   return STATUS_OK;
   // }
 
-  // status_t get_tetrahedron_count(integer * nbtetra, void *user_data)
-  // {
-  //   MG_Tetra_API::LibData* data = (MG_Tetra_API::LibData *) user_data;
+  status_t get_tetrahedron_count(integer * nbtetra, void *user_data)
+  {
+    MG_Tetra_API::LibData* data = (MG_Tetra_API::LibData *) user_data;
+    *nbtetra = data->NbTetra();
 
-  //   *nbtetra = 0;                 /* the number of tetra in your input mesh (0 if you describe a surface mesh) */
+    return STATUS_OK;
+  }
 
-  //   return STATUS_OK;
-  // }
+  status_t get_tetrahedron_vertices(integer itetra, integer * vtetra,
+                                    void *user_data)
+  {
+    int j;
+    MG_Tetra_API::LibData* data = (MG_Tetra_API::LibData *) user_data;
+    int* nodes = data->GetTetraNodes( itetra-1 );
+    for (j = 0; j < 4; j++)
+      vtetra[j] = nodes[j];
 
-  // status_t get_tetrahedron_vertices(integer itetra, integer * vtetra,
-  //                                   void *user_data)
-  // {
-  //   int j;
-  //   MG_Tetra_API::LibData* data = (MG_Tetra_API::LibData *) user_data;
-
-  //   for (j = 0; j < 4; j++)
-  //     vtetra[j] = 0;              /* the j'th vertex index of the itetra'th tetrahedron */
-
-  //   return STATUS_OK;
-  // }
+    return STATUS_OK;
+  }
 
   status_t get_vertex_required_property(integer ivtx, integer * rvtx, void *user_data)
   {
@@ -534,26 +558,37 @@ namespace // functions called by MG library to exchange with the application
     //std::cout << desc << std::endl;
 #endif
 
-    // Compute progress
-    // corresponding messages are:
-    // "  -- PHASE 1 COMPLETED"               => 10 %
-    // "  -- PHASE 2 COMPLETED"               => 25 %
-    // "     ** ITERATION   1"                => 25.* %
-    // "     ** ITERATION   2"                => 25.* %
-    // "  -- PHASE 3 COMPLETED"               => 70 %
-    // "  -- PHASE 4 COMPLETED"               => 98 %
+    if ( strncmp( "MGMESSAGE  1009001 ", desc, 19 ) == 0 )
+    {
+      // progress message (10%): "MGMESSAGE  1009001  0 1 1.000000e+01"
+      data->_progress = atof( desc + 24 );
 
-    if ( strncmp( "-- PHASE ", desc + 2, 9 ) == 0 && desc[ 13 ] == 'C' )
-    {
-      const double progress[] = { 10., 25., 70., 98., 100., 100., 100. };
-      int       phase = atoi( desc + 11 );
-      data->_progress = std::max( data->_progress, progress[ phase - 1 ] / 100. );
+      _progressInCallBack = true;
     }
-    else if ( strncmp( "** ITERATION ", desc + 5, 13 ) == 0 )
+
+    if ( !_progressInCallBack )
     {
-      int         iter = atoi( desc + 20 );
-      double   percent = 25. + iter * ( 70 - 25 ) / 20.;
-      data->_progress = std::max( data->_progress, ( percent / 100. ));
+      // Compute progress
+      // corresponding messages are:
+      // "  -- PHASE 1 COMPLETED"               => 10 %
+      // "  -- PHASE 2 COMPLETED"               => 25 %
+      // "     ** ITERATION   1"                => 25.* %
+      // "     ** ITERATION   2"                => 25.* %
+      // "  -- PHASE 3 COMPLETED"               => 70 %
+      // "  -- PHASE 4 COMPLETED"               => 98 %
+
+      if ( strncmp( "-- PHASE ", desc + 2, 9 ) == 0 && desc[ 13 ] == 'C' )
+      {
+        const double progress[] = { 10., 25., 70., 98., 100., 100., 100. };
+        int       phase = atoi( desc + 11 );
+        data->_progress = std::max( data->_progress, progress[ phase - 1 ] / 100. );
+      }
+      else if ( strncmp( "** ITERATION ", desc + 5, 13 ) == 0 )
+      {
+        int         iter = atoi( desc + 20 );
+        double   percent = 25. + iter * ( 70 - 25 ) / 20.;
+        data->_progress = std::max( data->_progress, ( percent / 100. ));
+      }
     }
 
     return STATUS_OK;
@@ -595,6 +630,8 @@ void MG_Tetra_API::LibData::Init()
   mesh_set_get_edge_vertices( _tria_mesh, get_edge_vertices, this );
   mesh_set_get_triangle_count( _tria_mesh, get_triangle_count, this );
   mesh_set_get_triangle_vertices( _tria_mesh, get_triangle_vertices, this );
+  mesh_set_get_tetrahedron_count( _tria_mesh, get_tetrahedron_count, this );
+  mesh_set_get_tetrahedron_vertices( _tria_mesh, get_tetrahedron_vertices, this );
 
   // Create a tetra session
   _session = tetra_session_new( _context );
@@ -607,9 +644,19 @@ void MG_Tetra_API::LibData::Init()
 
 bool MG_Tetra_API::LibData::Compute()
 {
-  // Set surface mesh
-  status_t ret = tetra_set_surface_mesh( _session, _tria_mesh );
-  if ( ret != STATUS_OK ) MG_Error( "unable to set surface mesh");
+  status_t ret;
+
+  if ( _tetraNodes.empty() )
+  {
+    // Set surface mesh
+    ret = tetra_set_surface_mesh( _session, _tria_mesh );
+    if ( ret != STATUS_OK ) MG_Error( "unable to set surface mesh");
+  }
+  else
+  {
+    ret = tetra_set_volume_mesh( _session, _tria_mesh );
+    if ( ret != STATUS_OK ) MG_Error( "unable to set volume mesh");
+  }
 
   // Set a sizemap
   if ( !_nodeSize.empty() )
@@ -1134,6 +1181,24 @@ void MG_Tetra_API::GmfSetLin(int iMesh, GmfKwdCod what, int node1, int node2, in
 #endif
   }
   ::GmfSetLin(iMesh, what, node1, node2, node3, domain );
+}
+
+//================================================================================
+/*!
+ * \brief Add tetra nodes
+ */
+//================================================================================
+
+void MG_Tetra_API::GmfSetLin(int iMesh, GmfKwdCod what,
+                             int node1, int node2, int node3, int node4, int domain )
+{
+  if ( _useLib ) {
+#ifdef USE_MG_LIBS
+    _libData->AddTetraNodes( node1, node2, node3, node4, domain );
+    return;
+#endif
+  }
+  ::GmfSetLin(iMesh, what, node1, node2, node3, node4, domain );
 }
 
 //================================================================================

@@ -135,7 +135,6 @@ static void removeFile( const TCollection_AsciiString& fileName )
 GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   : SMESH_3D_Algo(hypId, studyId, gen), _isLibUsed( false )
 {
-  MESSAGE("GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D");
   _name = Name();
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type
   _onlyUnaryInput = false; // Compute() will be called on a compound of solids
@@ -143,18 +142,14 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   _nbShape=0;
   _compatibleHypothesis.push_back( GHS3DPlugin_Hypothesis::GetHypType());
   _compatibleHypothesis.push_back( StdMeshers_ViscousLayers::GetHypType() );
-  _requireShape = false; // can work without shape_studyId
+  _requireShape = false; // can work without shape
 
   _smeshGen_i = SMESH_Gen_i::GetSMESHGen();
   CORBA::Object_var anObject = _smeshGen_i->GetNS()->Resolve("/myStudyManager");
   SALOMEDS::StudyManager_var aStudyMgr = SALOMEDS::StudyManager::_narrow(anObject);
 
-  MESSAGE("studyid = " << _studyId);
-
   _study = NULL;
   _study = aStudyMgr->GetStudyByID(_studyId);
-  if (!_study->_is_nil())
-    MESSAGE("_study->StudyId() = " << _study->StudyId());
   
   _computeCanceled = false;
   _progressAdvance = 1e-4;
@@ -168,7 +163,6 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
 
 GHS3DPlugin_GHS3D::~GHS3DPlugin_GHS3D()
 {
-  MESSAGE("GHS3DPlugin_GHS3D::~GHS3DPlugin_GHS3D");
 }
 
 //=============================================================================
@@ -220,7 +214,6 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
 
 TopoDS_Shape GHS3DPlugin_GHS3D::entryToShape(std::string entry)
 {
-  MESSAGE("GHS3DPlugin_GHS3D::entryToShape "<<entry );
   if ( _study->_is_nil() )
     throw SALOME_Exception("MG-Tetra plugin can't work w/o publishing in the study");
   GEOM::GEOM_Object_var aGeomObj;
@@ -453,7 +446,6 @@ static void addElemInMeshGroup(SMESH_Mesh*             theMesh,
       SMESHDS_Group* aGroupDS = static_cast<SMESHDS_Group*>( groupDS );
       aGroupDS->SMDSGroup().Add(anElem);
       groupDone = true;
-//       MESSAGE("Successfully added enforced element to existing group " << groupName);
       break;
     }
   }
@@ -465,7 +457,6 @@ static void addElemInMeshGroup(SMESH_Mesh*             theMesh,
     aGroup->SetName( groupName.c_str() );
     SMESHDS_Group* aGroupDS = static_cast<SMESHDS_Group*>( aGroup->GetGroupDS() );
     aGroupDS->SMDSGroup().Add(anElem);
-//     MESSAGE("Successfully created enforced vertex group " << groupName);
     groupDone = true;
   }
   if (!groupDone)
@@ -489,7 +480,6 @@ static void updateMeshGroups(SMESH_Mesh* theMesh, std::set<std::string> groupsTo
     std::string currentGroupName = (string)group->GetName();
     if (groupDS->IsEmpty() && groupsToRemove.find(currentGroupName) != groupsToRemove.end()) {
       // Previous group created by enforced elements
-      MESSAGE("Delete previous group created by removed enforced elements: " << group->GetName())
       theMesh->RemoveGroup(groupDS->GetID());
     }
   }
@@ -637,11 +627,9 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
   tabRef[GmfHexahedra]      = 8;
 
   int ver, dim;
-  MESSAGE("Read " << theFile << " file");
   int InpMsh = MGOutput->GmfOpenMesh( theFile, GmfRead, &ver, &dim);
   if (!InpMsh)
     return false;
-  MESSAGE("Done ");
 
   // Read ids of domains
   vector< int > solidIDByDomain;
@@ -982,7 +970,6 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
     makeDomainGroups( elemsOfDomain, theHelper );
 
 #ifdef _DEBUG_
-  MESSAGE("Nb subdomains " << subdomainId2tetraId.size());
   std::map<int, std::set<int> >::const_iterator subdomainIt = subdomainId2tetraId.begin();
   TCollection_AsciiString aSubdomainFileName = theFile;
   aSubdomainFileName = aSubdomainFileName + ".subdomain";
@@ -992,7 +979,6 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
   for(;subdomainIt != subdomainId2tetraId.end() ; ++subdomainIt) {
     int subdomainId = subdomainIt->first;
     std::set<int> tetraIds = subdomainIt->second;
-    MESSAGE("Subdomain #"<<subdomainId<<": "<<tetraIds.size()<<" tetrahedrons");
     std::set<int>::const_iterator tetraIdsIt = tetraIds.begin();
     aSubdomainFile << subdomainId << std::endl;
     for(;tetraIdsIt != tetraIds.end() ; ++tetraIdsIt) {
@@ -1026,7 +1012,6 @@ static bool writeGMFFile(MG_Tetra_API*                                   MGInput
                          GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues & theEnforcedVertices,
                          int &                                           theInvalidEnforcedFlags)
 {
-  MESSAGE("writeGMFFile w/o geometry");
   std::string tmpStr;
   int idx, idxRequired = 0, idxSol = 0;
   const int dummyint = 0;
@@ -1800,10 +1785,15 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
   else if ( mgTetra.HasLog() )
   {
-    // get problem description from the log file
-    _Ghs2smdsConvertor conv( aNodeByGhs3dId, proxyMesh );
-    storeErrorDescription( _logInStandardOutput ? 0 : aLogFileName.ToCString(),
-                           mgTetra.GetLog(), conv );
+    if( _computeCanceled )
+      error( "interruption initiated by user" );
+    else
+    {
+      // get problem description from the log file
+      _Ghs2smdsConvertor conv( aNodeByGhs3dId, proxyMesh );
+      error( getErrorDescription( _logInStandardOutput ? 0 : aLogFileName.ToCString(),
+                                  mgTetra.GetLog(), conv ));
+    }
   }
   else if ( !errStr.empty() )
   {
@@ -1846,8 +1836,6 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                                 SMESH_MesherHelper* theHelper)
 {
-  MESSAGE("GHS3DPlugin_GHS3D::Compute()");
-
   theHelper->IsQuadraticSubMesh( theHelper->GetSubShape() );
 
   // a unique working file name
@@ -2019,10 +2007,15 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   }
   else if ( mgTetra.HasLog() )
   {
-    // get problem description from the log file
-    _Ghs2smdsConvertor conv( aNodeByGhs3dId, proxyMesh );
-    storeErrorDescription( _logInStandardOutput ? 0 : aLogFileName.ToCString(),
-                           mgTetra.GetLog(), conv );
+    if( _computeCanceled )
+      error( "interruption initiated by user" );
+    else
+    {
+      // get problem description from the log file
+      _Ghs2smdsConvertor conv( aNodeByGhs3dId, proxyMesh );
+      error( getErrorDescription( _logInStandardOutput ? 0 : aLogFileName.ToCString(),
+                                  mgTetra.GetLog(), conv ));
+    }
   }
   else {
     // the log file is empty
@@ -2378,17 +2371,13 @@ static char* getIds( char* ptr, int nbIds, vector<int>& ids )
  */
 //================================================================================
 
-bool GHS3DPlugin_GHS3D::storeErrorDescription(const char*                logFile,
-                                              const std::string&         log,
-                                              const _Ghs2smdsConvertor & toSmdsConvertor )
+SMESH_ComputeErrorPtr
+GHS3DPlugin_GHS3D::getErrorDescription(const char*                logFile,
+                                       const std::string&         log,
+                                       const _Ghs2smdsConvertor & toSmdsConvertor,
+                                       const bool                 isOk/* = false*/ )
 {
-  if(_computeCanceled)
-    return error(SMESH_Comment("interruption initiated by user"));
-
-  // read file
-  // SMESH_File file( logFile.ToCString() );
-  // if ( file.size() == 0 )
-  //   return error( SMESH_Comment("See ") << logFile << " for problem description");
+  SMESH_ComputeErrorPtr err = SMESH_ComputeError::New( COMPERR_ALGO_FAILED );
 
   char* ptr = const_cast<char*>( log.c_str() );
   char* buf = ptr, * bufEnd = ptr + log.size();
@@ -2426,7 +2415,7 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const char*                logFile
     if ( strncmp( ptr, "ERR ", 4 ) != 0 )
       continue;
 
-    list<const SMDS_MeshElement*> badElems;
+    list<const SMDS_MeshElement*>& badElems = err->myBadElements;
     vector<int> nodeIds;
 
     ptr += 4;
@@ -2600,13 +2589,6 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const char*                logFile
 //         continue; // not to report different types of errors with bad elements
 //     }
 
-    // store bad elements
-    //if ( allElemsOk ) {
-      list<const SMDS_MeshElement*>::iterator elem = badElems.begin();
-      for ( ; elem != badElems.end(); ++elem )
-        addBadInputElement( *elem );
-      //}
-
     // make error text
     string text = translateError( errNum );
     if ( errDescription.find( text ) == text.npos ) {
@@ -2631,14 +2613,20 @@ bool GHS3DPlugin_GHS3D::storeErrorDescription(const char*                logFile
     }
   }
 
-  if ( logFile && logFile[0] )
+  if ( !isOk && logFile && logFile[0] )
   {
     if ( errDescription.empty() )
       errDescription << "See " << logFile << " for problem description";
     else
       errDescription << "\nSee " << logFile << " for more information";
   }
-  return error( errDescription );
+
+  err->myComment = errDescription;
+
+  if ( err->myComment.empty() && err->myBadElements.empty() )
+    err = SMESH_ComputeError::New(); // OK
+
+  return err;
 }
 
 //================================================================================
@@ -2936,7 +2924,7 @@ double GHS3DPlugin_GHS3D::GetProgress() const
   if ( _isLibUsed )
   {
     // this->_progress is advanced by MG_Tetra_API according to messages from MG library
-    // but sharply. Advanced it a bit to get smoother advancement.
+    // but sharply. Advance it a bit to get smoother advancement.
     GHS3DPlugin_GHS3D* me = const_cast<GHS3DPlugin_GHS3D*>( this );
     if ( _progress < 0.1 ) // the first message is at 10%
       me->_progress = GetProgressByTic();

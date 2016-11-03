@@ -1461,7 +1461,7 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
 
 std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
                                                  const bool                    hasShapeToMesh,
-                                                 const bool                    forExucutable)
+                                                 const bool                    forExecutable)
 {
   std::string cmd = GetExeName();
   // check if any option is overridden by hyp->myTextOption
@@ -1523,7 +1523,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
 
   // to create internal nodes
   if ( no_int_points && !toCreateNewNodes ) {
-    if ( forExucutable )
+    if ( forExecutable )
       cmd += " --no_internal_points";
     else
       cmd += " --internalpoints no";
@@ -1546,7 +1546,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
 
   // to remove initial central point.
   if ( rem && hyp && hyp->myToRemoveCentralPoint) {
-    if ( forExucutable )
+    if ( forExecutable )
       cmd += " --no_initial_central_point";
     else
       cmd += " --centralpoint no";
@@ -1559,7 +1559,7 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
 
   // to define volumic gradation.
   if ( gra && hyp ) {
-    if ( forExucutable )
+    if ( forExecutable )
       cmd += " -Dcpropa=" + SMESH_Comment( hyp->myGradation );
     else
       cmd += " --gradation " + SMESH_Comment( hyp->myGradation );

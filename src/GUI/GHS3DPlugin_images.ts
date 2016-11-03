@@ -15,5 +15,9 @@
             <source>ICON_SMESH_TREE_HYPO_MG-Tetra Parameters</source>
             <translation>mesh_tree_hypo_ghs3d.png</translation>
         </message>
+        <message>
+            <source>ICON_SMESH_TREE_HYPO_MG-Tetra Optimization Parameters</source>
+            <translation>mesh_tree_hypo_ghs3d.png</translation>
+        </message>
     </context>
 </TS>

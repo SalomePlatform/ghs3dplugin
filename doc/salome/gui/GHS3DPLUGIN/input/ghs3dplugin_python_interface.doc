@@ -24,6 +24,7 @@ Below you can see examples of usage of this class for tetrahedral mesh generatio
 -# \ref tui_ghs3d_basic
 -# \ref tui_ghs3d_enforced_vertices
 -# \ref tui_ghs3d_enforced_meshes
+-# \ref tui_ghs3d_optimization
 
 \section tui_ghs3d_basic Construction of Mesh using MG-Tetra algorithm
 
@@ -56,6 +57,11 @@ Below you can see examples of usage of this class for tetrahedral mesh generatio
 \image html ghs3d_screenshot_enf4.png
 \image html ghs3d_screenshot_enf5.png
 \image html ghs3d_screenshot_enf6.png
+
+\section tui_ghs3d_optimization Mesh optimization
+
+<h2>Example of mesh optimization with MG-Tetra Optimization:</h2>
+\tui_script{ghs3d_optimization.py}
 
 \ref tui_ghs3d "Back to top"
 

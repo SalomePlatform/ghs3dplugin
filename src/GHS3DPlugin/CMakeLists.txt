@@ -71,6 +71,9 @@ SET(GHS3DEngine_HEADERS
   GHS3DPlugin_GHS3D_i.hxx
   GHS3DPlugin_Hypothesis.hxx
   GHS3DPlugin_Hypothesis_i.hxx
+  GHS3DPlugin_Optimizer.hxx
+  GHS3DPlugin_OptimizerHypothesis.hxx
+  GHS3DPlugin_OptimizerHypothesis_i.hxx
   MG_Tetra_API.hxx
 )
 
@@ -83,6 +86,9 @@ SET(GHS3DEngine_SOURCES
   GHS3DPlugin_i.cxx
   GHS3DPlugin_Hypothesis.cxx
   GHS3DPlugin_Hypothesis_i.cxx
+  GHS3DPlugin_Optimizer.cxx
+  GHS3DPlugin_OptimizerHypothesis.cxx
+  GHS3DPlugin_OptimizerHypothesis_i.cxx
   MG_Tetra_API.cxx
 )
 

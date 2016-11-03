@@ -24,13 +24,16 @@
 //  $Header$
 //
 #include "GHS3DPlugin_GHS3D_i.hxx"
-#include "SMESH_Gen.hxx"
-#include "SMESH_Mesh_i.hxx"
-#include "SMESH_Gen_i.hxx"
-#include "GHS3DPlugin_GHS3D.hxx"
-#include "SMESH_PythonDump.hxx"
 
-#include "utilities.h"
+#include "GHS3DPlugin_GHS3D.hxx"
+#include "GHS3DPlugin_Optimizer.hxx"
+
+#include <SMESH_Gen.hxx>
+#include <SMESH_Gen_i.hxx>
+#include <SMESH_Mesh_i.hxx>
+#include <SMESH_PythonDump.hxx>
+
+#include <utilities.h>
 #include <cstring>
 
 //=============================================================================
@@ -49,7 +52,6 @@ GHS3DPlugin_GHS3D_i::GHS3DPlugin_GHS3D_i (PortableServer::POA_ptr thePOA,
        SMESH_Algo_i( thePOA ),
        SMESH_3D_Algo_i( thePOA )
 {
-  MESSAGE( "GHS3DPlugin_GHS3D_i::GHS3DPlugin_GHS3D_i" );
   myBaseImpl = new ::GHS3DPlugin_GHS3D (theGenImpl->GetANewId(),
                                         theStudyId,
                                         theGenImpl );
@@ -65,7 +67,6 @@ GHS3DPlugin_GHS3D_i::GHS3DPlugin_GHS3D_i (PortableServer::POA_ptr thePOA,
 
 GHS3DPlugin_GHS3D_i::~GHS3DPlugin_GHS3D_i()
 {
-  MESSAGE( "GHS3DPlugin_GHS3D_i::~GHS3DPlugin_GHS3D_i" );
 }
 
 //=============================================================================
@@ -78,7 +79,6 @@ GHS3DPlugin_GHS3D_i::~GHS3DPlugin_GHS3D_i()
 
 ::GHS3DPlugin_GHS3D* GHS3DPlugin_GHS3D_i::GetImpl()
 {
-  MESSAGE( "GHS3DPlugin_GHS3D_i::GetImpl" );
   return ( ::GHS3DPlugin_GHS3D* )myBaseImpl;
 }
 
@@ -92,7 +92,6 @@ GHS3DPlugin_GHS3D_i::~GHS3DPlugin_GHS3D_i()
 
 SMESH::SMESH_Mesh_ptr GHS3DPlugin_GHS3D_i::importGMFMesh(const char* theGMFFileName)
 {
-  MESSAGE( "GHS3DPlugin_GHS3D_i::importGMFMesh" );
   SMESH_Gen_i* smeshGen = SMESH_Gen_i::GetSMESHGen();
   SMESH::SMESH_Mesh_ptr theMesh = smeshGen->CreateEmptyMesh();
   smeshGen->RemoveLastFromPythonScript(smeshGen->GetCurrentStudy()->StudyId());
@@ -114,3 +113,25 @@ SMESH::SMESH_Mesh_ptr GHS3DPlugin_GHS3D_i::importGMFMesh(const char* theGMFFileN
   }
   return theMesh;
 }
+
+//=============================================================================
+/*!
+ *  GHS3DPlugin_Optimizer_i::GHS3DPlugin_Optimizer_i
+ *
+ *  Constructor
+ */
+//=============================================================================
+
+GHS3DPlugin_Optimizer_i::GHS3DPlugin_Optimizer_i (PortableServer::POA_ptr thePOA,
+                                                  int                     theStudyId,
+                                                  ::SMESH_Gen*            theGenImpl )
+  : SALOME::GenericObj_i( thePOA ),
+    SMESH_Hypothesis_i( thePOA ),
+    SMESH_Algo_i( thePOA ),
+    SMESH_3D_Algo_i( thePOA )
+{
+  myBaseImpl = new ::GHS3DPlugin_Optimizer (theGenImpl->GetANewId(),
+                                            theStudyId,
+                                            theGenImpl );
+}
+
