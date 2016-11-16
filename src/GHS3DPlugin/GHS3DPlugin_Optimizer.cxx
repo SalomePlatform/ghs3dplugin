@@ -271,7 +271,7 @@ namespace
         meshDS->ChangeElementNodes( tet, &nodes[0], 4 );
       }
     }
-    else // tetra added/removed
+    else if ( nbNodes >= nbNodesOld ) // tetra added/removed
     {
       // move or add nodes
       for ( int iN = 1; iN <= nbNodes; ++iN )
@@ -298,6 +298,55 @@ namespace
                            meshDS->FindNode( i3 ),
                            meshDS->FindNode( i2 ),
                            meshDS->FindNode( i4 ));
+      }
+    }
+    else if ( nbNodes < nbNodesOld ) // nodes and tetra removed
+    {
+      // unmark nodes
+      SMDS_NodeIteratorPtr nIt = meshDS->nodesIterator();
+      while ( nIt->more() )
+        nIt->next()->setIsMarked( false );
+
+      // remove tetrahedra and mark nodes used by them
+      SMDS_ElemIteratorPtr tetIt = meshDS->elementGeomIterator( SMDSGeom_TETRA );
+      while ( tetIt->more() )
+      {
+        const SMDS_MeshElement* tet = tetIt->next();
+        SMDS_ElemIteratorPtr nIter = tet->nodesIterator();
+        while ( nIter->more() )
+          nIter->next()->setIsMarked( true );
+
+        meshDS->RemoveFreeElement( tet, /*sm=*/0 );
+      }
+
+      // move or add nodes
+      for ( int iN = 1; iN <= nbNodes; ++iN )
+      {
+        theMGOutput->GmfGetLin( inFile, GmfVertices, &x, &y, &z, &tag );
+        const SMDS_MeshNode* node = meshDS->FindNode( iN );
+        if ( !node )
+          node = meshDS->AddNode( x,y,z );
+        else
+          meshDS->MoveNode( node, x,y,z );
+      }
+
+      // add tetrahedra
+      theMGOutput->GmfGotoKwd( inFile, GmfTetrahedra );
+      for ( int i = 0; i < nbTet; ++i )
+      {
+        theMGOutput->GmfGetLin( inFile, GmfTetrahedra, &i1, &i2, &i3, &i4, &tag);
+        meshDS->AddVolume( meshDS->FindNode( i1 ),
+                           meshDS->FindNode( i3 ),
+                           meshDS->FindNode( i2 ),
+                           meshDS->FindNode( i4 ));
+      }
+
+      // remove free marked nodes
+      for ( nIt = meshDS->nodesIterator(); nIt->more(); )
+      {
+        const SMDS_MeshNode* node = nIt->next();
+        if ( node->NbInverseElements() == 0 && node->isMarked() )
+          meshDS->RemoveFreeNode( node, 0 );
       }
     }
 
@@ -400,11 +449,6 @@ bool GHS3DPlugin_Optimizer::Compute(SMESH_Mesh&         theMesh,
   // ---------------------
   // remove working files
   // ---------------------
-  if ( Ok )
-  {
-    if ( removeLogOnSuccess )
-      removeFile( aLogFileName );
-  }
   if ( mgTetra.HasLog() )
   {
     if( _computeCanceled )
@@ -426,6 +470,10 @@ bool GHS3DPlugin_Optimizer::Compute(SMESH_Mesh&         theMesh,
     error(COMPERR_ALGO_FAILED, errStr);
   }
 
+  if ( Ok && removeLogOnSuccess )
+  {
+    removeFile( aLogFileName );
+  }
   if ( !keepFiles )
   {
     if ( !Ok && _computeCanceled )
