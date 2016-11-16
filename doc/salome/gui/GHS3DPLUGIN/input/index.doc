@@ -10,7 +10,12 @@ MG-Tetra plug-in adds two meshing algorithm to the SALOME Mesh:
   - Generating 3D meshes from 2D meshes (triangles and quadrangles), working without geometrical objects.
 
 <b>MG-Tetra Optimization</b> algorithm optimizes linear tetrahedral
-meshes not based on geometry.
+meshes not based on geometry. 
+- To be able to optimize a mesh generated on geometry, copy
+this mesh (menu <b>Mesh > Copy Mesh</b>) and assign MG-Tetra
+Optimization algorithm to the new mesh in <b>Edit Mesh</b> dialog.
+- To re-optimize a just optimized mesh, invoke <b>Clear Mesh
+  Data</b> command and then \b Compute the mesh again.
 
 \note MG-Tetra plug-in uses MG-Tetra commercial mesher and requires a
 license to be used within the Mesh module.
