@@ -12,6 +12,10 @@
       <translation>MG-Tetra</translation>
     </message>
     <message>
+      <source>GHS3D_OPTIMIZATIOL_HYPOTHESIS</source>
+      <translation>MG-Tetra 最適化</translation>
+    </message>
+    <message>
       <source>GHS3D_OPTIMIZATIOL_LEVEL</source>
       <translation>最適化のレベル</translation>
     </message>
@@ -230,6 +234,50 @@
     <message>
       <source>GHS3D_ENF_MESH_INFO</source>
       <translation>&lt;b&gt;注意&lt;/b&gt;: 要素制約の関連付けられたジオメトリなしメッシュ考慮されます。</translation>
+    </message>
+    <message>
+      <source>MODE_SAFE</source>
+      <translation>セーフモード</translation>
+    </message>
+    <message>
+      <source>MODE_AGGRESSIVE</source>
+      <translation>アグレッシブモード</translation>
+    </message>
+    <message>
+      <source>MODE_NONE</source>
+      <translation>無モード</translation>
+    </message>
+    <message>
+      <source>MODE_NO</source>
+      <translation>Noモード</translation>
+    </message>
+    <message>
+      <source>MODE_YES</source>
+      <translation>Yesモード</translation>
+    </message>
+    <message>
+      <source>MODE_ONLY</source>
+      <translation>Onlyモード</translation>
+    </message>
+    <message>
+      <source>GHS3D_OPTIMIZATION</source>
+      <translation>最適化</translation>
+    </message>
+    <message>
+      <source>GHS3D_SPLIT_OVERCONSTRAINED</source>
+      <translation>過剰拘束要素の分割</translation>
+    </message>
+    <message>
+      <source>GHS3D_PTHREADS_MODE</source>
+      <translation>PThreads モード</translation>
+    </message>
+    <message>
+      <source>GHS3D_NB_THREADS</source>
+      <translation>最大スレッド数</translation>
+    </message>
+    <message>
+      <source>GHS3D_SMOOTH_OFF_SLIVERS</source>
+      <translation>細長い要素のスムーズ化</translation>
     </message>
   </context>
 </TS>
