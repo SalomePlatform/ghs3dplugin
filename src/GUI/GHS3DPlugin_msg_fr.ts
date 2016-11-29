@@ -16,6 +16,10 @@
         <translation>MG-Tetra</translation>
     </message>
     <message>
+        <source>GHS3D_OPTIMIZATIOL_HYPOTHESIS</source>
+        <translation>MG-Tetra Optimisation</translation>
+    </message>
+    <message>
         <source>GHS3D_OPTIMIZATIOL_LEVEL</source>
         <translation>Niveau d&apos;optimisation</translation>
     </message>
@@ -230,6 +234,50 @@
     <message>
         <source>GHS3D_ENF_MESH_INFO</source>
         <translation>&lt;b&gt;Attention&lt;/b&gt;: Les éléments de contraintes ne sont pris en compte que pour des maillage sans géométrie associée.</translation>
+    </message>
+    <message>
+        <source>MODE_SAFE</source>
+        <translation>Sûr</translation>
+    </message>
+    <message>
+        <source>MODE_AGGRESSIVE</source>
+        <translation>Aggressif</translation>
+    </message>
+    <message>
+        <source>MODE_NONE</source>
+        <translation>Aucun</translation>
+    </message>
+    <message>
+        <source>MODE_NO</source>
+        <translation>Non</translation>
+    </message>
+    <message>
+        <source>MODE_YES</source>
+        <translation>Oui</translation>
+    </message>
+    <message>
+        <source>MODE_ONLY</source>
+        <translation>Seulement</translation>
+    </message>
+    <message>
+        <source>GHS3D_OPTIMIZATION</source>
+        <translation>Optimisation</translation>
+    </message>
+    <message>
+        <source>GHS3D_SPLIT_OVERCONSTRAINED</source>
+        <translation>Découpe les éléments surcontraints</translation>
+    </message>
+    <message>
+        <source>GHS3D_PTHREADS_MODE</source>
+        <translation>Mode pthreads</translation>
+    </message>
+    <message>
+        <source>GHS3D_NB_THREADS</source>
+        <translation>Nombre max de threads</translation>
+    </message>
+    <message>
+        <source>GHS3D_SMOOTH_OFF_SLIVERS</source>
+        <translation>Polir les élémenst aplatis</translation>
     </message>
 </context>
 </TS>
