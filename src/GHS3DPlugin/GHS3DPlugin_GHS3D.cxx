@@ -2040,8 +2040,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
 void GHS3DPlugin_GHS3D::CancelCompute()
 {
   _computeCanceled = true;
-#ifdef WIN32
-#else
+#if !defined WIN32 && !defined __APPLE__
   std::string cmd = "ps xo pid,args | grep " + _genericName;
   //cmd += " | grep -e \"^ *[0-9]\\+ \\+" + GHS3DPlugin_Hypothesis::GetExeName() + "\"";
   cmd += " | awk '{print $1}' | xargs kill -9 > /dev/null 2>&1";

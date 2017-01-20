@@ -851,22 +851,15 @@ bool GHS3DPlugin_Hypothesis::DefaultToMakeGroupsOfDomains()
 //function : DefaultMaximumMemory
 //=======================================================================
 
-#ifndef WIN32
-#include <sys/sysinfo.h>
-#else
+#if defined(WIN32)
 #include <windows.h>
+#elif !defined(__APPLE__)
+#include <sys/sysinfo.h>
 #endif
 
-long  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
+long GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
 {
-#ifndef WIN32
-  struct sysinfo si;
-  long err = sysinfo( &si );
-  if ( err == 0 ) {
-    long ramMB = si.totalram * si.mem_unit / 1024 / 1024;
-    return ( 0.7 * ramMB );
-  }
-#else
+#if defined(WIN32)
   // See http://msdn.microsoft.com/en-us/library/aa366589.aspx
   MEMORYSTATUSEX statex;
   statex.dwLength = sizeof (statex);
@@ -874,6 +867,13 @@ long  GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
   if (err != 0) {
     double totMB = (double)statex.ullAvailPhys / 1024. / 1024.;
     return (long)( 0.7 * totMB );
+  }
+#elif !defined(__APPLE__)
+  struct sysinfo si;
+  long err = sysinfo( &si );
+  if ( err == 0 ) {
+    long ramMB = si.totalram * si.mem_unit / 1024 / 1024;
+    return ( 0.7 * ramMB );
   }
 #endif
   return 1024;
