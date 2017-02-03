@@ -96,8 +96,6 @@ private:
   bool                _keepFiles;
   bool                _removeLogOnSuccess;
   bool                _logInStandardOutput;
-  SALOMEDS::Study_var _study;
-  SMESH_Gen_i*        _smeshGen_i;
 
   bool                _isLibUsed;
   double              _progressAdvance;

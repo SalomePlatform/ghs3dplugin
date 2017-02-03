@@ -144,13 +144,6 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, SMESH_Gen* gen)
   _compatibleHypothesis.push_back( GHS3DPlugin_Hypothesis::GetHypType());
   _compatibleHypothesis.push_back( StdMeshers_ViscousLayers::GetHypType() );
   _requireShape = false; // can work without shape
-
-  _smeshGen_i = SMESH_Gen_i::GetSMESHGen();
-  CORBA::Object_var anObject = _smeshGen_i->GetNS()->Resolve("/Study");
-  _study = SALOMEDS::Study::_narrow(anObject);
-
-  if (!_study->_is_nil())
-    MESSAGE("Study not empty");
   
   _computeCanceled = false;
   _progressAdvance = 1e-4;
@@ -217,18 +210,17 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
 TopoDS_Shape GHS3DPlugin_GHS3D::entryToShape(std::string entry)
 {
   MESSAGE("GHS3DPlugin_GHS3D::entryToShape "<<entry );
-  if ( _study->_is_nil() )
-    throw SALOME_Exception("MG-Tetra plugin can't work w/o publishing in the study");
+
   GEOM::GEOM_Object_var aGeomObj;
   TopoDS_Shape S = TopoDS_Shape();
-  SALOMEDS::SObject_var aSObj = _study->FindObjectID( entry.c_str() );
+  SALOMEDS::SObject_var aSObj = SMESH_Gen_i::getStudyServant()->FindObjectID( entry.c_str() );
   if (!aSObj->_is_nil() ) {
     CORBA::Object_var obj = aSObj->GetObject();
     aGeomObj = GEOM::GEOM_Object::_narrow(obj);
     aSObj->UnRegister();
   }
   if ( !aGeomObj->_is_nil() )
-    S = _smeshGen_i->GeomObjectToShape( aGeomObj.in() );
+    S = SMESH_Gen_i::GetSMESHGen()->GeomObjectToShape( aGeomObj.in() );
   return S;
 }
 
