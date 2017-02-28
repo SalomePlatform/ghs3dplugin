@@ -150,14 +150,14 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
 
   _study = NULL;
   _study = aStudyMgr->GetStudyByID(_studyId);
-  
+
   _computeCanceled = false;
   _progressAdvance = 1e-4;
 }
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -167,7 +167,7 @@ GHS3DPlugin_GHS3D::~GHS3DPlugin_GHS3D()
 
 //=============================================================================
 /*!
- *  
+ *
  */
 //=============================================================================
 
@@ -195,8 +195,8 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
   }
   if ( _hyp )
   {
-    _keepFiles = _hyp->GetKeepFiles();
-    _removeLogOnSuccess = _hyp->GetRemoveLogOnSuccess();
+    _keepFiles           = _hyp->GetKeepFiles();
+    _removeLogOnSuccess  = _hyp->GetRemoveLogOnSuccess();
     _logInStandardOutput = _hyp->GetStandardOutputLog();
   }
 
@@ -231,8 +231,9 @@ TopoDS_Shape GHS3DPlugin_GHS3D::entryToShape(std::string entry)
 
 //================================================================================
 /*!
- * \brief returns id of a solid if a triangle defined by the nodes is a temporary face on a
- * side facet of pyramid and defines sub-domian outside the pyramid; else returns HOLE_ID
+ * \brief returns id of a solid if a triangle defined by the nodes is a temporary face
+ * either on a side facet of pyramid or a top of pentahedron and defines sub-domian
+ * outside the volume; else returns HOLE_ID
  */
 //================================================================================
 
@@ -244,26 +245,34 @@ static int checkTmpFace(const SMDS_MeshNode* node1,
   SMDS_ElemIteratorPtr vIt1 = node1->GetInverseElementIterator(SMDSAbs_Volume);
   while ( vIt1->more() )
   {
-    const SMDS_MeshElement* pyram = vIt1->next();
-    if ( pyram->NbCornerNodes() != 5 ) continue;
+    const SMDS_MeshElement* vol = vIt1->next();
+    const int           nbNodes = vol->NbCornerNodes();
+    if ( nbNodes != 5 && nbNodes != 6 ) continue;
     int i2, i3;
-    if ( (i2 = pyram->GetNodeIndex( node2 )) >= 0 &&
-         (i3 = pyram->GetNodeIndex( node3 )) >= 0 )
+    if ( (i2 = vol->GetNodeIndex( node2 )) >= 0 &&
+         (i3 = vol->GetNodeIndex( node3 )) >= 0 )
     {
-      // Triangle defines sub-domian inside the pyramid if it's
-      // normal points out of the pyram
+      if ( nbNodes == 5 )
+      {
+        // Triangle defines sub-domian inside the pyramid if it's
+        // normal points out of the vol
 
-      // make i2 and i3 hold indices of base nodes of the pyram while
-      // keeping the nodes order in the triangle
-      const int iApex = 4;
-      if ( i2 == iApex )
-        i2 = i3, i3 = pyram->GetNodeIndex( node1 );
-      else if ( i3 == iApex )
-        i3 = i2, i2 = pyram->GetNodeIndex( node1 );
+        // make i2 and i3 hold indices of base nodes of the vol while
+        // keeping the nodes order in the triangle
+        const int iApex = 4;
+        if ( i2 == iApex )
+          i2 = i3, i3 = vol->GetNodeIndex( node1 );
+        else if ( i3 == iApex )
+          i3 = i2, i2 = vol->GetNodeIndex( node1 );
 
-      int i3base = (i2+1) % 4; // next index after i2 within the pyramid base
-      bool isDomainInPyramid = ( i3base != i3 );
-      return isDomainInPyramid ? HOLE_ID : pyram->getshapeId();
+        int i3base = (i2+1) % 4; // next index after i2 within the pyramid base
+        bool isDomainInPyramid = ( i3base != i3 );
+        return isDomainInPyramid ? HOLE_ID : vol->getshapeId();
+      }
+      else
+      {
+        return vol->getshapeId(); // triangle is a prism top
+      }
     }
   }
   return HOLE_ID;
@@ -295,7 +304,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
   const SMDS_MeshElement * face = meshDS->FindElement( nodes, SMDSAbs_Face, /*noMedium=*/true);
   if ( !face )
     return checkTmpFace(node1, node2, node3);
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
   std::cout << "bnd face " << face->GetID() << " - ";
 #endif
   // geom face the face assigned to
@@ -590,16 +599,14 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
   const bool hasGeom = ( theHelper->GetMesh()->HasShapeToMesh() );
 
   int nbInitialNodes = theNodeByGhs3dId.size();
-  int nbMeshNodes = theMeshDS->NbNodes();
   
+#ifdef _MY_DEBUG_
   const bool isQuadMesh = 
     theHelper->GetMesh()->NbEdges( ORDER_QUADRATIC ) ||
     theHelper->GetMesh()->NbFaces( ORDER_QUADRATIC ) ||
     theHelper->GetMesh()->NbVolumes( ORDER_QUADRATIC );
-    
-#ifdef _DEBUG_
   std::cout << "theNodeByGhs3dId.size(): " << nbInitialNodes << std::endl;
-  std::cout << "theHelper->GetMesh()->NbNodes(): " << nbMeshNodes << std::endl;
+  std::cout << "theHelper->GetMesh()->NbNodes(): " << theMeshDS->NbNodes() << std::endl;
   std::cout << "isQuadMesh: " << isQuadMesh << std::endl;
 #endif
   
@@ -610,7 +617,7 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
   int nbElem = 0, nbRef = 0;
   int aGMFNodeID = 0;
   std::vector< const SMDS_MeshNode*> GMFNode;
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
   std::map<int, std::set<int> > subdomainId2tetraId;
 #endif
   std::map <GmfKwdCod,int> tabRef;
@@ -666,7 +673,7 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
             findShapeID( *theHelper->GetMesh(), nn[0], nn[1], nn[2], toMeshHoles );
           if ( solidIDByDomain[ domainNb ] > 0 )
           {
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
             std::cout << "solid " << solidIDByDomain[ domainNb ] << std::endl;
 #endif
             const TopoDS_Shape& foundShape = theMeshDS->IndexToShape( solidIDByDomain[ domainNb ] );
@@ -796,7 +803,7 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
       (nbElem <= 1) ? tmpStr = " Tetrahedron" : tmpStr = " Tetrahedra";
       for ( int iElem = 0; iElem < nbElem; iElem++ ) {
         MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &domainID[iElem]);
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
         subdomainId2tetraId[dummy].insert(iElem+1);
 #endif
       }
@@ -969,7 +976,7 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
   if ( toMakeGroupsOfDomains )
     makeDomainGroups( elemsOfDomain, theHelper );
 
-#ifdef _DEBUG_
+#ifdef _MY_DEBUG_
   std::map<int, std::set<int> >::const_iterator subdomainIt = subdomainId2tetraId.begin();
   TCollection_AsciiString aSubdomainFileName = theFile;
   aSubdomainFileName = aSubdomainFileName + ".subdomain";
@@ -1648,7 +1655,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
 
   // make prisms on quadrangles
-  if ( theMesh.NbQuadrangles() > 0 )
+  if ( theMesh.NbQuadrangles() > 0 || _viscousLayersHyp )
   {
     vector<SMESH_ProxyMesh::Ptr> components;
     for (expBox.ReInit(); expBox.More(); expBox.Next())
@@ -1659,11 +1666,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
         if ( !proxyMesh )
           return false;
       }
-      StdMeshers_QuadToTriaAdaptor* q2t = new StdMeshers_QuadToTriaAdaptor;
-      Ok = q2t->Compute( theMesh, expBox.Current(), proxyMesh.get() );
-      components.push_back( SMESH_ProxyMesh::Ptr( q2t ));
-      if ( !Ok )
-        return false;
+      if ( theMesh.NbQuadrangles() > 0 )
+      {
+        StdMeshers_QuadToTriaAdaptor* q2t = new StdMeshers_QuadToTriaAdaptor;
+        Ok = q2t->Compute( theMesh, expBox.Current(), proxyMesh.get() );
+        components.push_back( SMESH_ProxyMesh::Ptr( q2t ));
+        if ( !Ok )
+          return false;
+      }
     }
     proxyMesh.reset( new SMESH_ProxyMesh( components ));
   }

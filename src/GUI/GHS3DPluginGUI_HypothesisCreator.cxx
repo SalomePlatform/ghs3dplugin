@@ -1576,6 +1576,14 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
     h_data.myNumberOfThreads      = opt->GetMaximalNumberOfThreads();
     h_data.mySmoothOffSlivers     = opt->GetSmoothOffSlivers();
   }
+  else // avoid "Conditional jump or move depends on uninitialised value" error
+  {
+    h_data.myOptimization         = 1;
+    h_data.mySplitOverConstrained = 1;
+    h_data.myPThreadsMode         = 1;
+    h_data.myNumberOfThreads      = 1;
+    h_data.mySmoothOffSlivers     = 1;
+  }
   h_data.myToMeshHoles                = h->GetToMeshHoles();
   h_data.myToMakeGroupsOfDomains      = h->GetToMakeGroupsOfDomains();
   h_data.myMaximumMemory              = h->GetMaximumMemory();
