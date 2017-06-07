@@ -1365,11 +1365,11 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   myCreateNewNodesCheck                       ->setChecked    ( data.myToCreateNewNodes );
 
   myAdvWidget->maxMemoryCheck                 ->setChecked    ( data.myMaximumMemory > 0 );
-  myAdvWidget->maxMemorySpin                  ->setValue      ( qMax( (int)data.myMaximumMemory,
-                                                                      myAdvWidget->maxMemorySpin->minimum() ));
+  myAdvWidget->maxMemorySpin                  ->setValue      ( qMax( data.myMaximumMemory,
+                                                                      (float)myAdvWidget->maxMemorySpin->minimum() ));
   myAdvWidget->initialMemoryCheck             ->setChecked    ( data.myInitialMemory > 0 );
-  myAdvWidget->initialMemorySpin              ->setValue      ( qMax( (int)data.myInitialMemory,
-                                                                      myAdvWidget->initialMemorySpin->minimum() ));
+  myAdvWidget->initialMemorySpin              ->setValue      ( qMax( data.myInitialMemory,
+                                                                      (float)myAdvWidget->initialMemorySpin->minimum() ));
   myAdvWidget->workingDirectoryLineEdit       ->setText       ( data.myWorkingDir );
   myAdvWidget->keepWorkingFilesCheck           ->setChecked    ( data.myKeepFiles );
   myAdvWidget->verboseLevelSpin               ->setValue      ( data.myVerboseLevel );

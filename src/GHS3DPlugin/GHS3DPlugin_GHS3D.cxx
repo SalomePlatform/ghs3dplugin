@@ -1654,7 +1654,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   // MG-Tetra for domain indication
   SMESH_ProxyMesh::Ptr proxyMesh( new SMESH_ProxyMesh( theMesh ));
 
-  // make prisms on quadrangles
+  // make prisms on quadrangles and viscous layers
   if ( theMesh.NbQuadrangles() > 0 || _viscousLayersHyp )
   {
     vector<SMESH_ProxyMesh::Ptr> components;
@@ -1678,12 +1678,12 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     proxyMesh.reset( new SMESH_ProxyMesh( components ));
   }
   // build viscous layers
-  else if ( _viscousLayersHyp )
-  {
-    proxyMesh = _viscousLayersHyp->Compute( theMesh, theShape );
-    if ( !proxyMesh )
-      return false;
-  }
+  // else if ( _viscousLayersHyp )
+  // {
+  //   proxyMesh = _viscousLayersHyp->Compute( theMesh, theShape );
+  //   if ( !proxyMesh )
+  //     return false;
+  // }
 
   int anInvalidEnforcedFlags = 0;
   Ok = writeGMFFile(&mgTetra,

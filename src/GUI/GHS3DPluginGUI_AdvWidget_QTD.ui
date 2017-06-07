@@ -31,6 +31,12 @@
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="3" column="4">
        <widget class="QLabel" name="maxMemoryLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>MB</string>
         </property>
@@ -52,34 +58,46 @@
       </item>
       <item row="0" column="4">
        <widget class="QLabel" name="initialMemoryLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>MB</string>
         </property>
        </widget>
       </item>
       <item row="0" column="2" colspan="2">
-       <widget class="SalomeApp_IntSpinBox" name="initialMemorySpin">
+       <widget class="SMESHGUI_SpinBox" name="initialMemorySpin">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>1</horstretch>
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="maximum" stdset="0">
-         <number>999999999</number>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>10.000000000000000</double>
         </property>
        </widget>
       </item>
       <item row="3" column="2" colspan="2">
-       <widget class="SalomeApp_IntSpinBox" name="maxMemorySpin">
+       <widget class="SMESHGUI_SpinBox" name="maxMemorySpin">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>1</horstretch>
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="maximum" stdset="0">
-         <number>999999999</number>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>10.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -217,11 +235,6 @@
    <class>SMESHGUI_SpinBox</class>
    <extends>QDoubleSpinBox</extends>
    <header location="global">SMESHGUI_SpinBox.h</header>
-  </customwidget>
-  <customwidget>
-   <class>SalomeApp_IntSpinBox</class>
-   <extends>QLineEdit</extends>
-   <header location="global">SalomeApp_IntSpinBox.h</header>
   </customwidget>
   <customwidget>
    <class>SMESH_AdvOptionsWdg</class>
