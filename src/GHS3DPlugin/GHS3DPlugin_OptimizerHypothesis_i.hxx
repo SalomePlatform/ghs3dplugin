@@ -41,7 +41,6 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_OptimizerHypothesis_i:
 {
  public:
   GHS3DPlugin_OptimizerHypothesis_i (PortableServer::POA_ptr thePOA,
-                                     int                     theStudyId,
                                      ::SMESH_Gen*            theGenImpl);
   // inherited params:
   // 1 - create new nodes

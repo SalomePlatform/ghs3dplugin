@@ -40,8 +40,8 @@ using namespace std;
 //function : GHS3DPlugin_Hypothesis
 //=======================================================================
 
-GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen * gen)
-  : SMESH_Hypothesis(hypId, studyId, gen),
+GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, SMESH_Gen * gen)
+  : SMESH_Hypothesis(hypId, gen),
   myToMeshHoles(DefaultMeshHoles()),
   myToMakeGroupsOfDomains(DefaultToMakeGroupsOfDomains()),
   myMaximumMemory(-1),

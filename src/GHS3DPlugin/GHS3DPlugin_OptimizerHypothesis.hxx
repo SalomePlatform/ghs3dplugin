@@ -28,7 +28,7 @@
 class GHS3DPlugin_OptimizerHypothesis : public GHS3DPlugin_Hypothesis
 {
 public:
-  GHS3DPlugin_OptimizerHypothesis(int hypId, int studyId, SMESH_Gen * gen);
+  GHS3DPlugin_OptimizerHypothesis(int hypId, SMESH_Gen * gen);
 
   // inherited params:
   // 1 - create new nodes

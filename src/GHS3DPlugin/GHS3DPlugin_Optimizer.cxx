@@ -39,8 +39,8 @@
  */
 //================================================================================
 
-GHS3DPlugin_Optimizer::GHS3DPlugin_Optimizer(int hypId, int studyId, SMESH_Gen* gen)
-  : SMESH_3D_Algo(hypId, studyId, gen)
+GHS3DPlugin_Optimizer::GHS3DPlugin_Optimizer(int hypId, SMESH_Gen* gen)
+  : SMESH_3D_Algo(hypId, gen)
 {
   _name = Name();
   _compatibleHypothesis.push_back( GHS3DPlugin_OptimizerHypothesis::GetHypType());

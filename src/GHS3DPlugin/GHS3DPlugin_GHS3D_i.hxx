@@ -42,7 +42,6 @@ class GHS3DPlugin_GHS3D_i:
 public:
   // Constructor
   GHS3DPlugin_GHS3D_i (PortableServer::POA_ptr thePOA,
-                       int                     theStudyId,
                        ::SMESH_Gen*            theGenImpl );
   // Destructor
   virtual ~GHS3DPlugin_GHS3D_i();
@@ -63,7 +62,6 @@ class GHS3DPlugin_Optimizer_i:
 public:
   // Constructor
   GHS3DPlugin_Optimizer_i (PortableServer::POA_ptr thePOA,
-                           int                     theStudyId,
                            ::SMESH_Gen*            theGenImpl );
 };
 

@@ -24,9 +24,8 @@
 #include <SMESH_Gen.hxx>
 
 GHS3DPlugin_OptimizerHypothesis::GHS3DPlugin_OptimizerHypothesis(int         hypId,
-                                                                 int         studyId,
                                                                  SMESH_Gen * gen)
-  :GHS3DPlugin_Hypothesis( hypId, studyId, gen ),
+  :GHS3DPlugin_Hypothesis( hypId, gen ),
    myOptimization( YES ),
    mySplitOverConstrained( NO ),
    mySmoothOffSlivers( false ),

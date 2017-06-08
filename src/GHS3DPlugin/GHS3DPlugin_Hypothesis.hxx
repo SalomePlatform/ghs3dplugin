@@ -44,7 +44,7 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis: public SMESH_Hypothesis
 {
 public:
 
-  GHS3DPlugin_Hypothesis(int hypId, int studyId, SMESH_Gen * gen);
+  GHS3DPlugin_Hypothesis(int hypId, SMESH_Gen * gen);
 
   typedef std::map<std::vector<double>,double> TGHS3DEnforcedVertexCoordsValues;
   typedef std::map<std::string,double> TGHS3DEnforcedVertexEntryValues;

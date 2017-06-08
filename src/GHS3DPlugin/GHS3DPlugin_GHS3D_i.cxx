@@ -45,7 +45,6 @@
 //=============================================================================
 
 GHS3DPlugin_GHS3D_i::GHS3DPlugin_GHS3D_i (PortableServer::POA_ptr thePOA,
-                                          int                     theStudyId,
                                           ::SMESH_Gen*            theGenImpl )
      : SALOME::GenericObj_i( thePOA ), 
        SMESH_Hypothesis_i( thePOA ), 
@@ -53,7 +52,6 @@ GHS3DPlugin_GHS3D_i::GHS3DPlugin_GHS3D_i (PortableServer::POA_ptr thePOA,
        SMESH_3D_Algo_i( thePOA )
 {
   myBaseImpl = new ::GHS3DPlugin_GHS3D (theGenImpl->GetANewId(),
-                                        theStudyId,
                                         theGenImpl );
 }
 
@@ -94,8 +92,8 @@ SMESH::SMESH_Mesh_ptr GHS3DPlugin_GHS3D_i::importGMFMesh(const char* theGMFFileN
 {
   SMESH_Gen_i* smeshGen = SMESH_Gen_i::GetSMESHGen();
   SMESH::SMESH_Mesh_ptr theMesh = smeshGen->CreateEmptyMesh();
-  smeshGen->RemoveLastFromPythonScript(smeshGen->GetCurrentStudy()->StudyId());
-  SALOMEDS::SObject_ptr theSMesh = smeshGen->ObjectToSObject(smeshGen->GetCurrentStudy(), theMesh);
+  smeshGen->RemoveLastFromPythonScript();
+  SALOMEDS::SObject_ptr theSMesh = smeshGen->ObjectToSObject(theMesh);
 #ifdef WINNT
 #define SEP '\\'
 #else
@@ -123,7 +121,6 @@ SMESH::SMESH_Mesh_ptr GHS3DPlugin_GHS3D_i::importGMFMesh(const char* theGMFFileN
 //=============================================================================
 
 GHS3DPlugin_Optimizer_i::GHS3DPlugin_Optimizer_i (PortableServer::POA_ptr thePOA,
-                                                  int                     theStudyId,
                                                   ::SMESH_Gen*            theGenImpl )
   : SALOME::GenericObj_i( thePOA ),
     SMESH_Hypothesis_i( thePOA ),
@@ -131,7 +128,6 @@ GHS3DPlugin_Optimizer_i::GHS3DPlugin_Optimizer_i (PortableServer::POA_ptr thePOA
     SMESH_3D_Algo_i( thePOA )
 {
   myBaseImpl = new ::GHS3DPlugin_Optimizer (theGenImpl->GetANewId(),
-                                            theStudyId,
                                             theGenImpl );
 }
 
