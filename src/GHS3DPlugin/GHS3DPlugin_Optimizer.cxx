@@ -164,7 +164,7 @@ namespace
 
     SMESHDS_Mesh* meshDS = theHelper->GetMeshDS();
     if ( meshDS->NbNodes() != meshDS->MaxNodeID() )
-      meshDS->compactMesh();
+      meshDS->CompactMesh();
 
     theMGInput->GmfSetKwd( mfile, GmfVertices, meshDS->NbNodes() );
     int TypTab[] = { GmfSca };

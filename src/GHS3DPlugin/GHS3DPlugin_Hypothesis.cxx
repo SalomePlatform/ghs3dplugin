@@ -629,7 +629,6 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
             nodeRet = _enfNodes.insert(make_pair(node,groupName));
             added = added && nodeRet.second;
           }
-//          added = true;s
         }
         break;
       case SMESH::EDGE:
@@ -638,12 +637,12 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
           added = added && elemRet.second;
         }
         else if (elem->GetType() > SMDSAbs_Edge) {
-          SMDS_ElemIteratorPtr it = elem->edgesIterator();
-          for (;it->more();) {
-            const SMDS_MeshElement* anEdge = it->next();
-            elemRet = _enfEdges.insert(make_pair(anEdge,groupName));
-            added = added && elemRet.second;
-          }
+          // SMDS_ElemIteratorPtr it = elem->edgesIterator();
+          // for (;it->more();) {
+          //   const SMDS_MeshElement* anEdge = it->next();
+          //   elemRet = _enfEdges.insert(make_pair(anEdge,groupName));
+          //   added = added && elemRet.second;
+          // }
         }
         break;
       case SMESH::FACE:
@@ -655,14 +654,14 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
           }
         }
         else if (elem->GetType() > SMDSAbs_Face) { // Group of faces
-          SMDS_ElemIteratorPtr it = elem->facesIterator();
-          for (;it->more();) {
-            const SMDS_MeshElement* aFace = it->next();
-            if (aFace->NbCornerNodes() == 3) {
-              elemRet = _enfTriangles.insert(make_pair(aFace,groupName));
-              added = added && elemRet.second;
-            }
-          }
+          // SMDS_ElemIteratorPtr it = elem->facesIterator();
+          // for (;it->more();) {
+          //   const SMDS_MeshElement* aFace = it->next();
+          //   if (aFace->NbCornerNodes() == 3) {
+          //     elemRet = _enfTriangles.insert(make_pair(aFace,groupName));
+          //     added = added && elemRet.second;
+          //   }
+          // }
         }
         break;
       default:

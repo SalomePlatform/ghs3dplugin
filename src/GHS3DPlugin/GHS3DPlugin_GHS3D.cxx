@@ -2386,7 +2386,9 @@ GHS3DPlugin_GHS3D::getErrorDescription(const char*                logFile,
                                        const _Ghs2smdsConvertor & toSmdsConvertor,
                                        const bool                 isOk/* = false*/ )
 {
-  SMESH_ComputeErrorPtr err = SMESH_ComputeError::New( COMPERR_ALGO_FAILED );
+  SMESH_BadInputElements* badElemsErr =
+    new SMESH_BadInputElements( toSmdsConvertor.getMesh(), COMPERR_ALGO_FAILED );
+  SMESH_ComputeErrorPtr err( badElemsErr );
 
   char* ptr = const_cast<char*>( log.c_str() );
   char* buf = ptr, * bufEnd = ptr + log.size();
@@ -2424,7 +2426,7 @@ GHS3DPlugin_GHS3D::getErrorDescription(const char*                logFile,
     if ( strncmp( ptr, "ERR ", 4 ) != 0 )
       continue;
 
-    list<const SMDS_MeshElement*>& badElems = err->myBadElements;
+    list<const SMDS_MeshElement*>& badElems = badElemsErr->myBadElements;
     vector<int> nodeIds;
 
     ptr += 4;
@@ -2632,7 +2634,7 @@ GHS3DPlugin_GHS3D::getErrorDescription(const char*                logFile,
 
   err->myComment = errDescription;
 
-  if ( err->myComment.empty() && err->myBadElements.empty() )
+  if ( err->myComment.empty() && !err->HasBadElems() )
     err = SMESH_ComputeError::New(); // OK
 
   return err;
@@ -2707,6 +2709,16 @@ const SMDS_MeshElement* _Ghs2smdsConvertor::getElement(const vector<int>& ghsNod
   return 0;
 }
 
+//================================================================================
+/*!
+ * \brief Return a mesh
+ */
+//================================================================================
+
+const SMDS_Mesh* _Ghs2smdsConvertor::getMesh() const
+{
+  return _mesh->GetMeshDS();
+}
 
 //=============================================================================
 /*!

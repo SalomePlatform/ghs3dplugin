@@ -111,7 +111,7 @@ public:
 
   struct TIDMeshIDCompare {
     bool operator () (const SMDS_MeshElement* e1, const SMDS_MeshElement* e2) const
-    { return e1->getMeshId() == e2->getMeshId() ? e1->GetID() < e2->GetID() : e1->getMeshId() < e2->getMeshId() ; }
+    { return e1->GetMesh() == e2->GetMesh() ? e1->GetID() < e2->GetID() : e1->GetMesh() < e2->GetMesh() ; }
   };
   
   typedef std::map<const SMDS_MeshElement*, std::string, TIDMeshIDCompare > TIDSortedElemGroupMap;

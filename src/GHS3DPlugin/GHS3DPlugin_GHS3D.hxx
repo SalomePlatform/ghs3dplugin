@@ -124,6 +124,7 @@ public:
                       SMESH_ProxyMesh::Ptr                        mesh);
 
   const SMDS_MeshElement* getElement(const std::vector<int>& ghsNodes) const;
+  const SMDS_Mesh*        getMesh() const;
 };
 
 #endif
