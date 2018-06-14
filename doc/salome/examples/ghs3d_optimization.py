@@ -53,8 +53,8 @@ mg_opt.SetOptimizationLevel( smeshBuilder.Strong_Optimization )
 # run optimization
 optMesh.Compute()
 
-print "Nb tetra before optimization", mesh.NbTetras()
-print "Nb tetra after  optimization", optMesh.NbTetras()
+print("Nb tetra before optimization", mesh.NbTetras())
+print("Nb tetra after  optimization", optMesh.NbTetras())
 
 # End of script
 

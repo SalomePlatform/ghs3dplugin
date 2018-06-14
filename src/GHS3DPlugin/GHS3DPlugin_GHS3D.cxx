@@ -132,8 +132,8 @@ static void removeFile( const TCollection_AsciiString& fileName )
  */
 //=============================================================================
 
-GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
-  : SMESH_3D_Algo(hypId, studyId, gen), _isLibUsed( false )
+GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, SMESH_Gen* gen)
+  : SMESH_3D_Algo(hypId, gen), _isLibUsed( false )
 {
   _name = Name();
   _shapeType = (1 << TopAbs_SHELL) | (1 << TopAbs_SOLID);// 1 bit /shape type
@@ -143,14 +143,7 @@ GHS3DPlugin_GHS3D::GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen)
   _compatibleHypothesis.push_back( GHS3DPlugin_Hypothesis::GetHypType());
   _compatibleHypothesis.push_back( StdMeshers_ViscousLayers::GetHypType() );
   _requireShape = false; // can work without shape
-
-  _smeshGen_i = SMESH_Gen_i::GetSMESHGen();
-  CORBA::Object_var anObject = _smeshGen_i->GetNS()->Resolve("/myStudyManager");
-  SALOMEDS::StudyManager_var aStudyMgr = SALOMEDS::StudyManager::_narrow(anObject);
-
-  _study = NULL;
-  _study = aStudyMgr->GetStudyByID(_studyId);
-
+  
   _computeCanceled = false;
   _progressAdvance = 1e-4;
 }
@@ -214,18 +207,19 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
 
 TopoDS_Shape GHS3DPlugin_GHS3D::entryToShape(std::string entry)
 {
-  if ( _study->_is_nil() )
+  if ( SMESH_Gen_i::getStudyServant()->_is_nil() )
     throw SALOME_Exception("MG-Tetra plugin can't work w/o publishing in the study");
+
   GEOM::GEOM_Object_var aGeomObj;
   TopoDS_Shape S = TopoDS_Shape();
-  SALOMEDS::SObject_var aSObj = _study->FindObjectID( entry.c_str() );
+  SALOMEDS::SObject_var aSObj = SMESH_Gen_i::getStudyServant()->FindObjectID( entry.c_str() );
   if (!aSObj->_is_nil() ) {
     CORBA::Object_var obj = aSObj->GetObject();
     aGeomObj = GEOM::GEOM_Object::_narrow(obj);
     aSObj->UnRegister();
   }
   if ( !aGeomObj->_is_nil() )
-    S = _smeshGen_i->GeomObjectToShape( aGeomObj.in() );
+    S = SMESH_Gen_i::GetSMESHGen()->GeomObjectToShape( aGeomObj.in() );
   return S;
 }
 

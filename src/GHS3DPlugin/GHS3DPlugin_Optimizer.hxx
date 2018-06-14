@@ -30,7 +30,7 @@ class GHS3DPlugin_OptimizerHypothesis;
 class GHS3DPlugin_Optimizer: public SMESH_3D_Algo
 {
 public:
-  GHS3DPlugin_Optimizer(int hypId, int studyId, SMESH_Gen* gen);
+  GHS3DPlugin_Optimizer(int hypId, SMESH_Gen* gen);
 
   virtual bool CheckHypothesis(SMESH_Mesh&         aMesh,
                                const TopoDS_Shape& aShape,

@@ -28,17 +28,16 @@
 
 GHS3DPlugin_OptimizerHypothesis_i::
 GHS3DPlugin_OptimizerHypothesis_i (PortableServer::POA_ptr thePOA,
-                                   int                     theStudyId,
                                    ::SMESH_Gen*            theGenImpl)
   : SALOME::GenericObj_i( thePOA ), 
     SMESH_Hypothesis_i( thePOA ),
-    GHS3DPlugin_Hypothesis_i( thePOA, theStudyId, theGenImpl )
+    GHS3DPlugin_Hypothesis_i( thePOA, theGenImpl )
 {
   int id = myBaseImpl ? myBaseImpl->GetID() : theGenImpl->GetANewId();
   if ( myBaseImpl )
     delete myBaseImpl;
 
-  myBaseImpl = new ::GHS3DPlugin_OptimizerHypothesis( id, theStudyId, theGenImpl );
+  myBaseImpl = new ::GHS3DPlugin_OptimizerHypothesis( id, theGenImpl );
 }
 
 namespace

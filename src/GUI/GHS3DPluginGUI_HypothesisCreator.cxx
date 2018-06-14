@@ -313,14 +313,13 @@ GHS3DPluginGUI_HypothesisCreator::~GHS3DPluginGUI_HypothesisCreator()
 }
 
 /**
- * \brief {Get or create the geom selection tool for active study}
+ * \brief {Get or create the geom selection tool for study}
  * */
 GeomSelectionTools* GHS3DPluginGUI_HypothesisCreator::getGeomSelectionTool()
 {
   GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
-  _PTR(Study) aStudy = SMESH::GetActiveStudyDocument();
-  if (that->GeomToolSelected == NULL || that->GeomToolSelected->getMyStudy() != aStudy) {
-    that->GeomToolSelected = new GeomSelectionTools(aStudy);
+  if (that->GeomToolSelected == NULL) {
+    that->GeomToolSelected = new GeomSelectionTools();
   }
   return that->GeomToolSelected;
 }
@@ -778,7 +777,7 @@ void GHS3DPluginGUI_HypothesisCreator::onSelectEnforcedVertex()
       return;
     if (myEnfVertex->GetShapeType() == GEOM::VERTEX) {
       GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
-      GEOM::GEOM_IMeasureOperations_var measureOp = getGeomEngine()->GetIMeasureOperations( that->getGeomSelectionTool()->getMyStudy()->StudyId() );
+      GEOM::GEOM_IMeasureOperations_var measureOp = getGeomEngine()->GetIMeasureOperations( );
       if (CORBA::is_nil(measureOp))
         return;
       
@@ -1137,16 +1136,17 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
   int elementType = myEnfMeshConstraint->currentIndex();
   
   
-  _PTR(Study) aStudy = SMESH::GetActiveStudyDocument();
+  _PTR(Study) aStudy = SMESH::getStudy();
   _PTR(SObject) aSObj;
   QString meshEntry = myEnfMeshWdg->GetValue();
   
   if (selEnfMeshes == 1)
   {
     aSObj = aStudy->FindObjectID(meshEntry.toStdString().c_str());
-    CORBA::Object_var anObj = SMESH::SObjectToObject(aSObj,aStudy);
-    if (!CORBA::is_nil(anObj))
+    CORBA::Object_var anObj = SMESH::SObjectToObject(aSObj);
+    if (!CORBA::is_nil(anObj)) {
       addEnforcedMesh( aSObj->GetName(), aSObj->GetID(), elementType, groupName);
+    }
   }
   else
   {
@@ -1154,7 +1154,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
     QStringListIterator meshEntriesIt (meshEntries);
     while (meshEntriesIt.hasNext()) {
       aSObj = aStudy->FindObjectID(meshEntriesIt.next().toStdString().c_str());
-      CORBA::Object_var anObj = SMESH::SObjectToObject(aSObj,aStudy);
+      CORBA::Object_var anObj = SMESH::SObjectToObject(aSObj);
       if (!CORBA::is_nil(anObj)) {
         addEnforcedMesh( aSObj->GetName(), aSObj->GetID(), elementType, groupName);
       }
@@ -1219,7 +1219,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
     if ( CORBA::is_nil(getGeomEngine()))
       return;
 
-    GEOM::GEOM_IMeasureOperations_var measureOp = getGeomEngine()->GetIMeasureOperations( that->getGeomSelectionTool()->getMyStudy()->StudyId() );
+    GEOM::GEOM_IMeasureOperations_var measureOp = getGeomEngine()->GetIMeasureOperations( );
     if (CORBA::is_nil(measureOp))
       return;
 
@@ -1734,7 +1734,7 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
 
     TEnfMeshList::const_iterator itEnfMesh;
 
-    _PTR(Study) aStudy = SMESH::GetActiveStudyDocument();
+    _PTR(Study) aStudy = SMESH::getStudy();
 
     for(itEnfMesh = h_data.myEnforcedMeshes.begin() ; itEnfMesh != h_data.myEnforcedMeshes.end(); itEnfMesh++ ) {
       TEnfMesh* enfMesh = (*itEnfMesh);

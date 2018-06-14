@@ -45,13 +45,11 @@ using namespace std;
 //=======================================================================
 
 GHS3DPlugin_Hypothesis_i::GHS3DPlugin_Hypothesis_i (PortableServer::POA_ptr thePOA,
-                                                    int                     theStudyId,
                                                     ::SMESH_Gen*            theGenImpl)
   : SALOME::GenericObj_i( thePOA ), 
     SMESH_Hypothesis_i( thePOA )
 {
   myBaseImpl = new ::GHS3DPlugin_Hypothesis (theGenImpl->GetANewId(),
-                                             theStudyId,
                                              theGenImpl);
 }
 
@@ -492,7 +490,6 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVe
   CORBA::Double x = 0, y = 0, z = 0;
   CORBA::Boolean isCompound = false;
   GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
-  SMESH_Gen_i *smeshGen = SMESH_Gen_i::GetSMESHGen();
   if (theVertexEntry.empty()) {
     string aName;
     if (theVertex->GetShapeType() == GEOM::VERTEX) {
@@ -503,7 +500,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVe
       isCompound = true;
     }
     aName += theVertex->GetEntry();
-    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(smeshGen->GetCurrentStudy(), NULL, theVertex, aName.c_str());
+    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(NULL, theVertex, aName.c_str());
     if (!theSVertex->_is_nil())
       theVertexEntry = theSVertex->GetID();
   }
@@ -511,7 +508,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVe
     THROW_SALOME_CORBA_EXCEPTION( "Geom object is not published in study" ,SALOME::BAD_PARAM );
 
   if (theVertex->GetShapeType() == GEOM::VERTEX) {
-    GEOM::GEOM_IMeasureOperations_var measureOp = geomGen->GetIMeasureOperations( smeshGen->GetCurrentStudy()->StudyId() );
+    GEOM::GEOM_IMeasureOperations_var measureOp = geomGen->GetIMeasureOperations();
     if (CORBA::is_nil(measureOp))
       return false;
     
@@ -535,7 +532,6 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_
   CORBA::Double x = 0, y = 0, z = 0;
   CORBA::Boolean isCompound = false;
   GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
-  SMESH_Gen_i *smeshGen = SMESH_Gen_i::GetSMESHGen();
   if (theVertexEntry.empty()) {
     string aName;
     if (theVertex->GetShapeType() == GEOM::VERTEX) {
@@ -546,7 +542,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_
       isCompound = true;
     }
     aName += theVertex->GetEntry();
-    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(smeshGen->GetCurrentStudy(), NULL, theVertex, aName.c_str());
+    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(NULL, theVertex, aName.c_str());
     if (!theSVertex->_is_nil())
       theVertexEntry = theSVertex->GetID();
   }
@@ -554,7 +550,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_
     THROW_SALOME_CORBA_EXCEPTION( "Geom object is not published in study" ,SALOME::BAD_PARAM );
 
   if (theVertex->GetShapeType() == GEOM::VERTEX) {
-    GEOM::GEOM_IMeasureOperations_var measureOp = geomGen->GetIMeasureOperations( smeshGen->GetCurrentStudy()->StudyId() );
+    GEOM::GEOM_IMeasureOperations_var measureOp = geomGen->GetIMeasureOperations();
     if (CORBA::is_nil(measureOp))
       return false;
     
@@ -669,14 +665,13 @@ CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertexGeom(GEOM::GEOM_Object_
   string theVertexEntry = theVertex->GetStudyEntry();
   if (theVertexEntry.empty()) {
     GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
-    SMESH_Gen_i *smeshGen = SMESH_Gen_i::GetSMESHGen();
     string aName;
     if (theVertex->GetShapeType() == GEOM::VERTEX)
       aName = "Vertex_";
     if (theVertex->GetShapeType() == GEOM::COMPOUND)
       aName = "Compound_";
     aName += theVertex->GetEntry();
-    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(smeshGen->GetCurrentStudy(), NULL, theVertex, aName.c_str());
+    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(NULL, theVertex, aName.c_str());
     if (!theSVertex->_is_nil())
       theVertexEntry = theSVertex->GetID();
   }
@@ -773,14 +768,13 @@ bool GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr th
   string theVertexEntry = theVertex->GetStudyEntry();
   if (theVertexEntry.empty()) {
     GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
-    SMESH_Gen_i *smeshGen = SMESH_Gen_i::GetSMESHGen();
     string aName;
     if (theVertex->GetShapeType() == GEOM::VERTEX)
       aName = "Vertex_";
     if (theVertex->GetShapeType() == GEOM::COMPOUND)
       aName = "Compound_";
     aName += theVertex->GetEntry();
-    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(smeshGen->GetCurrentStudy(), NULL, theVertex, aName.c_str());
+    SALOMEDS::SObject_ptr theSVertex = geomGen->PublishInStudy(NULL, theVertex, aName.c_str());
     if (!theSVertex->_is_nil())
       theVertexEntry = theSVertex->GetID();
   }
@@ -917,7 +911,7 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
   }
 
   SMESH_Gen_i *smeshGen = SMESH_Gen_i::GetSMESHGen();
-  SALOMEDS::SObject_ptr SObj = smeshGen->ObjectToSObject(smeshGen->GetCurrentStudy(),theSource);
+  SALOMEDS::SObject_ptr SObj = smeshGen->ObjectToSObject(theSource);
 
   SMESH_Mesh_i* theMesh_i = SMESH::DownCast<SMESH_Mesh_i*>( theSource);
   SMESH_Group_i* theGroup_i = SMESH::DownCast<SMESH_Group_i*>( theSource);

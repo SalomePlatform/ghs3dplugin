@@ -51,7 +51,7 @@ class GHS3DPlugin_GHS3D: public SMESH_3D_Algo
 {
 public:
 
-  GHS3DPlugin_GHS3D(int hypId, int studyId, SMESH_Gen* gen);
+  GHS3DPlugin_GHS3D(int hypId, SMESH_Gen* gen);
   virtual ~GHS3DPlugin_GHS3D();
 
   virtual bool CheckHypothesis(SMESH_Mesh&         aMesh,
@@ -100,8 +100,6 @@ private:
   bool                _keepFiles;
   bool                _removeLogOnSuccess;
   bool                _logInStandardOutput;
-  SALOMEDS::Study_var _study;
-  SMESH_Gen_i*        _smeshGen_i;
 
   bool                _isLibUsed;
   double              _progressAdvance;
