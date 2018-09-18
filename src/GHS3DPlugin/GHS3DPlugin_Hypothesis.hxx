@@ -247,11 +247,11 @@ public:
   TGHS3DEnforcedVertex* GetEnforcedVertex(double x, double y, double z) throw (std::invalid_argument);
   TGHS3DEnforcedVertex* GetEnforcedVertex(const std::string anEntry) throw (std::invalid_argument);
   bool RemoveEnforcedVertex(double x=0.0, double y=0.0, double z=0.0, const std::string anEntry="" ) throw (std::invalid_argument);
-  const TGHS3DEnforcedVertexCoordsValues _GetEnforcedVerticesCoordsSize() const {return _enfVertexCoordsSizeList; }
-  const TGHS3DEnforcedVertexEntryValues  _GetEnforcedVerticesEntrySize() const {return _enfVertexEntrySizeList; }
-  const TGHS3DEnforcedVertexList         _GetEnforcedVertices() const { return _enfVertexList; }
-  const TCoordsGHS3DEnforcedVertexMap    _GetEnforcedVerticesByCoords() const { return _coordsEnfVertexMap; }
-  const TGeomEntryGHS3DEnforcedVertexMap _GetEnforcedVerticesByEntry() const { return _geomEntryEnfVertexMap; }
+  const TGHS3DEnforcedVertexCoordsValues& _GetEnforcedVerticesCoordsSize() const {return _enfVertexCoordsSizeList; }
+  const TGHS3DEnforcedVertexEntryValues & _GetEnforcedVerticesEntrySize() const {return _enfVertexEntrySizeList; }
+  const TGHS3DEnforcedVertexList        & _GetEnforcedVertices() const { return _enfVertexList; }
+  const TCoordsGHS3DEnforcedVertexMap   & _GetEnforcedVerticesByCoords() const { return _coordsEnfVertexMap; }
+  const TGeomEntryGHS3DEnforcedVertexMap& _GetEnforcedVerticesByEntry() const { return _geomEntryEnfVertexMap; }
   void ClearEnforcedVertices();
 
   /*!
@@ -369,7 +369,6 @@ protected:
   TIDSortedElemGroupMap                    _enfEdges;
   TIDSortedElemGroupMap                    _enfTriangles;
   TID2SizeMap                              _nodeIDToSizeMap;
-  std::map<std::string, TIDSortedElemSet > _entryToElemsMap;
   
   TSetStrings _groupsToRemove;
 };

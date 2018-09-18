@@ -1023,3 +1023,134 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::IsDimSupported( SMESH::Dimension type )
 {
   return type == SMESH::DIM_3D;
 }
+
+
+//================================================================================
+/*!
+ * \brief Return geometry this hypothesis depends on. Return false if there is no geometry parameter
+ */
+//================================================================================
+
+bool
+GHS3DPlugin_Hypothesis_i::getObjectsDependOn( std::vector< std::string > & entryArray,
+                                              std::vector< int >         & subIDArray ) const
+{
+  typedef ::GHS3DPlugin_Hypothesis THyp;
+  const THyp* h = static_cast< const THyp*>( myBaseImpl );
+
+  {
+    const THyp::TGHS3DEnforcedVertexList& enfVertexList = h->_GetEnforcedVertices();
+    THyp::TGHS3DEnforcedVertexList::const_iterator evIt = enfVertexList.begin();
+    for ( ; evIt != enfVertexList.end(); ++evIt )
+    {
+      const THyp::TGHS3DEnforcedVertex* ev = *evIt;
+      entryArray.push_back( ev->geomEntry );
+    }
+  }
+  {
+    const THyp::TGHS3DEnforcedVertexEntryValues&
+      enfVertexEntrySizeList = h->_GetEnforcedVerticesEntrySize();
+    THyp::TGHS3DEnforcedVertexEntryValues::const_iterator entry2size;
+    for ( entry2size =  enfVertexEntrySizeList.cbegin();
+          entry2size != enfVertexEntrySizeList.cend();
+          entry2size++ )
+    {
+      entryArray.push_back( entry2size->first );
+    }
+  }
+  {
+    const THyp::TCoordsGHS3DEnforcedVertexMap&
+      coordsEnfVertexMap = h->_GetEnforcedVerticesByCoords();
+    THyp::TCoordsGHS3DEnforcedVertexMap::const_iterator size2ev = coordsEnfVertexMap.cbegin();
+    for ( ; size2ev != coordsEnfVertexMap.cend(); ++size2ev )
+    {
+      const THyp::TGHS3DEnforcedVertex* ev = size2ev->second;
+      entryArray.push_back( ev->geomEntry );
+    }
+  }
+  {
+    const THyp::TGeomEntryGHS3DEnforcedVertexMap&
+      geomEntryEnfVertexMap = h->_GetEnforcedVerticesByEntry();
+    THyp::TGeomEntryGHS3DEnforcedVertexMap::const_iterator entry2ev;
+    for ( entry2ev =  geomEntryEnfVertexMap.cbegin();
+          entry2ev != geomEntryEnfVertexMap.cend();
+          entry2ev++ )
+    {
+      entryArray.push_back( entry2ev->first );
+
+      const THyp::TGHS3DEnforcedVertex* ev = entry2ev->second;
+      entryArray.push_back( ev->geomEntry );
+    }
+  }
+
+  return entryArray.size() > 0;
+}
+
+//================================================================================
+/*!
+ * \brief Set new geometry instead of that returned by getObjectsDependOn()
+ */
+//================================================================================
+
+bool
+GHS3DPlugin_Hypothesis_i::setObjectsDependOn( std::vector< std::string > & entryArray,
+                                              std::vector< int >         & subIDArray )
+{
+  typedef ::GHS3DPlugin_Hypothesis THyp;
+  THyp* h = static_cast< THyp*>( myBaseImpl );
+
+  size_t iEnt = 0;
+  {
+    THyp::TGHS3DEnforcedVertexList& enfVertexList =
+      const_cast<THyp::TGHS3DEnforcedVertexList& >( h->_GetEnforcedVertices() );
+    THyp::TGHS3DEnforcedVertexList::iterator evIt = enfVertexList.begin();
+    for ( ; evIt != enfVertexList.end(); ++evIt )
+    {
+      THyp::TGHS3DEnforcedVertex* ev = *evIt;
+      ev->geomEntry = entryArray[ iEnt++ ];
+    }
+  }
+  {
+    THyp::TGHS3DEnforcedVertexEntryValues& enfVertexEntrySizeListNew =
+      const_cast< THyp::TGHS3DEnforcedVertexEntryValues& > ( h->_GetEnforcedVerticesEntrySize() );
+    THyp::TGHS3DEnforcedVertexEntryValues enfVertexEntrySizeList;
+    enfVertexEntrySizeList.swap( enfVertexEntrySizeListNew );
+    THyp::TGHS3DEnforcedVertexEntryValues::const_iterator entry2size;
+    for ( entry2size =  enfVertexEntrySizeList.cbegin();
+          entry2size != enfVertexEntrySizeList.cend();
+          entry2size++, ++iEnt )
+    {
+      if ( entry2size->first.empty() == entryArray[ iEnt ].empty() )
+        enfVertexEntrySizeListNew[ entryArray[ iEnt ]] = entry2size->second;
+    }
+  }
+  {
+    THyp::TCoordsGHS3DEnforcedVertexMap& coordsEnfVertexMap =
+      const_cast< THyp::TCoordsGHS3DEnforcedVertexMap& > ( h->_GetEnforcedVerticesByCoords() );
+    THyp::TCoordsGHS3DEnforcedVertexMap::iterator size2ev = coordsEnfVertexMap.begin();
+    for ( ; size2ev != coordsEnfVertexMap.end(); ++size2ev )
+    {
+      THyp::TGHS3DEnforcedVertex* ev = size2ev->second;
+      ev->geomEntry = entryArray[ iEnt++ ];
+    }
+  }
+  {
+    THyp::TGeomEntryGHS3DEnforcedVertexMap& geomEntryEnfVertexMapNew =
+      const_cast< THyp::TGeomEntryGHS3DEnforcedVertexMap& > ( h->_GetEnforcedVerticesByEntry() );
+    THyp::TGeomEntryGHS3DEnforcedVertexMap geomEntryEnfVertexMap;
+    geomEntryEnfVertexMap.swap( geomEntryEnfVertexMapNew );
+    THyp::TGeomEntryGHS3DEnforcedVertexMap::iterator entry2ev;
+    for ( entry2ev =  geomEntryEnfVertexMap.begin();
+          entry2ev != geomEntryEnfVertexMap.end();
+          entry2ev++ )
+    {
+      const std::string& entry = entryArray[ iEnt++ ];
+      THyp::TGHS3DEnforcedVertex* ev = entry2ev->second;
+      ev->geomEntry = entryArray[ iEnt++ ];
+
+      geomEntryEnfVertexMapNew[ entry ] = ev;
+    }
+  }
+
+  return iEnt == entryArray.size();
+}
