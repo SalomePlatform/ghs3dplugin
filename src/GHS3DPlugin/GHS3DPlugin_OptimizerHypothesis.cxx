@@ -155,6 +155,12 @@ std::string GHS3DPlugin_OptimizerHypothesis::CommandToRun(const GHS3DPlugin_Opti
 {
   SMESH_Comment cmd( GetExeName() );
 
+  cmd << " --max_memory "
+      << (( hyp && hyp->myMaximumMemory > 0 ) ? hyp->myMaximumMemory : DefaultMaximumMemory());
+
+  cmd << " --automatic_memory "
+      << (( hyp && hyp->myInitialMemory > 0 ) ? hyp->myInitialMemory : 100.0 );
+
   if ( hyp )
   {
     const char* mode[3] = { "no", "yes", "only" };
@@ -186,12 +192,6 @@ std::string GHS3DPlugin_OptimizerHypothesis::CommandToRun(const GHS3DPlugin_Opti
 
     if ( !hyp->myToCreateNewNodes )
       cmd << " --no_internal_points";
-
-    if ( hyp->myMaximumMemory > 0 )
-      cmd << " --max_memory " << hyp->myMaximumMemory;
-
-    if ( hyp->myInitialMemory > 0 )
-      cmd << " --automatic_memory " << hyp->myInitialMemory;
 
     cmd << " --verbose " << hyp->myVerboseLevel;
     
