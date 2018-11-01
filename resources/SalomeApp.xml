@@ -27,6 +27,6 @@
     <parameter name="plugins" value="NETGENPlugin,GHS3DPlugin"/>
   </section>
   <section name="smesh_help" >
-    <parameter name="User's Guide/Mesh module/Plug-ins/MG-Tetra plugin" value="${GHS3DPLUGIN_ROOT_DIR}/share/doc/salome/gui/GHS3DPLUGIN/index.html"/>
+    <parameter name="User's Guide/Mesh module/Plug-ins/MG-Tetra plugin" value="${GHS3DPLUGIN_ROOT_DIR}/share/doc/salome/gui/GHS3DPLUGIN/index.html;;http://docs.salome-platform.org/latest/gui/GHS3DPLUGIN/index.html"/>
   </section>
 </document>
