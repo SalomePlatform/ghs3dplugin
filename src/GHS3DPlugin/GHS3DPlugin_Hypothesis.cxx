@@ -1487,13 +1487,13 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   if ( max_memory ) {
     float aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
     cmd += " --max_memory ";
-    if ( aMaximumMemory < 0 ) cmd += SMESH_Comment( DefaultMaximumMemory() );
-    else                      cmd += SMESH_Comment( aMaximumMemory );
+    if ( aMaximumMemory < 0 ) cmd += SMESH_Comment( int( DefaultMaximumMemory() ));
+    else                      cmd += SMESH_Comment( int( aMaximumMemory ));
   }
   if ( auto_memory && !useBndRecovery ) {
     float aInitialMemory = hyp ? hyp->myInitialMemory : -1;
     cmd += " --automatic_memory ";
-    if ( aInitialMemory > 0 ) cmd += SMESH_Comment( aInitialMemory );
+    if ( aInitialMemory > 0 ) cmd += SMESH_Comment( int( aInitialMemory ));
     else                      cmd += "100";
   }
   // component to mesh
