@@ -552,13 +552,12 @@ static void makeDomainGroups( std::vector< std::vector< const SMDS_MeshElement* 
     }
     // create and fill the groups
     size_t iElem = 0;
-    int groupID;
     do
     {
       SMESH_Group* group = groupOfType[ elems[ iElem ]->GetType() ];
       if ( !group )
         group = theHelper->GetMesh()->AddGroup( elems[ iElem ]->GetType(),
-                                                domainName.c_str(), groupID );
+                                                domainName.c_str() );
       SMDS_MeshGroup& groupDS =
         static_cast< SMESHDS_Group* >( group->GetGroupDS() )->SMDSGroup();
 
