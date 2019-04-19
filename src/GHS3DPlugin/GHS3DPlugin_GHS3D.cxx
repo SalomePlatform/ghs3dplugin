@@ -455,8 +455,7 @@ static void addElemInMeshGroup(SMESH_Mesh*             theMesh,
   
   if (!groupDone)
   {
-    int groupId;
-    SMESH_Group* aGroup = theMesh->AddGroup(anElem->GetType(), groupName.c_str(), groupId);
+    SMESH_Group* aGroup = theMesh->AddGroup(anElem->GetType(), groupName.c_str());
     aGroup->SetName( groupName.c_str() );
     SMESHDS_Group* aGroupDS = static_cast<SMESHDS_Group*>( aGroup->GetGroupDS() );
     aGroupDS->SMDSGroup().Add(anElem);
@@ -942,6 +941,20 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
         default: continue;
         } // switch (token)
 
+        // care about medium nodes
+        if ( aCreatedElem &&
+             aCreatedElem->IsQuadratic() &&
+             ( solidID = aCreatedElem->getshapeId() ) > 0 )
+        {
+          int iN = aCreatedElem->NbCornerNodes(), nbN = aCreatedElem->NbNodes();
+          for ( ; iN < nbN; ++iN )
+          {
+            const SMDS_MeshNode* n = aCreatedElem->GetNode(iN);
+            if ( n->getshapeId() < 1 )
+              theMeshDS->SetNodeInVolume( n, solidID );
+          }
+        }
+
         if ( aCreatedElem && toMakeGroupsOfDomains )
         {
           if ( domainID[iElem] >= (int) elemsOfDomain.size() )
@@ -1070,9 +1083,17 @@ static bool writeGMFFile(MG_Tetra_API*                                   MGInput
       aNodeToGhs3dIdMap.insert( make_pair( node, newId ));
     }
   }
-  
+  if ( !anElemSet.empty() &&
+       (*anElemSet.begin())->IsQuadratic() &&
+       theProxyMesh.NbProxySubMeshes() > 0 )
+  {
+    // add medium nodes of proxy triangles to theHelper (#16843)
+    for ( elemSetIt = anElemSet.begin(); elemSetIt != anElemSet.end(); ++elemSetIt )
+      theHelper.AddTLinks( static_cast< const SMDS_MeshFace* >( *elemSetIt ));
+  }
+
   /* EDGES ========================== */
-  
+
   // Iterate over the enforced edges
   for(elemIt = theEnforcedEdges.begin() ; elemIt != theEnforcedEdges.end() ; ++elemIt) {
     elem = elemIt->first;
