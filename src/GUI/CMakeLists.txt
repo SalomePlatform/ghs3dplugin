@@ -33,6 +33,7 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PROJECT_BINARY_DIR}/idl
   ${PROJECT_SOURCE_DIR}/src/GHS3DPlugin
+  ${PROJECT_SOURCE_DIR}/src/GUI
 )
 
 # additional preprocessor / compiler flags
@@ -65,6 +66,7 @@ SET(_link_LIBRARIES
 SET(_moc_HEADERS
   GHS3DPluginGUI_HypothesisCreator.h
   GHS3DPluginGUI_Dlg.h
+  GHS3DPluginGUI_TreeWidget.h
 )
 
 # header files / no moc processed
@@ -84,6 +86,7 @@ SET(_other_SOURCES
   GHS3DPluginGUI.cxx
   GHS3DPluginGUI_HypothesisCreator.cxx
   GHS3DPluginGUI_AdvWidget.cxx
+  GHS3DPluginGUI_TreeWidget.cxx
 )
 
 # --- resources ---

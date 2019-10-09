@@ -23,6 +23,14 @@
 #ifndef GHS3DPLUGINGUI_H
 #define GHS3DPLUGINGUI_H
 
+enum {
+  OPTION_ID_COLUMN = 0,
+  OPTION_TYPE_COLUMN,
+  OPTION_NAME_COLUMN = 0,
+  OPTION_VALUE_COLUMN,
+  NB_COLUMNS,
+};
+
 //////////////////////////////////////////
 // GHS3DPluginGUI_AdvWidget
 //////////////////////////////////////////
@@ -38,6 +46,13 @@ class GHS3DPLUGINGUI_EXPORT GHS3DPluginGUI_AdvWidget : public QWidget,
 public:
   GHS3DPluginGUI_AdvWidget( QWidget* = 0, Qt::WindowFlags = 0 );
   ~GHS3DPluginGUI_AdvWidget();
+
+  void AddOption( const char* name_value_type, bool isCustom = false );
+  void GetOptionAndValue( QTreeWidgetItem * tblRow, QString& option, QString& value, bool& dflt );
+
+public slots:
+
+  void itemChanged(QTreeWidgetItem * tblRow, int column);
 };
 
 #endif

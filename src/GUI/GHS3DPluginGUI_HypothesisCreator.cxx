@@ -294,7 +294,25 @@ void EnforcedMeshTableWidgetDelegate::updateEditorGeometry(QWidget *editor,
 
 
 GHS3DPluginGUI_HypothesisCreator::GHS3DPluginGUI_HypothesisCreator( const QString& theHypType )
-  : SMESHGUI_GenericHypothesisCreator( theHypType )
+  : SMESHGUI_GenericHypothesisCreator( theHypType ),
+    myName(0),
+    myOptimizationLevelCombo(0),
+    myMinSizeCheck(0),
+    myMaxSizeCheck(0),
+    myMinSizeSpin(0),
+    myMaxSizeSpin(0),
+    myGradationCheck(0),
+    myGradationSpin(0),
+    myUseProximityGroup(0),
+    myNbProximityLayers(0),
+    myToMakeGroupsOfDomains(0),
+    myToMeshHolesCheck(0),
+    myOptimizationCombo(0),
+    mySplitOverConstrainedCombo(0),
+    myPThreadsModeCombo(0),
+    myNumberOfThreadsSpin(0),
+    mySmoothOffSliversCheck(0),
+    myCreateNewNodesCheck(0)
 {
   GeomToolSelected = NULL;
   GeomToolSelected = getGeomSelectionTool();
@@ -354,73 +372,127 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   aStdLayout->setMargin( 11 );
 
   int row = 0;
-  myName = 0;
   if ( isCreation() )
   {
     aStdLayout->addWidget( new QLabel( tr( "SMESH_NAME" ), myStdGroup ), row, 0, 1, 1 );
     myName = new QLineEdit( myStdGroup );
     aStdLayout->addWidget( myName, row++, 1, 1, 1 );
   }
+  if ( isOptimization() )
+  {
+    myToMeshHolesCheck = new QCheckBox( tr( "GHS3D_TO_MESH_HOLES" ), myStdGroup );
+    aStdLayout->addWidget( myToMeshHolesCheck, row, 0, 1, 1 );
+    myToMakeGroupsOfDomains = new QCheckBox( tr( "GHS3D_TO_MAKE_DOMAIN_GROUPS" ), myStdGroup );
+    aStdLayout->addWidget( myToMakeGroupsOfDomains, row++, 1, 1, 1 );
 
-  myToMeshHolesCheck = new QCheckBox( tr( "GHS3D_TO_MESH_HOLES" ), myStdGroup );
-  aStdLayout->addWidget( myToMeshHolesCheck, row, 0, 1, 1 );
-  myToMakeGroupsOfDomains = new QCheckBox( tr( "GHS3D_TO_MAKE_DOMAIN_GROUPS" ), myStdGroup );
-  aStdLayout->addWidget( myToMakeGroupsOfDomains, row++, 1, 1, 1 );
+    QLabel* optimizationLbl = new QLabel( tr( "GHS3D_OPTIMIZATION" ), myStdGroup );
+    aStdLayout->addWidget( optimizationLbl, row, 0, 1, 1 );
+    myOptimizationCombo = getModeCombo( myStdGroup, false );
+    aStdLayout->addWidget( myOptimizationCombo, row++, 1, 1, 1 );
 
-  QLabel* optimizationLbl = new QLabel( tr( "GHS3D_OPTIMIZATION" ), myStdGroup );
-  aStdLayout->addWidget( optimizationLbl, row, 0, 1, 1 );
-  myOptimizationCombo = getModeCombo( myStdGroup, false );
-  aStdLayout->addWidget( myOptimizationCombo, row++, 1, 1, 1 );
+    QLabel* optimizatiolLevelLbl = new QLabel( tr( "GHS3D_OPTIMIZATIOL_LEVEL" ), myStdGroup );
+    aStdLayout->addWidget( optimizatiolLevelLbl, row, 0, 1, 1 );
+    myOptimizationLevelCombo = new QComboBox( myStdGroup );
+    aStdLayout->addWidget( myOptimizationLevelCombo, row++, 1, 1, 1 );
 
-  QLabel* optimizatiolLevelLbl = new QLabel( tr( "GHS3D_OPTIMIZATIOL_LEVEL" ), myStdGroup );
-  aStdLayout->addWidget( optimizatiolLevelLbl, row, 0, 1, 1 );
-  myOptimizationLevelCombo = new QComboBox( myStdGroup );
-  aStdLayout->addWidget( myOptimizationLevelCombo, row++, 1, 1, 1 );
+    QLabel* splitOverconstrainedLbl = new QLabel( tr("GHS3D_SPLIT_OVERCONSTRAINED"), myStdGroup );
+    aStdLayout->addWidget( splitOverconstrainedLbl, row, 0, 1, 1 );
+    mySplitOverConstrainedCombo = getModeCombo( myStdGroup, false );
+    aStdLayout->addWidget( mySplitOverConstrainedCombo, row++, 1, 1, 1 );
 
-  QLabel* splitOverconstrainedLbl = new QLabel( tr("GHS3D_SPLIT_OVERCONSTRAINED"), myStdGroup );
-  aStdLayout->addWidget( splitOverconstrainedLbl, row, 0, 1, 1 );
-  mySplitOverConstrainedCombo = getModeCombo( myStdGroup, false );
-  aStdLayout->addWidget( mySplitOverConstrainedCombo, row++, 1, 1, 1 );
+    QLabel* pthreadsModeLbl = new QLabel( tr( "GHS3D_PTHREADS_MODE" ), myStdGroup);
+    aStdLayout->addWidget( pthreadsModeLbl, row, 0, 1, 1 );
+    myPThreadsModeCombo = getModeCombo( myStdGroup, true );
+    aStdLayout->addWidget( myPThreadsModeCombo, row++, 1, 1, 1 );
 
-  QLabel* pthreadsModeLbl = new QLabel( tr( "GHS3D_PTHREADS_MODE" ), myStdGroup);
-  aStdLayout->addWidget( pthreadsModeLbl, row, 0, 1, 1 );
-  myPThreadsModeCombo = getModeCombo( myStdGroup, true );
-  aStdLayout->addWidget( myPThreadsModeCombo, row++, 1, 1, 1 );
+    QLabel* nbThreadsLbl = new QLabel( tr( "GHS3D_NB_THREADS" ), myStdGroup);
+    aStdLayout->addWidget( nbThreadsLbl, row, 0, 1, 1 );
+    myNumberOfThreadsSpin = new SalomeApp_IntSpinBox( 0, 1000, 1, myStdGroup );
+    aStdLayout->addWidget( myNumberOfThreadsSpin, row++, 1, 1, 1 );
 
-  QLabel* nbThreadsLbl = new QLabel( tr( "GHS3D_NB_THREADS" ), myStdGroup);
-  aStdLayout->addWidget( nbThreadsLbl, row, 0, 1, 1 );
-  myNumberOfThreadsSpin = new SalomeApp_IntSpinBox( 0, 1000, 1, myStdGroup );
-  aStdLayout->addWidget( myNumberOfThreadsSpin, row++, 1, 1, 1 );
+    mySmoothOffSliversCheck = new QCheckBox( tr( "GHS3D_SMOOTH_OFF_SLIVERS" ), myStdGroup );
+    aStdLayout->addWidget( mySmoothOffSliversCheck, row, 0, 1, 1 );
+    myCreateNewNodesCheck = new QCheckBox( tr( "TO_ADD_NODES" ), myStdGroup );
+    aStdLayout->addWidget( myCreateNewNodesCheck, row++, 1, 1, 1 );
+  }
+  else
+  {
+    // Main parameters
 
-  mySmoothOffSliversCheck = new QCheckBox( tr( "GHS3D_SMOOTH_OFF_SLIVERS" ), myStdGroup );
-  aStdLayout->addWidget( mySmoothOffSliversCheck, row, 0, 1, 1 );
-  myCreateNewNodesCheck = new QCheckBox( tr( "TO_ADD_NODES" ), myStdGroup );
-  aStdLayout->addWidget( myCreateNewNodesCheck, row++, 1, 1, 1 );
+    QGroupBox* mainGroup = new QGroupBox( tr("GHS3D_MAIN_PARAMS"), myStdGroup );
+    QLabel* optimizatiolLevelLbl = new QLabel( tr( "GHS3D_OPTIMIZATIOL_LEVEL" ), mainGroup );
+    myOptimizationLevelCombo = new QComboBox( mainGroup );
+    myMinSizeCheck = new QCheckBox( tr("GHS3D_MIN_SIZE"), mainGroup );
+    myMaxSizeCheck = new QCheckBox( tr("GHS3D_MAX_SIZE"), mainGroup );
+    myMinSizeSpin  = new SMESHGUI_SpinBox( mainGroup );
+    myMaxSizeSpin  = new SMESHGUI_SpinBox( mainGroup );
+    myMinSizeCheck->setChecked( false );
+    myMaxSizeCheck->setChecked( false );
+    myMinSizeSpin->RangeStepAndValidator(0, COORD_MAX, 10.0, "length_precision");
+    myMaxSizeSpin->RangeStepAndValidator(0, COORD_MAX, 10.0, "length_precision");
+    myMinSizeSpin->setEnabled( false );
+    myMaxSizeSpin->setEnabled( false );
+    connect( myMinSizeCheck, SIGNAL( toggled(bool)), myMinSizeSpin, SLOT( setEnabled(bool)));
+    connect( myMaxSizeCheck, SIGNAL( toggled(bool)), myMaxSizeSpin, SLOT( setEnabled(bool)));
+
+    QGridLayout* mainLayout = new QGridLayout( mainGroup );
+    mainLayout->setSpacing( 6 );
+    mainLayout->setMargin( 11 );
+    mainLayout->addWidget( optimizatiolLevelLbl,     0, 0, 1, 1 );
+    mainLayout->addWidget( myOptimizationLevelCombo, 0, 1, 1, 1 );
+    mainLayout->addWidget( myMinSizeCheck,           1, 0, 1, 1 );
+    mainLayout->addWidget( myMinSizeSpin,            1, 1, 1, 1 );
+    mainLayout->addWidget( myMaxSizeCheck,           2, 0, 1, 1 );
+    mainLayout->addWidget( myMaxSizeSpin,            2, 1, 1, 1 );
+
+    // Volume proximity
+
+    QGroupBox* proxyGroup = new QGroupBox( tr("GHS3D_VOLUME_PROXIMITY"), myStdGroup );
+    myGradationCheck = new QCheckBox( tr("GHS3D_GRADATION"), proxyGroup );
+    myGradationSpin  = new SMESHGUI_SpinBox( proxyGroup );
+    myGradationSpin->RangeStepAndValidator(1, COORD_MAX, 0.1, "length_precision");
+    myGradationSpin->setEnabled( false );
+    connect( myGradationCheck, SIGNAL( toggled(bool)), myGradationSpin, SLOT( setEnabled(bool)));
+    myUseProximityGroup = new QGroupBox( tr("GHS3D_USE_VOLUME_PROXIMITY"), proxyGroup );
+    myUseProximityGroup->setCheckable( true );
+    //myUseProximityGroup->setChecked( false );
+    QLabel* nbProximityLayersLabel = new QLabel( tr("GHS3D_NB_LAYERS"));
+    myNbProximityLayers = new SalomeApp_IntSpinBox( 2, 1e6, 1, proxyGroup );
+
+    QHBoxLayout* useProxyLayout = new QHBoxLayout( myUseProximityGroup );
+    useProxyLayout->addWidget( nbProximityLayersLabel );
+    useProxyLayout->addWidget( myNbProximityLayers );
+
+    QGridLayout* proxyLayout = new QGridLayout( proxyGroup );
+    proxyLayout->setSpacing( 6 );
+    proxyLayout->setMargin( 11 );
+    proxyLayout->addWidget( myGradationCheck,    0, 0, 1, 1 );
+    proxyLayout->addWidget( myGradationSpin,     0, 1, 1, 1 );
+    proxyLayout->addWidget( myUseProximityGroup, 1, 0, 1, 2 );
+
+    // Other parameters
+
+    QGroupBox* otherGroup = new QGroupBox( tr("GHS3D_OTHER_PARAMETERS"), myStdGroup );
+    myToMeshHolesCheck = new QCheckBox( tr( "GHS3D_TO_MESH_HOLES" ), otherGroup );
+    myToMakeGroupsOfDomains = new QCheckBox( tr( "GHS3D_TO_MAKE_DOMAIN_GROUPS" ), otherGroup );
+
+    QGridLayout* otherLayout = new QGridLayout( otherGroup );
+    otherLayout->setSpacing( 6 );
+    otherLayout->setMargin( 11 );
+    otherLayout->addWidget( myToMeshHolesCheck,      0, 0 );
+    otherLayout->addWidget( myToMakeGroupsOfDomains, 1, 0 );
+
+
+    aStdLayout->addWidget( mainGroup,  row++, 0, 1, 2 );
+    aStdLayout->addWidget( proxyGroup, row++, 0, 1, 2 );
+    aStdLayout->addWidget( otherGroup, row++, 0, 1, 2 );
+  }
+  aStdLayout->setRowStretch( row, 10 );
 
   myOptimizationLevelCombo->addItems( QStringList()
                                       << tr( "LEVEL_NONE" )   << tr( "LEVEL_LIGHT" )
                                       << tr( "LEVEL_MEDIUM" ) << tr( "LEVEL_STANDARDPLUS" )
                                       << tr( "LEVEL_STRONG" ));
-  aStdLayout->setRowStretch( row, 10 );
-
-  if ( isOptimization() )
-  {
-    myToMeshHolesCheck->hide();
-    myToMakeGroupsOfDomains->hide();
-  }
-  else
-  {
-    optimizationLbl->hide();
-    myOptimizationCombo->hide();
-    splitOverconstrainedLbl->hide();
-    mySplitOverConstrainedCombo->hide();
-    pthreadsModeLbl->hide();
-    myPThreadsModeCombo->hide();
-    nbThreadsLbl->hide();
-    myNumberOfThreadsSpin->hide();
-    mySmoothOffSliversCheck->hide();
-    myCreateNewNodesCheck->hide();
-  }
 
   // advanced parameters
   myAdvGroup = new QWidget();
@@ -451,24 +523,24 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   
   myAdvWidget->memoryGroupBox                ->setTitle(tr( "MEMORY_GROUP_TITLE" ));
   myAdvWidget->logGroupBox                   ->setTitle(tr( "LOG_GROUP_TITLE" ));
-  myAdvWidget->advancedMeshingGroupBox       ->setTitle(tr( "ADVANCED_MESHING_GROUP_TITLE" ));
+  //myAdvWidget->advancedMeshingGroupBox       ->setTitle(tr( "ADVANCED_MESHING_GROUP_TITLE" ));
   
-  myAdvWidget->createNewNodesCheck           ->setText (tr( "TO_ADD_NODES" ));
-  myAdvWidget->removeInitialCentralPointCheck->setText (tr( "NO_INITIAL_CENTRAL_POINT" ));
-  myAdvWidget->boundaryRecoveryCheck         ->setText (tr( "RECOVERY_VERSION" ));
-  myAdvWidget->FEMCorrectionCheck            ->setText (tr( "FEM_CORRECTION" ));
-  myAdvWidget->gradationLabel                ->setText (tr( "GHS3D_GRADATION" ));
-  myAdvWidget->gradationSpinBox->RangeStepAndValidator(0.0, 5.0, 0.05, "length_precision");
+  // myAdvWidget->createNewNodesCheck           ->setText (tr( "TO_ADD_NODES" ));
+  // myAdvWidget->removeInitialCentralPointCheck->setText (tr( "NO_INITIAL_CENTRAL_POINT" ));
+  // myAdvWidget->boundaryRecoveryCheck         ->setText (tr( "RECOVERY_VERSION" ));
+  // myAdvWidget->FEMCorrectionCheck            ->setText (tr( "FEM_CORRECTION" ));
+  // myAdvWidget->gradationLabel                ->setText (tr( "GHS3D_GRADATION" ));
+  // myAdvWidget->gradationSpinBox->RangeStepAndValidator(0.0, 5.0, 0.05, "length_precision");
 
-  if ( isOptimization() )
-  {
-    myAdvWidget->createNewNodesCheck->hide();
-    myAdvWidget->removeInitialCentralPointCheck->hide();
-    myAdvWidget->boundaryRecoveryCheck->hide();
-    myAdvWidget->FEMCorrectionCheck->hide();
-    myAdvWidget->gradationLabel->hide();
-    myAdvWidget->gradationSpinBox->hide();
-  }
+  // if ( isOptimization() )
+  // {
+  //   myAdvWidget->createNewNodesCheck->hide();
+  //   myAdvWidget->removeInitialCentralPointCheck->hide();
+  //   myAdvWidget->boundaryRecoveryCheck->hide();
+  //   myAdvWidget->FEMCorrectionCheck->hide();
+  //   myAdvWidget->gradationLabel->hide();
+  //   myAdvWidget->gradationSpinBox->hide();
+  // }
 
   // Enforced vertices parameters
   myEnfGroup = new QWidget();
@@ -619,10 +691,10 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
 
   connect( myAdvWidget->maxMemoryCheck,             SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myAdvWidget->initialMemoryCheck,         SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
-  connect( myAdvWidget->boundaryRecoveryCheck,      SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myAdvWidget->logInFileCheck,             SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myAdvWidget->keepWorkingFilesCheck,      SIGNAL( toggled( bool ) ), this, SLOT( updateWidgets() ) );
   connect( myAdvWidget->workingDirectoryPushButton, SIGNAL( clicked() ),       this, SLOT( onDirBtnClicked() ) );
+  connect( myAdvWidget->addBtn,                     SIGNAL( clicked() ),       this, SLOT( onAddOption() ) );
   
   connect( myEnforcedTableWidget,   SIGNAL( itemClicked(QTableWidgetItem *)), this, SLOT( synchronizeCoords() ) );
   connect( myEnforcedTableWidget,   SIGNAL( itemChanged(QTableWidgetItem *)), this, SLOT( updateEnforcedVertexValues(QTableWidgetItem *) ) );
@@ -769,12 +841,12 @@ void GHS3DPluginGUI_HypothesisCreator::onSelectEnforcedVertex()
     myEnfVertex = myEnfVertexWdg->GetObject< GEOM::GEOM_Object >(nbSelEnfVertex-1);
     if (myEnfVertex == GEOM::GEOM_Object::_nil())
       return;
-    if (myEnfVertex->GetShapeType() == GEOM::VERTEX) {
-      GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
+    if (myEnfVertex->GetShapeType() == GEOM::VERTEX)
+    {
       GEOM::GEOM_IMeasureOperations_var measureOp = getGeomEngine()->GetIMeasureOperations( );
       if (CORBA::is_nil(measureOp))
         return;
-      
+
       CORBA::Double x,y,z;
       measureOp->PointCoordinates (myEnfVertex, x, y, z);
       if ( measureOp->IsDone() )
@@ -1309,15 +1381,14 @@ void GHS3DPluginGUI_HypothesisCreator::updateWidgets()
 {
   //myToMakeGroupsOfDomains->setEnabled( myToMeshHolesCheck->isChecked() );
   myAdvWidget->maxMemorySpin->setEnabled( myAdvWidget->maxMemoryCheck->isChecked() );
-  myAdvWidget->initialMemoryCheck->setEnabled( !myAdvWidget->boundaryRecoveryCheck->isChecked() );
-  myAdvWidget->initialMemorySpin->setEnabled( myAdvWidget->initialMemoryCheck->isChecked() && !myAdvWidget->boundaryRecoveryCheck->isChecked() );
-  myOptimizationLevelCombo->setEnabled( !myAdvWidget->boundaryRecoveryCheck->isChecked() );
+  //myAdvWidget->initialMemoryCheck->setEnabled( !myAdvWidget->boundaryRecoveryCheck->isChecked() );
+  myAdvWidget->initialMemorySpin->setEnabled( myAdvWidget->initialMemoryCheck->isChecked() /*&& !myAdvWidget->boundaryRecoveryCheck->isChecked()*/ );
+  //myOptimizationLevelCombo->setEnabled( !myAdvWidget->boundaryRecoveryCheck->isChecked() );
   if ( sender() == myAdvWidget->logInFileCheck ||
        sender() == myAdvWidget->keepWorkingFilesCheck )
   {
-    bool logFileRemovable = myAdvWidget->logInFileCheck->isChecked() &&
-      !myAdvWidget->keepWorkingFilesCheck->isChecked();
-
+    bool logFileRemovable = ( myAdvWidget->logInFileCheck->isChecked() &&
+                              !myAdvWidget->keepWorkingFilesCheck->isChecked() );
     myAdvWidget->removeLogOnSuccessCheck->setEnabled( logFileRemovable );
   }
 }
@@ -1331,7 +1402,43 @@ bool GHS3DPluginGUI_HypothesisCreator::checkParams(QString& msg) const
     return false;
   }
 
-  return true;
+  GHS3DPlugin::GHS3DPlugin_Hypothesis_var h =
+    GHS3DPlugin::GHS3DPlugin_Hypothesis::_narrow( hypothesis() );
+
+  myAdvWidget->myOptionTable->setFocus();
+  QApplication::instance()->processEvents();
+
+  QString name, value;
+  bool isDefault, ok = true;
+  int iRow = 0, nbRows = myAdvWidget->myOptionTable->topLevelItemCount();
+  for ( ; iRow < nbRows; ++iRow )
+  {
+    QTreeWidgetItem* row = myAdvWidget->myOptionTable->topLevelItem( iRow );
+    myAdvWidget->GetOptionAndValue( row, name, value, isDefault );
+
+    if ( name.simplified().isEmpty() )
+      continue; // invalid custom option
+
+    if ( isDefault ) // not selected option
+      value.clear();
+
+    try {
+      h->SetOptionValue( name.toLatin1().constData(), value.toLatin1().constData() );
+    }
+    catch ( const SALOME::SALOME_Exception& ex )
+    {
+      msg = ex.details.text.in();
+      ok = false;
+      break;
+    }
+  }
+
+  if ( !ok )
+  {
+    h->SetOptionValues( myOptions ); // restore values
+  }
+
+  return ok;
 }
 
 void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
@@ -1351,30 +1458,48 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   myToMeshHolesCheck                          ->setChecked    ( data.myToMeshHoles );
   myToMakeGroupsOfDomains                     ->setChecked    ( data.myToMakeGroupsOfDomains );
   myOptimizationLevelCombo                    ->setCurrentIndex( data.myOptimizationLevel );
-  myOptimizationCombo                         ->setCurrentIndex( data.myOptimization );
-  mySplitOverConstrainedCombo                 ->setCurrentIndex( data.mySplitOverConstrained );
-  myPThreadsModeCombo                         ->setCurrentIndex( data.myPThreadsMode );
-  myNumberOfThreadsSpin                       ->setValue      ( data.myNumberOfThreads );
-  mySmoothOffSliversCheck                     ->setChecked    ( data.mySmoothOffSlivers );
-  myCreateNewNodesCheck                       ->setChecked    ( data.myToCreateNewNodes );
-
+  if ( myOptimizationCombo ) // optimizer
+  {
+    myOptimizationCombo                         ->setCurrentIndex( data.myOptimization );
+    mySplitOverConstrainedCombo                 ->setCurrentIndex( data.mySplitOverConstrained );
+    myPThreadsModeCombo                         ->setCurrentIndex( data.myPThreadsMode );
+    myNumberOfThreadsSpin                       ->setValue      ( data.myNumberOfThreads );
+    mySmoothOffSliversCheck                     ->setChecked    ( data.mySmoothOffSlivers );
+    myCreateNewNodesCheck                       ->setChecked    ( data.myToCreateNewNodes );
+  }
+  else
+  {
+    myMinSizeSpin->setValue( data.myMinSize );
+    myMinSizeCheck->setChecked( data.myUseMinSize );
+    myMaxSizeSpin->setValue( data.myMaxSize );
+    myMaxSizeCheck->setChecked( data.myUseMaxSize );
+    myGradationCheck->setChecked( data.myUseGradation );
+    myGradationSpin->setValue( data.myUseGradation ? data.myGradation : GHS3DPlugin_Hypothesis::DefaultGradation() );
+    myUseProximityGroup->setChecked( data.myUseProximity );
+    myNbProximityLayers->setValue( data.myNbProximityLayers );
+  }
   myAdvWidget->maxMemoryCheck                 ->setChecked    ( data.myMaximumMemory > 0 );
-  myAdvWidget->maxMemorySpin                  ->setValue      ( qMax( data.myMaximumMemory,
-                                                                      (float)myAdvWidget->maxMemorySpin->minimum() ));
+  myAdvWidget->maxMemorySpin                  ->setValue
+    ( qMax( data.myMaximumMemory, (float)myAdvWidget->maxMemorySpin->minimum() ));
   myAdvWidget->initialMemoryCheck             ->setChecked    ( data.myInitialMemory > 0 );
-  myAdvWidget->initialMemorySpin              ->setValue      ( qMax( data.myInitialMemory,
-                                                                      (float)myAdvWidget->initialMemorySpin->minimum() ));
+  myAdvWidget->initialMemorySpin              ->setValue
+    ( qMax( data.myInitialMemory, (float)myAdvWidget->initialMemorySpin->minimum() ));
   myAdvWidget->workingDirectoryLineEdit       ->setText       ( data.myWorkingDir );
   myAdvWidget->keepWorkingFilesCheck           ->setChecked    ( data.myKeepFiles );
   myAdvWidget->verboseLevelSpin               ->setValue      ( data.myVerboseLevel );
-  myAdvWidget->createNewNodesCheck            ->setChecked    ( data.myToCreateNewNodes );
-  myAdvWidget->removeInitialCentralPointCheck ->setChecked    ( data.myRemoveInitialCentralPoint );
-  myAdvWidget->boundaryRecoveryCheck          ->setChecked    ( data.myBoundaryRecovery );
-  myAdvWidget->FEMCorrectionCheck             ->setChecked    ( data.myFEMCorrection );
-  myAdvWidget->gradationSpinBox               ->setValue      ( data.myGradation );
-  myAdvWidget->advOptionTable                 ->SetCustomOptions( data.myTextOption );
   myAdvWidget->logInFileCheck                 ->setChecked    ( !data.myLogInStandardOutput );
   myAdvWidget->removeLogOnSuccessCheck        ->setChecked    ( data.myRemoveLogOnSuccess );
+
+  if ( myOptions.operator->() ) {
+    for ( int i = 0, nb = myOptions->length(); i < nb; ++i )
+      myAdvWidget->AddOption( that->myOptions[i].in() );
+  }
+  if ( myCustomOptions.operator->() ) {
+    for ( int i = 0, nb = myCustomOptions->length(); i < nb; ++i )
+      myAdvWidget->AddOption( that->myCustomOptions[i].in() );
+  }
+  myAdvWidget->myOptionTable->resizeColumnToContents( OPTION_NAME_COLUMN );
+
 
   TEnfVertexList::const_iterator it;
   int rowCount = 0;
@@ -1535,20 +1660,17 @@ QString GHS3DPluginGUI_HypothesisCreator::storeParams() const
   if ( data.myRemoveInitialCentralPoint )
     valStr += " --no_initial_central_point";
     
-  if ( data.myBoundaryRecovery )
-    valStr += " -C";
+  // if ( data.myBoundaryRecovery )
+  //   valStr += " -C";
     
-  if ( data.myFEMCorrection )
-    valStr += " -FEM";
+  // if ( data.myFEMCorrection )
+  //   valStr += " -FEM";
     
   if ( data.myGradation != 1.05 ) {
     valStr += " -Dcpropa=";
     valStr += QString::number( data.myGradation );
   }
     
-  valStr += " ";
-  valStr += data.myTextOption;
-
   return valStr;
 }
 
@@ -1570,31 +1692,47 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
     h_data.myNumberOfThreads      = opt->GetMaximalNumberOfThreads();
     h_data.mySmoothOffSlivers     = opt->GetSmoothOffSlivers();
   }
-  else // avoid "Conditional jump or move depends on uninitialised value" error
+  else
   {
+    // avoid "Conditional jump or move depends on uninitialised value" error
     h_data.myOptimization         = 1;
     h_data.mySplitOverConstrained = 1;
     h_data.myPThreadsMode         = 1;
     h_data.myNumberOfThreads      = 1;
     h_data.mySmoothOffSlivers     = 1;
   }
+  h_data.myOptimizationLevel          = h->GetOptimizationLevel();
+  h_data.myMinSize                    = h->GetMinSize();
+  h_data.myMaxSize                    = h->GetMaxSize();
+  this->myMinSizeDefault              = h->GetMinSizeDefault();
+  this->myMaxSizeDefault              = h->GetMaxSizeDefault();
+  if ( ! ( h_data.myUseMinSize        = h_data.myMinSize > 0 ))
+    h_data.myMinSize                  = this->myMinSizeDefault;
+  if ( ! ( h_data.myUseMaxSize        = h_data.myMaxSize > 0 ))
+    h_data.myMaxSize                  = this->myMaxSizeDefault;
+  h_data.myNbProximityLayers          = h->GetNbVolumeProximityLayers();
+  h_data.myUseGradation               = h->GetGradation() != GHS3DPlugin_Hypothesis::DefaultGradation();
+  h_data.myUseProximity               = h->GetVolumeProximity();
   h_data.myToMeshHoles                = h->GetToMeshHoles();
   h_data.myToMakeGroupsOfDomains      = h->GetToMakeGroupsOfDomains();
   h_data.myMaximumMemory              = h->GetMaximumMemory();
   h_data.myInitialMemory              = h->GetInitialMemory();
   h_data.myInitialMemory              = h->GetInitialMemory();
-  h_data.myOptimizationLevel          = h->GetOptimizationLevel();
   h_data.myKeepFiles                  = h->GetKeepFiles();
   h_data.myWorkingDir                 = h->GetWorkingDirectory();
   h_data.myVerboseLevel               = h->GetVerboseLevel();
   h_data.myToCreateNewNodes           = h->GetToCreateNewNodes();
-  h_data.myRemoveInitialCentralPoint  = h->GetToRemoveCentralPoint();
-  h_data.myBoundaryRecovery           = h->GetToUseBoundaryRecoveryVersion();
-  h_data.myFEMCorrection              = h->GetFEMCorrection();
+  //h_data.myRemoveInitialCentralPoint  = h->GetToRemoveCentralPoint();
+  //h_data.myBoundaryRecovery           = h->GetToUseBoundaryRecoveryVersion();
+  //h_data.myFEMCorrection              = h->GetFEMCorrection();
   h_data.myGradation                  = h->GetGradation();
-  h_data.myTextOption                 = h->GetAdvancedOption();
+  //h_data.myTextOption                 = h->GetAdvancedOption();
   h_data.myLogInStandardOutput        = h->GetStandardOutputLog();
   h_data.myRemoveLogOnSuccess         = h->GetRemoveLogOnSuccess();
+
+  GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
+  that->myOptions       = h->GetOptionValues();
+  that->myCustomOptions = h->GetAdvancedOptionValues();
   
   GHS3DPlugin::GHS3DEnforcedVertexList_var vertices = h->GetEnforcedVertices();
   h_data.myEnforcedVertices.clear();
@@ -1651,43 +1789,31 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
     if( isCreation() )
       SMESH::SetName( SMESH::FindSObject( h ), h_data.myName.toLatin1().constData() );
 
-    if ( h->GetToMeshHoles() != h_data.myToMeshHoles ) // avoid duplication of DumpPython commands
-      h->SetToMeshHoles      ( h_data.myToMeshHoles       );
-    if ( h->GetToMakeGroupsOfDomains() != h_data.myToMakeGroupsOfDomains )
-      h->SetToMakeGroupsOfDomains( h_data.myToMakeGroupsOfDomains );
-    if ( h->GetMaximumMemory() != h_data.myMaximumMemory )
-      h->SetMaximumMemory    ( h_data.myMaximumMemory     );
-    if ( h->GetInitialMemory() != h_data.myInitialMemory )
-      h->SetInitialMemory    ( h_data.myInitialMemory     );
-    if ( h->GetInitialMemory() != h_data.myInitialMemory )
-      h->SetInitialMemory    ( h_data.myInitialMemory     );
-    if ( h->GetOptimizationLevel() != h_data.myOptimizationLevel )
-      h->SetOptimizationLevel( h_data.myOptimizationLevel );
-    if ( h->GetKeepFiles() != h_data.myKeepFiles         )
-      h->SetKeepFiles        ( h_data.myKeepFiles         );
-    if ( h->GetWorkingDirectory() != h_data.myWorkingDir )
-      h->SetWorkingDirectory ( h_data.myWorkingDir.toLatin1().constData() );
-    if ( h->GetVerboseLevel() != h_data.myVerboseLevel   )
-      h->SetVerboseLevel     ( h_data.myVerboseLevel      );
-    if ( h->GetToCreateNewNodes() != h_data.myToCreateNewNodes )
-      h->SetToCreateNewNodes( h_data.myToCreateNewNodes   );
-    if ( h->GetToRemoveCentralPoint() != h_data.myRemoveInitialCentralPoint )
-      h->SetToRemoveCentralPoint( h_data.myRemoveInitialCentralPoint );
-    if ( h->GetToUseBoundaryRecoveryVersion() != h_data.myBoundaryRecovery )
-      h->SetToUseBoundaryRecoveryVersion( h_data.myBoundaryRecovery );
-    if ( h->GetFEMCorrection() != h_data.myFEMCorrection )
-      h->SetFEMCorrection    ( h_data.myFEMCorrection     );
-    if ( h->GetGradation() != h_data.myGradation         )
-      h->SetGradation        ( h_data.myGradation         );
-    if ( h->GetAdvancedOption() != h_data.myTextOption       )
-      h->SetAdvancedOption       ( h_data.myTextOption.toLatin1().constData() );
-    if ( h->GetStandardOutputLog() != h_data.myLogInStandardOutput   )
-      h->SetStandardOutputLog( h_data.myLogInStandardOutput  );
-    if ( h->GetRemoveLogOnSuccess() != h_data.myRemoveLogOnSuccess   )
-      h->SetRemoveLogOnSuccess( h_data.myRemoveLogOnSuccess  );
+    h->SetOptimizationLevel           ( h_data.myOptimizationLevel );
+    h->SetMinSize                     ( h_data.myUseMinSize ? h_data.myMinSize : 0 );
+    h->SetMaxSize                     ( h_data.myUseMaxSize ? h_data.myMaxSize : 0 );
+    h->SetMinMaxSizeDefault           ( this->myMinSizeDefault, this->myMaxSizeDefault );
+    h->SetGradation                   ( h_data.myGradation         );
+    h->SetVolumeProximity             ( h_data.myUseProximity      );
+    h->SetNbVolumeProximityLayers     ( h_data.myNbProximityLayers );
+    h->SetToMeshHoles                 ( h_data.myToMeshHoles       );
+    h->SetToMakeGroupsOfDomains       ( h_data.myToMakeGroupsOfDomains );
+
+    h->SetMaximumMemory               ( h_data.myMaximumMemory     );
+    h->SetInitialMemory               ( h_data.myInitialMemory     );
+    h->SetInitialMemory               ( h_data.myInitialMemory     );
+    h->SetKeepFiles                   ( h_data.myKeepFiles         );
+    h->SetWorkingDirectory            ( h_data.myWorkingDir.toLatin1().constData() );
+    h->SetVerboseLevel                ( h_data.myVerboseLevel      );
+    //h->SetToRemoveCentralPoint        ( h_data.myRemoveInitialCentralPoint );
+    //h->SetToUseBoundaryRecoveryVersion( h_data.myBoundaryRecovery  );
+    //h->SetFEMCorrection               ( h_data.myFEMCorrection     );
+    h->SetStandardOutputLog           ( h_data.myLogInStandardOutput );
+    h->SetRemoveLogOnSuccess          ( h_data.myRemoveLogOnSuccess  );
 
     if ( !opt->_is_nil() )
     {
+      opt->SetToCreateNewNodes      ( h_data.myToCreateNewNodes  );
       opt->SetOptimization          ( (GHS3DPlugin::Mode) h_data.myOptimization );
       opt->SetSplitOverConstrained  ( (GHS3DPlugin::Mode) h_data.mySplitOverConstrained );
       opt->SetPThreadsMode          ( (GHS3DPlugin::PThreadsMode) h_data.myPThreadsMode );
@@ -1750,7 +1876,7 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       default:
         break;
       }
-    
+
       ok = h->p_SetEnforcedMesh(theSource, elementType, enfMesh->name.c_str(), enfMesh->groupName.c_str());
     } // for
   } // try
@@ -1764,32 +1890,38 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
 
 bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisData& h_data ) const
 {
-  h_data.myName                       = myName ? myName->text() : "";
-  h_data.myToMeshHoles                = myToMeshHolesCheck->isChecked();
-  h_data.myToMakeGroupsOfDomains      = myToMakeGroupsOfDomains->isChecked();
-  h_data.myOptimization               = myOptimizationCombo->currentIndex();
-  h_data.myOptimizationLevel          = myOptimizationLevelCombo->currentIndex();
-  h_data.mySplitOverConstrained       = mySplitOverConstrainedCombo->currentIndex();
-  h_data.myPThreadsMode               = myPThreadsModeCombo->currentIndex();
-  h_data.myNumberOfThreads            = myNumberOfThreadsSpin->value();
-  h_data.mySmoothOffSlivers           = mySmoothOffSliversCheck->isChecked();
-  h_data.myMaximumMemory              = myAdvWidget->maxMemoryCheck->isChecked() ? myAdvWidget->maxMemorySpin->value() : -1;
-  h_data.myInitialMemory              = myAdvWidget->initialMemoryCheck->isChecked() ? myAdvWidget->initialMemorySpin->value() : -1;
-  h_data.myKeepFiles                  = myAdvWidget->keepWorkingFilesCheck->isChecked();
-  h_data.myWorkingDir                 = myAdvWidget->workingDirectoryLineEdit->text().trimmed();
-  h_data.myVerboseLevel               = myAdvWidget->verboseLevelSpin->value();
-  h_data.myRemoveInitialCentralPoint  = myAdvWidget->removeInitialCentralPointCheck->isChecked();
-  h_data.myBoundaryRecovery           = myAdvWidget->boundaryRecoveryCheck->isChecked();
-  h_data.myFEMCorrection              = myAdvWidget->FEMCorrectionCheck->isChecked();
-  h_data.myGradation                  = myAdvWidget->gradationSpinBox->value();
-  h_data.myTextOption                 = myAdvWidget->advOptionTable->GetCustomOptions();
-  h_data.myLogInStandardOutput        = !myAdvWidget->logInFileCheck->isChecked();
-  h_data.myRemoveLogOnSuccess         = myAdvWidget->removeLogOnSuccessCheck->isChecked();
-  if ( isOptimization() )
-    h_data.myToCreateNewNodes         = myCreateNewNodesCheck->isChecked();
+  h_data.myName                    = myName ? myName->text() : "";
+  h_data.myOptimizationLevel       = myOptimizationLevelCombo->currentIndex();
+  if ( mySplitOverConstrainedCombo ) // optimizer
+  {
+    h_data.myToCreateNewNodes      = myCreateNewNodesCheck->isChecked();
+    h_data.myOptimization          = myOptimizationCombo->currentIndex();
+    h_data.mySplitOverConstrained  = mySplitOverConstrainedCombo->currentIndex();
+    h_data.myPThreadsMode          = myPThreadsModeCombo->currentIndex();
+    h_data.myNumberOfThreads       = myNumberOfThreadsSpin->value();
+    h_data.mySmoothOffSlivers      = mySmoothOffSliversCheck->isChecked();
+  }
   else
-    h_data.myToCreateNewNodes         = myAdvWidget->createNewNodesCheck->isChecked();
-  
+  {
+    h_data.myMinSize               = myMinSizeSpin->value();
+    h_data.myMaxSize               = myMaxSizeSpin->value();
+    h_data.myUseMinSize            = myMinSizeCheck->isChecked();
+    h_data.myUseMaxSize            = myMaxSizeCheck->isChecked();
+    h_data.myGradation             = myGradationSpin->value();
+    h_data.myUseGradation          = myGradationCheck->isChecked();
+    h_data.myUseProximity          = myUseProximityGroup->isChecked();
+    h_data.myNbProximityLayers     = myNbProximityLayers->value();
+    h_data.myToMeshHoles           = myToMeshHolesCheck->isChecked();
+    h_data.myToMakeGroupsOfDomains = myToMakeGroupsOfDomains->isChecked();
+  }
+  h_data.myMaximumMemory           = myAdvWidget->maxMemoryCheck->isChecked() ? myAdvWidget->maxMemorySpin->value() : -1;
+  h_data.myInitialMemory           = myAdvWidget->initialMemoryCheck->isChecked() ? myAdvWidget->initialMemorySpin->value() : -1;
+  h_data.myKeepFiles               = myAdvWidget->keepWorkingFilesCheck->isChecked();
+  h_data.myWorkingDir              = myAdvWidget->workingDirectoryLineEdit->text().trimmed();
+  h_data.myVerboseLevel            = myAdvWidget->verboseLevelSpin->value();
+  h_data.myLogInStandardOutput     = !myAdvWidget->logInFileCheck->isChecked();
+  h_data.myRemoveLogOnSuccess      = myAdvWidget->removeLogOnSuccessCheck->isChecked();
+
   // Enforced vertices
   h_data.myEnforcedVertices.clear();
   QVariant valueX, valueY, valueZ;
@@ -1847,4 +1979,9 @@ QString GHS3DPluginGUI_HypothesisCreator::type() const
 QString GHS3DPluginGUI_HypothesisCreator::helpPage() const
 {
   return isOptimization() ? "optimization_page.html" : "ghs3d_hypo_page.html";
+}
+
+void GHS3DPluginGUI_HypothesisCreator::onAddOption()
+{
+  myAdvWidget->AddOption( NULL, true );
 }

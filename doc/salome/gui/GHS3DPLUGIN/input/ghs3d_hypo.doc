@@ -17,15 +17,6 @@ To get a license, visit http://www.meshgems.com/meshgems-products.html
 - <b>Name</b> - allows to define the name of the hypothesis (MG-Tetra
 Parameters by default).
 
-- <b>Mesh holes</b> - if checked, the algorithm will 
-create mesh in the holes inside a solid shape, else only the outermost
-shape will be meshed. Volumic elements created within holes are bound
-to the solid.
-
-- <b>Make groups of domains</b> - if checked, the algorithm will
-create groups of just generated elements corresponding to each mesh
-domain.<br>
-
 - <b>Optimization level</b> - allows choosing the required
 optimization level (higher level of optimization provides better mesh,
 but can be time-consuming):
@@ -40,11 +31,167 @@ but can be time-consuming):
 
   - strong
 
+- <b>Minimal size</b> - sets the minimum edge size in the generated mesh.
+
+- <b>Maximal size</b> - sets the maximum edge size in the generated mesh.
+
+- <b>Volumic gradation</b> - Defines the volumic ratio between 2 consecutive elements.
+WARNING: Changing the default value of this parameter may dramatically
+decrease the quality of the resulting mesh.
+
+- <b>Use volume proximity</b> - activates consideration of distance between opposite surfaces.
+
+    - <b>Number of layers</b> - asks for at least given number of layers of tets between opposite surfaces.
+
+- <b>Mesh holes</b> - if checked, the algorithm will 
+create mesh in the holes inside a solid shape, else only the outermost
+shape will be meshed. Volumic elements created within holes are bound
+to the solid.
+
+- <b>Make groups of domains</b> - if checked, the algorithm will
+create groups of just generated elements corresponding to each mesh
+domain.<br>
+
 \ref ghs3d_top "Back to top"
 
 \section ghs3d_advanced_parameters Advanced parameters
 
 \image html ghs3d_parameters_advanced.png
+
+\subsection advanced_meshing_options Advanced meshing options
+
+Advanced page tab expose mostly useful advanced options. Initially,
+default values of the options are displayed and they are not
+modifiable. If an option is activated using a check-box, its value
+becomes modifiable.
+
+<b>Add option</b> button adds a line to the table where you can type
+an option and its value as text. A check box in the first column
+activates/deactivates the option of the current row. A deactivated
+option will be erased upon pressing \a Ok.
+
+- <b>Gradation on skin</b> - This option set or not the gradation
+  value on the initial size of the skin vertices.
+
+     - <b>no</b> the gradation is not applied on the skin vertices.
+       In this case the initial size of a vertex is the average edges 
+       lenght which belong the vertex.
+
+     - <b>yes</b> the gradation is applied on the skin vertices. In
+       this case the initial size of a vertex is the average edges
+       lenght which belong the vertex multiplied by the gradation.
+
+
+- <b>Boundary regeneration</b> - defines the boundary regeneration mode.
+  MeshGems-Tetra uses alternative strategies for boundary regeneration.
+
+     - <b>standard</b> means that the standard boundary regeneration algorithm is used.
+
+     - <b>safe</b> means that various methods are tried as long as
+        the regeneration phase fails (including the alternate boundary
+        recovery mode), can be time consuming and can fail in very
+        difficult cases.
+
+     - <b>recovery</b> means that the alternate boundary recovery
+       version is activated. Check <b>Using MeshGems-Tetra with the
+       boundary recovery module</b> chapter of MG-Tetra User Manual.
+
+- <b>Force maximum edge size</b> - This option can be used to force
+  the desired maximum edge size in the generated mesh given by
+  the <b>Max Size</b> parameter. The default value is no, meaning that
+  the maximum edge length can be greater than the given value of
+  the <b>Max Size</b> parameter.
+
+- <b>Force quadratic mesh</b> - This option permits to write or not an
+  output mesh file in case of negative Jacobians when generating a
+  quadratic mesh. Refer to section 4.6.3 for more details. 
+
+     - <b>no</b> means that no output is written (this is the default);
+ 
+     - <b>yes</b> means that an output is written even in case of negative Jacobians.
+
+- <b>Respect surface mesh</b> - This option forbids or not the
+  correction of input triangles and enforced edges mid-nodes to make
+  the element Jacobian strictly positive when generating a quadratic
+  mesh.
+
+     - <b>yes</b> means that the input triangles and edges mid-nodes
+       are unchanged, the correction of nodes is only applied in the volume.
+
+     - <b>no</b> means that the input triangles and edges mid-nodes
+       can be moved. The correction of nodes is applied in the volume
+       and the mid-nodes correction can be applied on the input
+       triangles and edges mid-nodes. The corrected surface mid-nodes
+       are approximated on the surface first, or put on the linear
+       edges; The corrected edges mid-nodes can be put on the linear
+       edges.
+
+- <b>Max number of errors</b> - the error messages will be printed up
+  to a given maximum number of errors. At least 1 error is printed and
+  at most 100 errors are printed to prevent infinite loops.
+
+- <b>Maximal number of threads</b> - This allows to set the maximal
+  number of threads the software can use in parallel for the
+  multi-threading optimization mode.
+
+- <b>No central point</b> - <b>yes</b> prevents adding an internal point at the
+   centre of gravity of the bounding box that MeshGems-Tetra uses by
+   default in order to speed up and to simplify the meshing
+   process. This option can be particularly useful to:
+
+      -  generate a volume mesh without internal points at all;
+
+      - in some rare cases, help the boundary regeneration phase when
+        it failed with the standard options (for example when one
+        dimension of the domain is large compared to the other two with
+        a ratio of 20 or more). Use this option when the boundary
+        regeneration failed with the standard parameters and before
+        using the recovery version.
+
+- <b>Optimise worst elements</b> - Applies an optimization processing
+  to improve the worst quality elements whenever possible. 
+
+- <b>Mode of pthreads</b> - This option sets the optimization mode
+  when using multithread capabilities. By default, this option is not
+  activated which means that only a sequential optimization is
+  performed.
+
+  - <b>safe</b> is slower than the sequential mode, but the
+    quality of the mesh can only improve;
+
+  - <b>aggressive</b> - is faster than the sequential mode, but
+    the quality of the resulting mesh may altered compared to the sequential mode.
+
+- <b>Rectify jacobian</b> - This option activates correction of some
+  nodes so as to make the Jacobian of element strictly positive when
+  generating a quadratic mesh.
+
+- <b>Sliver angle</b> - This options can be used to specify to
+  MeshGems-Tetra what is considered as a sliver and what is not. The
+  user has the possibility to specify an angle (in degrees), which
+  caracterizes a sliver : any tetrahedron which has at least an angle
+  below this value will be considered as a sliver.
+
+- <b>Remove overconstrained tetrahedra</b> - This option can be used
+  to only split the tetrahadra which have at least two facets that
+  belong to the surface mesh. It will not split the overconstrained
+  edges in the mesh. The overconstrained tetrahedra are splitting,
+  whenever possible, which ensures that no tetrahedron has no more
+  than one boundary facet.
+
+  - <b>no</b> means that no correction is applied;
+
+  - <b>yes</b> means that the correction is applied after mesh generation;
+
+  - <b>only</b> means only correction is applied to an existing mesh.
+
+- <b>Target quality</b> - Sets the desired maximum target of worst
+  quality acceptable for the volume mesh used during optimisation
+  phase. When defined, an optimization processing is applied to
+  improve the quality until the given target is reached whenever
+  possible. By default, this option is not activated which means that
+  only the standard optimisations are performed (the quality target is
+  the target quality computed by the program).
 
 \subsection memory_settings Memory settings
 
@@ -85,54 +232,6 @@ is enabled (there must be a log file to delete it) and <b>Keep all working files
 - <b>Keep all working files</b> - allows checking input and output files
 of MG-Tetra software, while usually these files are removed after the
 launch of the mesher. The log file (if any) is also kept if this option is checked.
-
-\subsection advanced_meshing_options Advanced meshing options
-
-- <b>Create new nodes</b> - if this option is checked off, MG-Tetra
-tries to create tetrahedrons using only the nodes of the 2D mesh.
-
-- <b>Remove the initial central point</b> MG-Tetra adds an internal point 
-at the gravity center of the bounding box to speed up and to simplify 
-the meshing process. However, it is possible to refrain from creating 
-this point by using the command line option -no initial central point. This can be
-particularly useful to generate a volume mesh without internal points at all and in some rare cases
-at the boundary regeneration phase when it is impossible to proceed
-with the standard options
-(for example, when one dimension of the domain is more than 20 times greater than the other two).
-Use this option if the boundary regeneration has failed with the standard parameters and before using
-the recovery version (command line option -C).
-Note: when using this option, the speed of the meshing process may
-decrease, and the quality may change.
-Note: the boundary regeneration may fail with this option, in some rare cases.
-
-- <b>Use boundary recovery version</b> - enables using a
-boundary recovery module which tries to
-create volume meshes starting from very poor quality surface meshes
-(almost flat triangles on the surface, high density propagation,
-extreme aspect ratios, etc.) which fails with the standard version. The
-resulting volume mesh will however most likely have a very poor
-quality (poor aspect ratio of elements, tetrahedra with a very small
-positive volume).
-
-- <b>Use FEM correction</b> - Applies finite-element correction by 
-replacing overconstrained elements where it is possible. At first the process 
-slices the overconstrained edges and at second the overconstrained 
-facets. This ensures that there are no edges with two boundary
-vertices and that there are no facets with three boundary vertices. MG-Tetra gives the initial 
-and final overconstrained edges and facets. It also gives the facets
-which have three edges on the boundary.
-Note: when using this option, the speed of the meshing process may 
-decrease, quality may change, and the smallest volume may be smaller.
-By default, the FEM correction is not used.
-
-- <b>Volumic gradation</b> - Defines the volumic ratio between 2 consecutive elements.
-WARNING: Changing the default value of this parameter may dramatically decrease the quality of the resulting mesh.
-
-- A table at the page bottom allows to input in the command line any text
-for MG-Tetra, for example, advanced options. <br> 
-<b>Add option</b> - adds a line to the table where you can type an option and its value as text.
-A check box in the first column activates/deactivates the option of the current row. A deactivated option will be erased upon pressing \a Ok.
-
 
 \ref ghs3d_top "Back to top"
 

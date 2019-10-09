@@ -88,6 +88,30 @@ class GHS3D_Algorithm(Mesh_Algorithm):
             pass
         return self.params
 
+    ## Set lower boundary of mesh element size
+    #  Set it to zero to deactivate this option
+    def SetMinSize(self, theMinSize):
+        self.Parameters().SetMinSize(theMinSize)
+        return
+
+    ## Set upper boundary of mesh element size
+    #  Set it to zero to deactivate this option
+    def SetMaxSize(self, theMaxSize):
+        self.Parameters().SetMaxSize(theMaxSize)
+        return
+
+    ## Activate/deactivate volume proximity computation
+    #
+    def SetVolumeProximity(self, toUse ):
+        self.Parameters().SetVolumeProximity(toUse)
+        return
+
+    ## Set number of surface element layers to be generated due to volume proximity
+    #
+    def SetNbVolumeProximityLayers(self, nbLayers ):
+        self.Parameters().SetNbVolumeProximityLayers(nbLayers)
+        return
+
     ## To mesh "holes" in a solid or not. Default is to mesh.
     #  @param toMesh "mesh holes" flag value
     def SetToMeshHoles(self, toMesh):
@@ -264,15 +288,22 @@ class GHS3D_Algorithm(Mesh_Algorithm):
             pass
         pass
 
-    ## Sets command line option as text.
-    #  @param option command line option
-    def SetTextOption(self, option):
-        self.Parameters().SetAdvancedOption(option)
+    ## Set advanced option value
+    #  @param optionName option name
+    #  @param optionValue option value
+    def SetOptionValue(self, optionName, optionValue):
+        self.Parameters().SetOptionValue( optionName, optionValue )
         pass
     
     ## Sets command line option as text.
+    #  @param optionAndValue command line option in a form "option value"
+    def SetAdvancedOption(self, optionAndValue):
+        self.Parameters().SetAdvancedOption(optionAndValue)
+        pass
+    
+    ## OBSOLETE Sets command line option as text.
     #  @param option command line option
-    def SetAdvancedOption(self, option):
+    def SetTextOption(self, option):
         self.Parameters().SetAdvancedOption(option)
         pass
     

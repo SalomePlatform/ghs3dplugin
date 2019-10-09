@@ -55,6 +55,22 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   void SetToMeshHoles(CORBA::Boolean toMesh);
   CORBA::Boolean GetToMeshHoles();
   /*!
+   *  Activate/deactivate volume proximity computation
+   */
+  void SetVolumeProximity( CORBA::Boolean toUse );
+  CORBA::Boolean GetVolumeProximity();
+  /*!
+   * Set number of surface element layers to be generated due to volume proximity
+   */
+  void SetNbVolumeProximityLayers( CORBA::Short nbLayers );
+  CORBA::Short GetNbVolumeProximityLayers();
+
+  void SetMaxSize(CORBA::Double theMaxSize);
+  CORBA::Double GetMaxSize();
+
+  void SetMinSize(CORBA::Double theMinSize);
+  CORBA::Double GetMinSize();
+  /*!
    * To make groups of volumes of different domains when mesh is generated from skin.
    * Default is to make groups.
    * This option works only (1) for the mesh w/o shape and (2) if GetToMeshHoles() == true
@@ -126,10 +142,23 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   /*!
    * To set hiden/undocumented/advanced options
    */
-  void SetAdvancedOption(const char* option);
+  void SetAdvancedOption(const char* option) throw (SALOME::SALOME_Exception);
   char* GetAdvancedOption();
   void SetTextOption(const char* option); // obsolete
   char* GetTextOption();
+
+  void SetOptionValue(const char* optionName, const char* optionValue) throw (SALOME::SALOME_Exception);
+  char* GetOptionValue(const char* optionName) throw (SALOME::SALOME_Exception);
+  void UnsetOption(const char* optionName);
+
+  GHS3DPlugin::string_array* GetOptionValues();
+  GHS3DPlugin::string_array* GetAdvancedOptionValues();
+
+  void SetOptionValues(const GHS3DPlugin::string_array& options) throw (SALOME::SALOME_Exception);
+  void SetAdvancedOptionValues(const GHS3DPlugin::string_array& options);
+
+  void AddOption(const char* optionName, const char* optionValue);
+  char* GetOption(const char* optionName);
   /*!
   * To define the volumic gradation
   */
@@ -178,6 +207,11 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
 
   GHS3DPlugin::GHS3DEnforcedMeshList* GetEnforcedMeshes();
   void ClearEnforcedMeshes();
+
+  // 3 GUI methods
+  CORBA::Double GetMaxSizeDefault();
+  CORBA::Double GetMinSizeDefault();
+  void SetMinMaxSizeDefault( CORBA::Double theMinSize, CORBA::Double theMaxSize );
 
   // Get implementation
   ::GHS3DPlugin_Hypothesis* GetImpl();

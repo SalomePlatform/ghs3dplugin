@@ -119,6 +119,19 @@ public:
   typedef std::set<std::string> TSetStrings;
 
   static const char* GetHypType() { return "MG-Tetra Parameters"; }
+
+  void SetMinSize(double theMinSize);
+  double GetMinSize() const { return myMinSize; }
+
+  void SetMaxSize(double theMaxSize);
+  double GetMaxSize() const { return myMaxSize; }
+
+  void SetUseVolumeProximity( bool toUse );
+  bool GetUseVolumeProximity() const { return myUseVolumeProximity; }
+
+  void SetNbVolumeProximityLayers( int nbLayers );
+  int GetNbVolumeProximityLayers() const { return myNbVolumeProximityLayers; }
+
   /*!
    * To mesh "holes" in a solid or not. Default is to mesh.
    */
@@ -215,6 +228,19 @@ public:
   void SetRemoveLogOnSuccess(bool removeLogOnSuccess);
   bool GetRemoveLogOnSuccess() const ;
     
+
+  typedef std::map< std::string, std::string > TOptionValues;
+  typedef std::set< std::string >              TOptionNames;
+
+  void SetOptionValue(const std::string& optionName,
+                      const std::string& optionValue) throw (std::invalid_argument);
+  std::string GetOptionValue(const std::string& optionName,
+                             bool*              isDefault=0) const throw (std::invalid_argument);
+  bool HasOptionDefined( const std::string& optionName ) const;
+  void ClearOption(const std::string& optionName);
+  TOptionValues        GetOptionValues()       const;
+  const TOptionValues& GetCustomOptionValues() const { return _customOption2value; }
+  //static inline const char* NoValue() { return "_"; }
   
 //   struct TEnforcedEdge {
 //     long ID;
@@ -302,24 +328,15 @@ public:
   static bool   DefaultToRemoveCentralPoint();
   static bool   DefaultStandardOutputLog();
   static bool   DefaultRemoveLogOnSuccess();
-  static double DefaultGradation();
-  
-  static TGHS3DEnforcedVertex DefaultGHS3DEnforcedVertex() {return TGHS3DEnforcedVertex();}
-  static TGHS3DEnforcedVertexList DefaultGHS3DEnforcedVertexList() {return TGHS3DEnforcedVertexList();}
-  static TGHS3DEnforcedVertexCoordsValues DefaultGHS3DEnforcedVertexCoordsValues() {return TGHS3DEnforcedVertexCoordsValues();}
-  static TGHS3DEnforcedVertexEntryValues DefaultGHS3DEnforcedVertexEntryValues() {return TGHS3DEnforcedVertexEntryValues();}
-  static TCoordsGHS3DEnforcedVertexMap DefaultCoordsGHS3DEnforcedVertexMap() {return TCoordsGHS3DEnforcedVertexMap();}
-  static TGeomEntryGHS3DEnforcedVertexMap DefaultGeomEntryGHS3DEnforcedVertexMap() {return TGeomEntryGHS3DEnforcedVertexMap();}
-  static TGroupNameGHS3DEnforcedVertexMap DefaultGroupNameGHS3DEnforcedVertexMap() {return TGroupNameGHS3DEnforcedVertexMap();}
-  
-  static TGHS3DEnforcedMesh         DefaultGHS3DEnforcedMesh() {return TGHS3DEnforcedMesh();}
-  static TGHS3DEnforcedMeshList     DefaultGHS3DEnforcedMeshList() {return TGHS3DEnforcedMeshList();}
-  static TEntryGHS3DEnforcedMeshListMap DefaultEntryGHS3DEnforcedMeshListMap() {return TEntryGHS3DEnforcedMeshListMap();}
-  static TIDSortedNodeGroupMap      DefaultIDSortedNodeGroupMap() {return TIDSortedNodeGroupMap();}
-  static TIDSortedElemGroupMap      DefaultIDSortedElemGroupMap() {return TIDSortedElemGroupMap();}
-  static TID2SizeMap                DefaultID2SizeMap() {return TID2SizeMap();}
-  static TSetStrings                DefaultGroupsToRemove() {return TSetStrings();}
-  
+  static inline double DefaultGradation() { return 1.05; }
+  static bool   DefaultUseVolumeProximity() { return false; }
+  static int    DefaultNbVolumeProximityLayers() { return 2; }
+   
+  void SetMinMaxSizeDefault( double theMinSize, double theMaxSize )
+  { myMinSizeDefault = theMinSize; myMaxSizeDefault = theMaxSize; }
+  double GetMinSizeDefault() const { return myMinSizeDefault; }
+  double GetMaxSizeDefault() const { return myMaxSizeDefault; }
+
   // Persistence
   virtual std::ostream & SaveTo(std::ostream & save);
   virtual std::istream & LoadFrom(std::istream & load);
@@ -333,6 +350,10 @@ public:
    * \brief Sets myToMakeGroupsOfDomains depending on whether theMesh is on shape or not
    */
   virtual bool SetParametersByDefaults(const TDefaults& dflts, const SMESH_Mesh* theMesh=0);
+
+  static bool  ToBool(const std::string& str, bool* isOk=0) throw (std::invalid_argument);
+  static double ToDbl(const std::string& str, bool* isOk=0) throw (std::invalid_argument);
+  static int    ToInt(const std::string& str, bool* isOk=0) throw (std::invalid_argument);
 
 protected:
 
@@ -350,9 +371,17 @@ protected:
   bool        myToRemoveCentralPoint;
   bool        myLogInStandardOutput;
   bool        myRemoveLogOnSuccess;
-  std::string myTextOption;
   double      myGradation;
+  bool        myUseVolumeProximity;
+  int         myNbVolumeProximityLayers;
+  double      myMinSize, myMinSizeDefault;
+  double      myMaxSize, myMaxSizeDefault;
+  //std::string myTextOption;
   
+  TOptionValues _option2value, _customOption2value;         // user defined values
+  TOptionValues _defaultOptionValues;                       // default values
+  TOptionNames  _doubleOptions, _charOptions, _boolOptions; // to find a type of option
+
   TGHS3DEnforcedVertexList         _enfVertexList;
   TGHS3DEnforcedVertexCoordsValues _enfVertexCoordsSizeList;
   TGHS3DEnforcedVertexEntryValues  _enfVertexEntrySizeList;

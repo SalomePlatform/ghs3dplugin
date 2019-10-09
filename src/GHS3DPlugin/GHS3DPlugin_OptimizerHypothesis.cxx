@@ -195,7 +195,7 @@ std::string GHS3DPlugin_OptimizerHypothesis::CommandToRun(const GHS3DPlugin_Opti
 
     cmd << " --verbose " << hyp->myVerboseLevel;
     
-    cmd << " " << hyp->myTextOption;
+    //cmd << " " << hyp->myTextOption;
   }
 
   return cmd;

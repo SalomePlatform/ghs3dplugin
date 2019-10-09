@@ -6,24 +6,67 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>485</width>
-    <height>477</height>
+    <width>337</width>
+    <height>369</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <item>
+  <layout class="QGridLayout" name="gridLayout_4">
+   <item row="0" column="0" colspan="2">
+    <widget class="GHS3DPluginGUI_TreeWidget" name="myOptionTable">
+     <property name="editTriggers">
+      <set>QAbstractItemView::DoubleClicked|QAbstractItemView::EditKeyPressed</set>
+     </property>
+     <property name="tabKeyNavigation">
+      <bool>true</bool>
+     </property>
+     <column>
+      <property name="text">
+       <string>OPTION_NAME_COLUMN</string>
+      </property>
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>OPTION_VALUE_COLUMN</string>
+      </property>
+      <property name="font">
+       <font>
+        <weight>50</weight>
+        <bold>false</bold>
+       </font>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QPushButton" name="addBtn">
+     <property name="text">
+      <string>GHS3D_ADD_OPTION</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <spacer name="horizontalSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>188</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="2" column="0" colspan="2">
     <widget class="QGroupBox" name="memoryGroupBox">
      <property name="title">
       <string>Memory settings</string>
@@ -104,7 +147,7 @@
      </layout>
     </widget>
    </item>
-   <item>
+   <item row="3" column="0" colspan="2">
     <widget class="QGroupBox" name="logGroupBox">
      <property name="title">
       <string>Logs and debug</string>
@@ -178,56 +221,6 @@
      </layout>
     </widget>
    </item>
-   <item>
-    <widget class="QGroupBox" name="advancedMeshingGroupBox">
-     <property name="title">
-      <string>Advanced meshing options</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_4">
-      <item row="1" column="1">
-       <widget class="QCheckBox" name="FEMCorrectionCheck">
-        <property name="text">
-         <string>Use FEM correction</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="removeInitialCentralPointCheck">
-        <property name="text">
-         <string>Remove initial central point</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="SMESHGUI_SpinBox" name="gradationSpinBox"/>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="gradationLabel">
-        <property name="text">
-         <string>Volumic gradation</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="createNewNodesCheck">
-        <property name="text">
-         <string>Create new nodes</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="boundaryRecoveryCheck">
-        <property name="text">
-         <string>Use boundary recovery version</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0" colspan="2">
-       <widget class="SMESH_AdvOptionsWdg" name="advOptionTable" native="true"/>
-      </item>
-     </layout>
-    </widget>
-   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -237,10 +230,9 @@
    <header location="global">SMESHGUI_SpinBox.h</header>
   </customwidget>
   <customwidget>
-   <class>SMESH_AdvOptionsWdg</class>
-   <extends>QWidget</extends>
-   <header location="global">SMESH_AdvOptionsWdg.h</header>
-   <container>1</container>
+   <class>GHS3DPluginGUI_TreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header location="global">GHS3DPluginGUI_TreeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

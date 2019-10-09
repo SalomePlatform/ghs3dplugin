@@ -279,5 +279,109 @@
         <source>GHS3D_SMOOTH_OFF_SLIVERS</source>
         <translation>Smooth off sliver elements</translation>
     </message>
+    <message>
+        <source>OPTION_TYPE_COLUMN</source>
+        <translation>Type</translation>
+    </message>
+    <message>
+        <source>OPTION_NAME_COLUMN</source>
+        <translation>Option</translation>
+    </message>
+    <message>
+        <source>OPTION_VALUE_COLUMN</source>
+        <translation>Value</translation>
+    </message>
+    <message>
+        <source>GHS3D_ADD_OPTION</source>
+        <translation>Add option</translation>
+    </message>
+    <message>
+        <source>GHS3D_MAIN_PARAMS</source>
+        <translation>Main parameters</translation>
+    </message>
+    <message>
+        <source>GHS3D_MIN_SIZE</source>
+        <translation>Minimal size</translation>
+    </message>
+    <message>
+        <source>GHS3D_MAX_SIZE</source>
+        <translation>Maximal size</translation>
+    </message>
+    <message>
+        <source>GHS3D_VOLUME_PROXIMITY</source>
+        <translation>Volume proximity</translation>
+    </message>
+    <message>
+        <source>GHS3D_USE_VOLUME_PROXIMITY</source>
+        <translation>Use volume proximity</translation>
+    </message>
+    <message>
+        <source>GHS3D_NB_LAYERS</source>
+        <translation>Number of layers</translation>
+    </message>
+    <message>
+        <source>GHS3D_OTHER_PARAMETERS</source>
+        <translation>Other parameters</translation>
+    </message>
+    <message>
+        <source>no_initial_central_point</source>
+        <translation>No central point</translation>
+    </message>
+    <message>
+        <source>force_max_size</source>
+        <translation>Force maximum edge size</translation>
+    </message>
+    <message>
+        <source>apply_gradation_on_skin_vertex_sizes</source>
+        <translation>Gradation on skin</translation>
+    </message>
+    <message>
+        <source>optimise_worst_elements</source>
+        <translation>Optimise worst elements</translation>
+    </message>
+    <message>
+        <source>force_output_quadratic_mesh</source>
+        <translation>Force quadratic mesh</translation>
+    </message>
+    <message>
+        <source>rectify_jacobian</source>
+        <translation>Rectify jacobian</translation>
+    </message>
+    <message>
+        <source>jacobian_rectification_respect_input_surface_mesh</source>
+        <translation>Respect surface mesh</translation>
+    </message>
+    <message>
+        <source>max_number_of_errors_printed</source>
+        <translation>Max number of errors</translation>
+    </message>
+    <message>
+        <source>max_number_of_threads</source>
+        <translation>Maximal number of threads</translation>
+    </message>
+    <message>
+        <source>target_quality</source>
+        <translation>Target quality</translation>
+    </message>
+    <message>
+        <source>sliver_angle</source>
+        <translation>Sliver angle</translation>
+    </message>
+    <message>
+        <source>pthreads_mode</source>
+        <translation>Mode of pthreads</translation>
+    </message>
+    <message>
+        <source>boundary_regeneration</source>
+        <translation>Boundary regeneration</translation>
+    </message>
+    <message>
+        <source>split_overconstrained_tetrahedra</source>
+        <translation>Remove overconstrained tetrahedra</translation>
+    </message>
+    <message>
+        <source>_</source>
+        <translation> </translation>
+    </message>
 </context>
 </TS>

@@ -31,12 +31,8 @@
 #include <SMESH_Mesh_i.hxx>
 #include <SMESH_Group_i.hxx>
 #include <SMESH_Gen_i.hxx>
-//#include <SMESH_TypeDefs.hxx>
 #include <SMESHDS_GroupBase.hxx>
 
-// SALOME KERNEL includes
-// #include <SALOMEDSClient.hxx>
-// #include <SALOMEDSClient_definitions.hxx>
 
 using namespace std;
 
@@ -80,6 +76,92 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToMeshHoles()
 {
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetToMeshHoles();
+}
+
+//=============================================================================
+void GHS3DPlugin_Hypothesis_i::SetMinSize(CORBA::Double theMinSize)
+{
+  if ( GetMinSize() != theMinSize ) {
+    this->GetImpl()->SetMinSize( theMinSize );
+    SMESH::TPythonDump() << _this() << ".SetMinSize( " << theMinSize << " )";
+  }
+}
+
+//=============================================================================
+CORBA::Double GHS3DPlugin_Hypothesis_i::GetMinSize()
+{
+  return this->GetImpl()->GetMinSize();
+}
+
+//=============================================================================
+CORBA::Double GHS3DPlugin_Hypothesis_i::GetMinSizeDefault()
+{
+  return this->GetImpl()->GetMinSizeDefault();
+}
+
+//=============================================================================
+void GHS3DPlugin_Hypothesis_i::SetMaxSize(CORBA::Double theMaxSize)
+{
+  if ( GetMaxSize() != theMaxSize ) {
+    this->GetImpl()->SetMaxSize( theMaxSize );
+    SMESH::TPythonDump() << _this() << ".SetMaxSize( " << theMaxSize << " )";
+  }
+}
+
+//=============================================================================
+CORBA::Double GHS3DPlugin_Hypothesis_i::GetMaxSize()
+{
+  return this->GetImpl()->GetMaxSize();
+}
+
+//=============================================================================
+CORBA::Double GHS3DPlugin_Hypothesis_i::GetMaxSizeDefault()
+{
+  return this->GetImpl()->GetMaxSizeDefault();
+}
+
+//=============================================================================
+void GHS3DPlugin_Hypothesis_i::SetMinMaxSizeDefault( CORBA::Double theMinSize,
+                                                     CORBA::Double theMaxSize )
+{
+  this->GetImpl()->SetMinMaxSizeDefault( theMinSize, theMaxSize );
+}
+
+//=============================================================================
+/*!
+ *  Activate/deactivate volume proximity computation
+ */
+void GHS3DPlugin_Hypothesis_i::SetVolumeProximity( CORBA::Boolean toUse )
+{
+  if ( GetVolumeProximity() != toUse )
+  {
+    this->GetImpl()->SetUseVolumeProximity( toUse );
+    SMESH::TPythonDump() << _this() << ".SetVolumeProximity( " << toUse << " )";
+  }
+}
+
+CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetVolumeProximity()
+{
+  return this->GetImpl()->GetUseVolumeProximity();
+}
+
+
+//=============================================================================
+/*!
+ * Set number of surface element layers to be generated due to volume proximity
+ */
+void GHS3DPlugin_Hypothesis_i::SetNbVolumeProximityLayers( CORBA::Short nbLayers )
+{
+  if ( GetNbVolumeProximityLayers() != nbLayers )
+  {
+    this->GetImpl()->SetNbVolumeProximityLayers( nbLayers );
+    SMESH::TPythonDump() << _this() << ".SetNbVolumeProximityLayers( " << nbLayers << " )";
+  }
+}
+
+CORBA::Short GHS3DPlugin_Hypothesis_i::GetNbVolumeProximityLayers()
+{
+  return this->GetImpl()->GetNbVolumeProximityLayers();
 }
 
 //=======================================================================
@@ -349,9 +431,7 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToRemoveCentralPoint()
 
 void GHS3DPlugin_Hypothesis_i::SetTextOption(const char* option)
 {
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetAdvancedOption(option);
-  SMESH::TPythonDump() << _this() << ".SetAdvancedOption( '" << option << "' )";
+  SetAdvancedOption(option);
 }
 
 //=======================================================================
@@ -360,20 +440,19 @@ void GHS3DPlugin_Hypothesis_i::SetTextOption(const char* option)
 
 char* GHS3DPlugin_Hypothesis_i::GetTextOption()
 {
-  ASSERT(myBaseImpl);
-  return CORBA::string_dup( this->GetImpl()->GetAdvancedOption().c_str() );
+  return GetAdvancedOption();
 }
 
 //=======================================================================
 //function : SetAdvancedOption
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis_i::SetAdvancedOption(const char* option)
-{
-  ASSERT(myBaseImpl);
-  this->GetImpl()->SetAdvancedOption(option);
-  SMESH::TPythonDump() << _this() << ".SetAdvancedOption( '" << option << "' )";
-}
+// void GHS3DPlugin_Hypothesis_i::SetAdvancedOption(const char* option)
+// {
+//   ASSERT(myBaseImpl);
+//   this->GetImpl()->SetAdvancedOption(option);
+//   SMESH::TPythonDump() << _this() << ".SetAdvancedOption( '" << option << "' )";
+// }
 
 //=======================================================================
 //function : GetAdvancedOption
@@ -385,8 +464,278 @@ char* GHS3DPlugin_Hypothesis_i::GetAdvancedOption()
   return CORBA::string_dup( this->GetImpl()->GetAdvancedOption().c_str() );
 }
 
+//=============================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetOptionValue(const char* optionName, const char* optionValue)
+  throw (SALOME::SALOME_Exception)
+{
+  ASSERT(myBaseImpl);
+  try {
+    std::string name( optionName );
+    if ( !optionValue || !optionValue[0] )
+      UnsetOption( optionName );
+
+    // basic options (visible in Advanced table)
+
+    else if ( name == "verbose" )
+      SetVerboseLevel( GetImpl()->ToInt( optionValue ));
+
+    else if ( name == "max_memory" )
+      SetMaximumMemory( GetImpl()->ToInt( optionValue ));
+
+    else if ( name == "automatic_memory" )
+      SetInitialMemory( GetImpl()->ToInt( optionValue ));
+
+    else if ( name == "no_initial_central_point" && // optimizer
+              strcmp( GetImpl()->GetName(), ::GHS3DPlugin_Hypothesis::GetHypType() ) != 0 )
+    {
+      //if ( strcmp( optionValue, ::GHS3DPlugin_Hypothesis::NoValue() ) == 0 )
+      if ( !optionValue[0] )
+        SetToRemoveCentralPoint( true );
+      else
+        SetToRemoveCentralPoint( GetImpl()->ToBool( optionValue ));
+    }
+    else if ( name == "no_internal_points"  && // optimizer
+              strcmp( GetImpl()->GetName(), ::GHS3DPlugin_Hypothesis::GetHypType() ) != 0)
+    {
+      //if ( strcmp( optionValue, ::GHS3DPlugin_Hypothesis::NoValue() ) == 0 )
+      if ( !optionValue[0] )
+        SetToRemoveCentralPoint( true );
+      else
+        SetToCreateNewNodes( GetImpl()->ToBool( optionValue ));
+    }
+    else if ( name == "min_size" )
+      SetMinSize( GetImpl()->ToDbl( optionValue ));
+
+    else if ( name == "max_size" )
+      SetMaxSize( GetImpl()->ToDbl( optionValue ));
+
+    else if ( name == "gradation" )
+      SetGradation( GetImpl()->ToDbl( optionValue ));
+
+    else if ( name == "volume_proximity_layers" )
+      SetNbVolumeProximityLayers( GetImpl()->ToInt( optionValue ));
+
+    else if ( name == "components" )
+      SetToMeshHoles( strncmp( "all", optionValue, 3 ) == 0 );
+
+    // advanced options (for backward compatibility)
+    // else if ( name == "create_tag_on_collision" ||
+    //           name == "tiny_edge_respect_geometry" )
+    //   AddOption( optionName, optionValue );
+
+    else {
+      bool valueChanged = true;
+      try {
+        valueChanged = ( this->GetImpl()->GetOptionValue( name ) != optionValue );
+      }
+      catch ( std::invalid_argument ) {
+      }
+      if ( valueChanged )
+      {
+        this->GetImpl()->SetOptionValue(optionName, optionValue);
+        SMESH::TPythonDump() << _this() << ".SetOptionValue( '" << optionName << "', '" << optionValue << "' )";
+      }
+    }
+  } catch (const std::invalid_argument& ex) {
+    THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+  } catch (SALOME_Exception& ex) {
+    THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+  }
+}
+
+//=============================================================================
+
+char* GHS3DPlugin_Hypothesis_i::GetOptionValue(const char* optionName)
+  throw (SALOME::SALOME_Exception)
+{
+  ASSERT(myBaseImpl);
+  try {
+    bool isDefault;
+    return CORBA::string_dup(this->GetImpl()->GetOptionValue(optionName,&isDefault).c_str());
+  } catch (const std::invalid_argument& ex) {
+    THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+  } catch (SALOME_Exception& ex) {
+    THROW_SALOME_CORBA_EXCEPTION( ex.what() ,SALOME::BAD_PARAM );
+  }
+  return 0;
+}
+
+//=============================================================================
+
+void GHS3DPlugin_Hypothesis_i::UnsetOption(const char* optionName) {
+  ASSERT(myBaseImpl);
+  if ( !GetImpl()->GetOptionValue( optionName ).empty() )
+  {
+    this->GetImpl()->ClearOption(optionName);
+    SMESH::TPythonDump() << _this() << ".UnsetOption( '" << optionName << "' )";
+  }
+}
+
+//=============================================================================
+
+GHS3DPlugin::string_array* GHS3DPlugin_Hypothesis_i::GetOptionValues()
+{
+  GHS3DPlugin::string_array_var result = new GHS3DPlugin::string_array();
+
+  const ::GHS3DPlugin_Hypothesis::TOptionValues & opts = this->GetImpl()->GetOptionValues();
+  result->length(opts.size());
+  int i=0;
+
+  bool isDefault;
+  ::GHS3DPlugin_Hypothesis::TOptionValues::const_iterator opIt = opts.begin();
+  for (; opIt != opts.end(); ++opIt, ++i)
+  {
+    string name_value_type = opIt->first;
+    //if (!opIt->second.empty())
+    {
+      name_value_type += ":";
+      name_value_type += GetImpl()->GetOptionValue( opIt->first, &isDefault );
+      name_value_type += isDefault ? ":0" : ":1";
+    }
+    result[i] = CORBA::string_dup(name_value_type.c_str());
+  }
+
+  return result._retn();
+}
+
+//=============================================================================
+
+GHS3DPlugin::string_array* GHS3DPlugin_Hypothesis_i::GetAdvancedOptionValues()
+{
+  GHS3DPlugin::string_array_var result = new GHS3DPlugin::string_array();
+
+  const ::GHS3DPlugin_Hypothesis::TOptionValues & custom_opts = this->GetImpl()->GetCustomOptionValues();
+  result->length(custom_opts.size());
+  int i=0;
+
+  ::GHS3DPlugin_Hypothesis::TOptionValues::const_iterator opIt = custom_opts.begin();
+  for (; opIt != custom_opts.end(); ++opIt, ++i) {
+    string name_value_type = opIt->first;
+    if (!opIt->second.empty()) {
+      name_value_type += ":";
+      name_value_type += opIt->second;
+      name_value_type += ":1"; // user defined
+    }
+    result[i] = CORBA::string_dup(name_value_type.c_str());
+  }
+  return result._retn();
+}
+
+//=============================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetOptionValues(const GHS3DPlugin::string_array& options)
+  throw (SALOME::SALOME_Exception)
+{
+  for (CORBA::ULong i = 0; i < options.length(); ++i)
+  {
+    string name_value_type = options[i].in();
+    if(name_value_type.empty())
+      continue;
+    size_t colonPos = name_value_type.find(':');
+    string name, value;
+    if (colonPos == string::npos) // ':' not found
+      name = name_value_type;
+    else {
+      name = name_value_type.substr(0, colonPos);
+      if (colonPos < name_value_type.size() - 1 && name_value_type[colonPos] != ' ') {
+        string value_type = name_value_type.substr(colonPos + 1);
+        colonPos = value_type.find(':');
+        value = value_type.substr(0, colonPos);
+        if (colonPos < value_type.size() - 1 && value_type[colonPos] != ' ')
+          if ( value_type.substr(colonPos + 1) == "0" ) // is default
+            value.clear();
+      }
+    }
+    SetOptionValue(name.c_str(), value.c_str());
+  }
+}
+
+//=============================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetAdvancedOptionValues(const GHS3DPlugin::string_array& options)
+{
+  SMESH::TPythonDump dump;
+
+  string optionsAndValues;
+  for ( CORBA::ULong i = 0; i < options.length(); ++i) {
+    string name_value_type = options[i].in();
+    if(name_value_type.empty())
+      continue;
+    size_t colonPos = name_value_type.find(':');
+    string name, value;
+    if (colonPos == string::npos) // ':' not found
+      name = name_value_type;
+    else {
+      name = name_value_type.substr(0, colonPos);
+      if (colonPos < name_value_type.size() - 1 && name_value_type[colonPos] != ' ') {
+        string value_type = name_value_type.substr(colonPos + 1);
+        colonPos = value_type.find(':');
+        value = value_type.substr(0, colonPos);
+      }
+    }
+    AddOption(name.c_str(), value.c_str());
+
+    optionsAndValues += name + " " + value + " ";
+  }
+
+  if ( !optionsAndValues.empty() )
+    dump << _this() << ".SetAdvancedOptions( '" << optionsAndValues.c_str() << "' )";
+}
+
+//=============================================================================
+
+void GHS3DPlugin_Hypothesis_i::SetAdvancedOption(const char* optionsAndValues)
+  throw (SALOME::SALOME_Exception)
+{
+  if ( !optionsAndValues ) return;
+
+  SMESH::TPythonDump dump;
+
+  std::istringstream strm( optionsAndValues );
+  std::istream_iterator<std::string> sIt( strm ), sEnd;
+  for ( int nbPairs = 0; sIt != sEnd; ++nbPairs )
+  {
+    std::string option = *sIt;
+    if ( ++sIt != sEnd )
+    {
+      std::string value = *sIt;
+      ++sIt;
+      AddOption( option.c_str(), value.c_str() );
+    }
+    else
+    {
+      if ( nbPairs > 0 )
+        THROW_SALOME_CORBA_EXCEPTION( "Uneven number of options and values" ,SALOME::BAD_PARAM );
+      AddOption( option.c_str(), "" );
+    }
+  }
+  dump << _this() << ".SetAdvancedOption( '" << optionsAndValues << "' )";
+}
+
+//=============================================================================
+
+void GHS3DPlugin_Hypothesis_i::AddOption(const char* optionName, const char* optionValue)
+{
+  ASSERT(myBaseImpl);
+  bool valueChanged = ( !this->GetImpl()->HasOptionDefined(optionName) ||
+                        this->GetImpl()->GetOptionValue(optionName) != optionValue );
+  if (valueChanged) {
+    this->GetImpl()->SetOptionValue(optionName, optionValue);
+    SMESH::TPythonDump() << _this() << ".SetOptionValue( '" << optionName << "', '" << optionValue << "' )";
+  }
+}
+
+//=============================================================================
+
+char* GHS3DPlugin_Hypothesis_i::GetOption(const char* optionName)
+{
+  ASSERT(myBaseImpl);
+  return CORBA::string_dup(this->GetImpl()->GetOptionValue(optionName).c_str());
+}
+
 //=======================================================================
-//function : SetToRemoveCentralPoint
+//function : SetGradation
 //=======================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetGradation(CORBA::Double gradation)
@@ -399,7 +748,7 @@ void GHS3DPlugin_Hypothesis_i::SetGradation(CORBA::Double gradation)
 }
 
 //=======================================================================
-//function : GetToRemoveCentralPoint
+//function : GetGradation
 //=======================================================================
 
 CORBA::Double GHS3DPlugin_Hypothesis_i::GetGradation()

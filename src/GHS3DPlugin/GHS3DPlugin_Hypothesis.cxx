@@ -36,6 +36,15 @@
 
 using namespace std;
 
+namespace
+{
+  struct GET_DEFAULT // struct used to get default value from GetOptionValue()
+  {
+    bool isDefault;
+    operator bool* () { return &isDefault; }
+  };
+}
+
 //=======================================================================
 //function : GHS3DPlugin_Hypothesis
 //=======================================================================
@@ -57,21 +66,84 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, SMESH_Gen * gen)
     myLogInStandardOutput(DefaultStandardOutputLog()),
     myRemoveLogOnSuccess( DefaultRemoveLogOnSuccess() ),
     myGradation(DefaultGradation()),
-    _enfVertexList(DefaultGHS3DEnforcedVertexList()),
-    _enfVertexCoordsSizeList(DefaultGHS3DEnforcedVertexCoordsValues()),
-    _enfVertexEntrySizeList(DefaultGHS3DEnforcedVertexEntryValues()),
-    _coordsEnfVertexMap(DefaultCoordsGHS3DEnforcedVertexMap()),
-    _geomEntryEnfVertexMap(DefaultGeomEntryGHS3DEnforcedVertexMap()),
-    _enfMeshList(DefaultGHS3DEnforcedMeshList()),
-    _entryEnfMeshMap(DefaultEntryGHS3DEnforcedMeshListMap()),
-    _enfNodes(TIDSortedNodeGroupMap()),
-    _enfEdges(TIDSortedElemGroupMap()),
-    _enfTriangles(TIDSortedElemGroupMap()),
-    _nodeIDToSizeMap(DefaultID2SizeMap()),
-    _groupsToRemove(DefaultGroupsToRemove())
+    myUseVolumeProximity(DefaultUseVolumeProximity()),
+    myNbVolumeProximityLayers(DefaultNbVolumeProximityLayers()),
+    myMinSize(0),
+    myMinSizeDefault(0),
+    myMaxSize(0),
+    myMaxSizeDefault(0)
 {
   _name = GetHypType();
   _param_algo_dim = 3;
+
+  const char* boolOptionNames[] = { "no_initial_central_point",                          // no
+                                    "force_max_size",                                    // no
+                                    "apply_gradation_on_skin_vertex_sizes",              // yes
+                                    "optimise_worst_elements",                           // no
+                                    "force_output_quadratic_mesh",                       // no
+                                    "rectify_jacobian",                                  // yes
+                                    "jacobian_rectification_respect_input_surface_mesh", // yes
+                                    "" // mark of end
+  };
+  const char* intOptionNames[] = { "max_number_of_errors_printed", // 1
+                                   "max_number_of_threads",        // 4
+                                   "" // mark of end
+  };
+  const char* doubleOptionNames[] = { "target_quality",  // 0
+                                      "sliver_angle",    // 5
+                                      "" // mark of end
+  };
+  const char* charOptionNames[] = { "pthreads_mode",                    // ""
+                                    "boundary_regeneration",            // standard
+                                    "split_overconstrained_tetrahedra", // no
+                                    "" // mark of end
+  };
+
+  int i = 0;
+  while (boolOptionNames[i][0])
+  {
+    _boolOptions.insert( boolOptionNames[i] );
+    _option2value[boolOptionNames[i++]].clear();
+  }
+  i = 0;
+  while (intOptionNames[i][0])
+    _option2value[intOptionNames[i++]].clear();
+  
+  i = 0;
+  while (doubleOptionNames[i][0]) {
+    _doubleOptions.insert(doubleOptionNames[i]);
+    _option2value[doubleOptionNames[i++]].clear();
+  }
+  i = 0;
+  while (charOptionNames[i][0]) {
+    _charOptions.insert(charOptionNames[i]);
+    _option2value[charOptionNames[i++]].clear();
+  }
+
+  // default values to be used while MG meshing
+
+  _defaultOptionValues["no_initial_central_point"                         ] = "no";
+  _defaultOptionValues["force_max_size"                                   ] = "no";
+  _defaultOptionValues["apply_gradation_on_skin_vertex_sizes"             ] = "yes";
+  _defaultOptionValues["optimise_worst_elements"                          ] = "no";
+  _defaultOptionValues["force_output_quadratic_mesh"                      ] = "no";
+  _defaultOptionValues["rectify_jacobian"                                 ] = "yes";
+  _defaultOptionValues["jacobian_rectification_respect_input_surface_mesh"] = "yes";
+  _defaultOptionValues["max_number_of_errors_printed"                     ] = "1";
+  _defaultOptionValues["max_number_of_threads"                            ] = "4";
+  _defaultOptionValues["target_quality"                                   ] = "";//NoValue();
+  _defaultOptionValues["sliver_angle"                                     ] = "5";
+  _defaultOptionValues["pthreads_mode"                                    ] = "";//NoValue();
+  _defaultOptionValues["boundary_regeneration"                            ] = "standard";
+  _defaultOptionValues["split_overconstrained_tetrahedra"                 ] = "no";
+
+#ifdef _DEBUG_
+  // check validity of option names of _defaultOptionValues
+  TOptionValues::iterator n2v = _defaultOptionValues.begin();
+  for ( ; n2v != _defaultOptionValues.end(); ++n2v )
+    ASSERT( _option2value.count( n2v->first ));
+  ASSERT( _option2value.size() == _defaultOptionValues.size() );
+#endif
 }
 
 //=======================================================================
@@ -92,11 +164,17 @@ void GHS3DPlugin_Hypothesis::SetToMeshHoles(bool toMesh)
 
 bool GHS3DPlugin_Hypothesis::GetToMeshHoles(bool checkFreeOption) const
 {
-  if (checkFreeOption && !myTextOption.empty()) {
-    if ( myTextOption.find("--components all"))
-      return true;
-    if ( myTextOption.find("--components outside_components"))
-      return false;
+  if ( checkFreeOption )
+  {
+    std::string optionName = "components";
+    TOptionValues::const_iterator op_val = _customOption2value.find(optionName);
+    if ( op_val != _customOption2value.end())
+    {
+      if ( op_val->second.find("all"))
+        return true;
+      if ( op_val->second.find("outside_components"))
+        return false;
+    }
   }
   return myToMeshHoles;
 }
@@ -330,10 +408,8 @@ bool GHS3DPlugin_Hypothesis::GetFEMCorrection() const
 
 void GHS3DPlugin_Hypothesis::SetToRemoveCentralPoint(bool toRemove)
 {
-  if ( myToRemoveCentralPoint != toRemove ) {
-    myToRemoveCentralPoint = toRemove;
-    NotifySubMeshesHypothesisModification();
-  }
+  SetOptionValue( "no_initial_central_point", toRemove ? "yes" : "no" );
+  myToRemoveCentralPoint = toRemove;
 }
 
 //=======================================================================
@@ -351,9 +427,16 @@ bool GHS3DPlugin_Hypothesis::GetToRemoveCentralPoint() const
 
 void GHS3DPlugin_Hypothesis::SetAdvancedOption(const std::string& option)
 {
-  if ( myTextOption != option ) {
-    myTextOption = option;
-    NotifySubMeshesHypothesisModification();
+  size_t wsPos = option.find(' ');
+  if ( wsPos == string::npos )
+  {
+    SetOptionValue( option, "" );
+  }
+  else
+  {
+    std::string opt( option, 0, wsPos );
+    std::string val( option, wsPos + 1 );
+    SetOptionValue( opt, val );
   }
 }
 
@@ -363,7 +446,23 @@ void GHS3DPlugin_Hypothesis::SetAdvancedOption(const std::string& option)
 
 std::string GHS3DPlugin_Hypothesis::GetAdvancedOption() const
 {
-  return myTextOption;
+  SMESH_Comment txt;
+
+  TOptionValues::const_iterator o2v = _option2value.begin();
+  for ( ; o2v != _option2value.end(); ++o2v )
+    if ( !o2v->second.empty() )
+    {
+      if ( !txt.empty() )
+        txt << " ";
+      txt << o2v->first << " " << o2v->second;
+    }
+  for ( o2v = _customOption2value.begin(); o2v != _customOption2value.end(); ++o2v )
+  {
+    if ( !txt.empty() )
+      txt << " ";
+    txt << o2v->first << " " << o2v->second;
+  }
+  return txt;
 }
 
 //=======================================================================
@@ -385,6 +484,46 @@ void GHS3DPlugin_Hypothesis::SetGradation(double gradation)
 double GHS3DPlugin_Hypothesis::GetGradation() const
 {
   return myGradation;
+}
+
+//=============================================================================
+void GHS3DPlugin_Hypothesis::SetMinSize(double theMinSize)
+{
+  if ( theMinSize != myMinSize )
+  {
+    myMinSize = theMinSize;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+void GHS3DPlugin_Hypothesis::SetMaxSize(double theMaxSize)
+{
+  if ( theMaxSize != myMaxSize )
+  {
+    myMaxSize = theMaxSize;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+void GHS3DPlugin_Hypothesis::SetUseVolumeProximity( bool toUse )
+{
+  if ( myUseVolumeProximity != toUse )
+  {
+    myUseVolumeProximity = toUse;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+void GHS3DPlugin_Hypothesis::SetNbVolumeProximityLayers( int nbLayers )
+{
+  if ( myNbVolumeProximityLayers != nbLayers )
+  {
+    myNbVolumeProximityLayers = nbLayers;
+    NotifySubMeshesHypothesisModification();
+  }
 }
 
 //=======================================================================
@@ -984,15 +1123,6 @@ bool GHS3DPlugin_Hypothesis::DefaultToRemoveCentralPoint()
 }
 
 //=======================================================================
-//function : DefaultGradation
-//=======================================================================
-
-double GHS3DPlugin_Hypothesis::DefaultGradation()
-{
-  return 1.05;
-}
-
-//=======================================================================
 //function : DefaultStandardOutputLog
 //=======================================================================
 
@@ -1030,11 +1160,11 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
   save << (int)myToRemoveCentralPoint         << " ";
   save << myGradation                         << " ";
   save << myToMakeGroupsOfDomains             << " ";
-  if (!myTextOption.empty()) {
-    save << "__OPTIONS_BEGIN__ ";
-    save << myTextOption                      << " ";
-    save << "__OPTIONS_END__ ";
-  }
+  // if (!myTextOption.empty()) {
+  //   save << "__OPTIONS_BEGIN__ ";
+  //   save << myTextOption                      << " ";
+  //   save << "__OPTIONS_END__ ";
+  // }
   
 
   TGHS3DEnforcedVertexList::iterator it  = _enfVertexList.begin();
@@ -1104,6 +1234,25 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
     }
     save << " "  << "__ENFORCED_MESHES_END__ ";
   }
+
+  // New options in 2.9.6 (issue #17784)
+
+  save << " " << myUseVolumeProximity;
+  save << " " << myNbVolumeProximityLayers;
+  save << " " << myMinSize;
+  save << " " << myMaxSize;
+  save << " " << myMinSizeDefault;
+  save << " " << myMaxSizeDefault;
+
+  save << " " << _option2value.size();
+  TOptionValues::iterator o2v = _option2value.begin();
+  for ( ; o2v != _option2value.end(); ++o2v )
+    save << " -" << o2v->first << " -" << o2v->second;
+  
+  save << " " << _customOption2value.size();
+  for ( o2v = _customOption2value.begin(); o2v != _customOption2value.end(); ++o2v )
+    save << " -" << o2v->first << " -" << o2v->second;
+
   return save;
 }
 
@@ -1226,15 +1375,15 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
       isOK = static_cast<bool>(load >> txt);
       if (isOK) {
         if (txt == "__OPTIONS_END__") {
-          if (!myTextOption.empty()) {
-            // Remove last space
-            myTextOption.erase(myTextOption.end()-1);
-          }
+          // if (!myTextOption.empty()) {
+          //   // Remove last space
+          //   myTextOption.erase(myTextOption.end()-1);
+          // }
           isOK = false;
           break;
         }
-        myTextOption += txt;
-        myTextOption += " ";
+        // myTextOption += txt;
+        // myTextOption += " ";
       }
     }
   }
@@ -1427,6 +1576,39 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
     } // while
   } // if
 
+  // New options in 2.9.6 (issue #17784)
+
+  if ( ! hasOptions && ! hasEnforcedVertices && ! hasEnforcedMeshes )
+    myUseVolumeProximity = ( separator == "1" );
+  else if ( static_cast<bool>( load >> i ))
+    myUseVolumeProximity = (bool) i;
+
+  if ( static_cast<bool>( load >> myNbVolumeProximityLayers ))
+  {
+    load >> myMinSize;
+    load >> myMaxSize;
+    load >> myMinSizeDefault;
+    load >> myMaxSizeDefault;
+
+    std::string option, value;
+    if ( static_cast<bool>( load >> i ) && i >= 0 )
+    {
+      for ( int nbRead = 0; nbRead < i; ++nbRead )
+      {
+        load >> option >> value;
+        _option2value[ std::string( option, 1 )] = std::string( value, 1 );
+      }
+    }
+    if ( static_cast<bool>( load >> i ) && i >= 0 )
+    {
+      for ( int nbRead = 0; nbRead < i; ++nbRead )
+      {
+        load >> option >> value;
+        _customOption2value[ std::string( option, 1 )] = std::string( value, 1 );
+      }
+    }
+  }
+
   return load;
 }
 
@@ -1450,6 +1632,11 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
                                                      const SMESH_Mesh* /*theMesh*/)
 {
   myToMakeGroupsOfDomains = ( !dflts._shape || dflts._shape->IsNull() );
+
+  double diagonal = dflts._elemLength * _gen->GetBoundaryBoxSegmentation();
+  myMinSizeDefault = 1e-3 * diagonal;
+  myMaxSizeDefault = diagonal / 5.;
+
   return true;
 }
 
@@ -1465,16 +1652,16 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
 {
   std::string cmd = GetExeName();
   // check if any option is overridden by hyp->myTextOption
-  bool max_memory   = hyp ? ( hyp->myTextOption.find("--max_memory")  == std::string::npos ) : true;
-  bool auto_memory   = hyp ? ( hyp->myTextOption.find("--automatic_memory")  == std::string::npos ) : true;
-  bool comp   = hyp ? ( hyp->myTextOption.find("--components")  == std::string::npos ) : true;
-  bool optim_level   = hyp ? ( hyp->myTextOption.find("--optimisation_level")  == std::string::npos ) : true;
-  bool no_int_points  = hyp ? ( hyp->myTextOption.find("--no_internal_points") == std::string::npos ) : true;
-  bool C   = hyp ? ( hyp->myTextOption.find("-C")  == std::string::npos ) : true;
-  bool verbose   = hyp ? ( hyp->myTextOption.find("--verbose")  == std::string::npos ) : true;
-  bool fem = hyp ? ( hyp->myTextOption.find("-FEM")== std::string::npos ) : true;
-  bool rem = hyp ? ( hyp->myTextOption.find("--no_initial_central_point")== std::string::npos ) : true;
-  bool gra = hyp ? ( hyp->myTextOption.find("-Dcpropa")== std::string::npos ) : true;
+  bool max_memory     = hyp ? !hyp->HasOptionDefined("max_memory")               : true;
+  bool auto_memory    = hyp ? !hyp->HasOptionDefined("automatic_memory")         : true;
+  bool comp           = hyp ? !hyp->HasOptionDefined("components")               : true;
+  bool optim_level    = hyp ? !hyp->HasOptionDefined("optimisation_level")       : true;
+  bool no_int_points  = hyp ? !hyp->HasOptionDefined("no_internal_points")       : true;
+  bool C              = hyp ? !hyp->HasOptionDefined("-C")                       : true;
+  bool verbose        = hyp ? !hyp->HasOptionDefined("verbose")                  : true;
+  bool gra            = hyp ? !hyp->HasOptionDefined("-Dcpropa")                 : true;
+  bool rem            = hyp ? !hyp->HasOptionDefined("no_initial_central_point") : true;
+  //bool fem            = hyp ? !hyp->HasOptionDefined("-FEM")                     : true;
 
   // if use boundary recovery version, few options are allowed
   bool useBndRecovery = !C;
@@ -1535,17 +1722,17 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   }
 
   // boundary recovery version
-  if ( useBndRecovery ) {
-    cmd += " -C";
-  }
+  // if ( useBndRecovery ) {
+  //   cmd += " -C";
+  // }
 
   // to use FEM correction
-  if ( fem && hyp && hyp->myToUseFemCorrection) {
-    cmd += " -FEM";
-  }
+  // if ( fem && hyp && hyp->myToUseFemCorrection) {
+  //   cmd += " -FEM";
+  // }
 
   // to remove initial central point.
-  if ( rem && hyp && hyp->myToRemoveCentralPoint) {
+  if ( rem && hyp && hyp->myToRemoveCentralPoint ) {
     if ( forExecutable )
       cmd += " --no_initial_central_point";
     else
@@ -1553,16 +1740,65 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
   }
 
   // options as text
-  if ( hyp && !hyp->myTextOption.empty() ) {
-    cmd += " " + hyp->myTextOption;
+  // if ( hyp && !hyp->myTextOption.empty() ) {
+  //   cmd += " " + hyp->myTextOption;
+  // }
+
+  // min/max size
+  if ( hyp )
+  {
+    if ( hyp->GetMinSize() > 0 )
+      cmd += " --min_size " + SMESH_Comment( hyp->GetMinSize() );
+    if ( hyp->GetMaxSize() > 0 )
+      cmd += " --max_size " + SMESH_Comment( hyp->GetMaxSize() );
   }
 
   // to define volumic gradation.
-  if ( gra && hyp ) {
-    if ( forExecutable )
-      cmd += " -Dcpropa=" + SMESH_Comment( hyp->myGradation );
-    else
-      cmd += " --gradation " + SMESH_Comment( hyp->myGradation );
+  if ( gra && hyp )
+  {
+    cmd += " --gradation " + SMESH_Comment( hyp->myGradation );
+  }
+
+  if ( hyp )
+  {
+    // proximity
+    if ( hyp->GetUseVolumeProximity() )
+    {
+      cmd += " --volume_proximity_layers " + SMESH_Comment( hyp->GetNbVolumeProximityLayers() );
+    }
+
+    std::string option, value;
+    bool isDefault;
+    const TOptionValues* options[] = { & hyp->_option2value, & hyp->_customOption2value };
+    for ( int iOp = 0; iOp < 2; ++iOp )
+    {
+      TOptionValues::const_iterator o2v = options[iOp]->begin();
+      for ( ; o2v != options[iOp]->end(); ++o2v )
+      {
+        option = o2v->first;
+        value = hyp->GetOptionValue( option, &isDefault );
+
+        if ( isDefault )
+          continue;
+        if ( value.empty() )//value == NoValue() )
+        {
+          if ( hyp->_defaultOptionValues.count( option ))
+            continue; // non-custom option with no value
+          //value.clear();
+        }
+        if ( strncmp( "no", option.c_str(), 2 ) == 0 ) // options w/o values: --no_*
+        {
+          if ( !value.empty() && ToBool( value ) == false )
+            continue;
+          value.clear();
+        }
+        if ( option[0] != '-' )
+          cmd += " --";
+        else
+          cmd += " ";
+        cmd += option + " " + value;
+      }
+    }
   }
 
 #ifdef WIN32
@@ -1616,50 +1852,264 @@ std::string GHS3DPlugin_Hypothesis::GetExeName()
 
 GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList GHS3DPlugin_Hypothesis::GetEnforcedVertices(const GHS3DPlugin_Hypothesis* hyp)
 {
-  return hyp ? hyp->_GetEnforcedVertices():DefaultGHS3DEnforcedVertexList();
+  return hyp ? hyp->_GetEnforcedVertices(): TGHS3DEnforcedVertexList();
 }
 
 GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexCoordsValues GHS3DPlugin_Hypothesis::GetEnforcedVerticesCoordsSize (const GHS3DPlugin_Hypothesis* hyp)
 {  
-  return hyp ? hyp->_GetEnforcedVerticesCoordsSize(): DefaultGHS3DEnforcedVertexCoordsValues();
+  return hyp ? hyp->_GetEnforcedVerticesCoordsSize(): TGHS3DEnforcedVertexCoordsValues();
 }
 
 GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexEntryValues GHS3DPlugin_Hypothesis::GetEnforcedVerticesEntrySize (const GHS3DPlugin_Hypothesis* hyp)
 {  
-  return hyp ? hyp->_GetEnforcedVerticesEntrySize(): DefaultGHS3DEnforcedVertexEntryValues();
+  return hyp ? hyp->_GetEnforcedVerticesEntrySize(): TGHS3DEnforcedVertexEntryValues();
 }
 
 GHS3DPlugin_Hypothesis::TCoordsGHS3DEnforcedVertexMap GHS3DPlugin_Hypothesis::GetEnforcedVerticesByCoords (const GHS3DPlugin_Hypothesis* hyp)
 {  
-  return hyp ? hyp->_GetEnforcedVerticesByCoords(): DefaultCoordsGHS3DEnforcedVertexMap();
+  return hyp ? hyp->_GetEnforcedVerticesByCoords(): TCoordsGHS3DEnforcedVertexMap();
 }
 
 GHS3DPlugin_Hypothesis::TGeomEntryGHS3DEnforcedVertexMap GHS3DPlugin_Hypothesis::GetEnforcedVerticesByEntry (const GHS3DPlugin_Hypothesis* hyp)
 {  
-  return hyp ? hyp->_GetEnforcedVerticesByEntry(): DefaultGeomEntryGHS3DEnforcedVertexMap();
+  return hyp ? hyp->_GetEnforcedVerticesByEntry(): TGeomEntryGHS3DEnforcedVertexMap();
 }
 
 GHS3DPlugin_Hypothesis::TIDSortedNodeGroupMap GHS3DPlugin_Hypothesis::GetEnforcedNodes(const GHS3DPlugin_Hypothesis* hyp)
 {
-  return hyp ? hyp->_GetEnforcedNodes():DefaultIDSortedNodeGroupMap();
+  return hyp ? hyp->_GetEnforcedNodes():TIDSortedNodeGroupMap();
 }
 
 GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap GHS3DPlugin_Hypothesis::GetEnforcedEdges(const GHS3DPlugin_Hypothesis* hyp)
 {
-  return hyp ? hyp->_GetEnforcedEdges():DefaultIDSortedElemGroupMap();
+  return hyp ? hyp->_GetEnforcedEdges():TIDSortedElemGroupMap();
 }
 
 GHS3DPlugin_Hypothesis::TIDSortedElemGroupMap GHS3DPlugin_Hypothesis::GetEnforcedTriangles(const GHS3DPlugin_Hypothesis* hyp)
 {
-  return hyp ? hyp->_GetEnforcedTriangles():DefaultIDSortedElemGroupMap();
+  return hyp ? hyp->_GetEnforcedTriangles():TIDSortedElemGroupMap();
 }
 
 GHS3DPlugin_Hypothesis::TID2SizeMap GHS3DPlugin_Hypothesis::GetNodeIDToSizeMap(const GHS3DPlugin_Hypothesis* hyp)
 {
-  return hyp ? hyp->_GetNodeIDToSizeMap(): DefaultID2SizeMap();
+  return hyp ? hyp->_GetNodeIDToSizeMap(): TID2SizeMap();
 }
 
 GHS3DPlugin_Hypothesis::TSetStrings GHS3DPlugin_Hypothesis::GetGroupsToRemove(const GHS3DPlugin_Hypothesis* hyp)
 {
-  return hyp ? hyp->_GetGroupsToRemove(): DefaultGroupsToRemove();
+  return hyp ? hyp->_GetGroupsToRemove(): TSetStrings();
 }
+
+
+//=============================================================================
+void GHS3DPlugin_Hypothesis::SetOptionValue(const std::string& optionName,
+                                            const std::string& optionValue)
+  throw (std::invalid_argument)
+{
+  TOptionValues::iterator op_val = _option2value.find(optionName);
+  if (op_val == _option2value.end())
+  {
+    op_val = _customOption2value.find( optionName );
+    if ( op_val != _customOption2value.end() && op_val->second != optionValue )
+      NotifySubMeshesHypothesisModification();
+    _customOption2value[ optionName ] = optionValue;
+    return;
+  }
+
+  if (op_val->second != optionValue)
+  {
+    const char* ptr = optionValue.c_str();
+    // strip white spaces
+    while (ptr[0] == ' ')
+      ptr++;
+    int i = strlen(ptr);
+    while (i != 0 && ptr[i - 1] == ' ')
+      i--;
+    // check value type
+    bool typeOk = true;
+    std::string typeName;
+    if (i == 0) {
+      // empty string
+    } else if (_charOptions.count(optionName)) {
+      // do not check strings
+    } else if (_doubleOptions.count(optionName)) {
+      // check if value is double
+      ToDbl(ptr, &typeOk);
+      typeName = "real";
+    } else if (_boolOptions.count(optionName)) {
+      // check if value is bool
+      ToBool(ptr, &typeOk);
+      typeName = "bool";
+    } else {
+      // check if value is int
+      ToInt(ptr, &typeOk);
+      typeName = "integer";
+    }
+    if ( typeOk ) // check some specific values ?
+    {
+    }
+    if ( !typeOk )
+    {
+      std::string msg = "Advanced option '" + optionName + "' = '" + optionValue + "' but must be " + typeName;
+      throw std::invalid_argument(msg);
+    }
+    std::string value( ptr, i );
+    if ( _defaultOptionValues[ optionName ] == value )
+      value.clear();
+
+    op_val->second = value;
+
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=============================================================================
+//! Return option value. If isDefault provided, it can be a default value,
+//  then *isDefault == true. If isDefault is not provided, the value will be
+//  empty if it equals a default one.
+std::string GHS3DPlugin_Hypothesis::GetOptionValue(const std::string& optionName,
+                                                   bool*              isDefault) const
+  throw (std::invalid_argument)
+{
+  TOptionValues::const_iterator op_val = _option2value.find(optionName);
+  if (op_val == _option2value.end())
+  {
+    op_val = _customOption2value.find(optionName);
+    if (op_val == _customOption2value.end())
+    {
+      std::string msg = "Unknown MG-Tetra option: <" + optionName + ">";
+      throw std::invalid_argument(msg);
+    }
+  }
+  std::string val = op_val->second;
+  if ( isDefault ) *isDefault = ( val.empty() );
+
+  if ( val.empty() && isDefault )
+  {
+    op_val = _defaultOptionValues.find( optionName );
+    if (op_val != _defaultOptionValues.end())
+      val = op_val->second;
+  }
+  return val;
+}
+
+
+//=============================================================================
+bool GHS3DPlugin_Hypothesis::HasOptionDefined( const std::string& optionName ) const
+{
+  bool isDefault = false;
+  try
+  {
+    GetOptionValue( optionName, &isDefault );
+  }
+  catch ( std::invalid_argument )
+  {
+    return false;
+  }
+  return !isDefault;
+}
+
+//=============================================================================
+void GHS3DPlugin_Hypothesis::ClearOption(const std::string& optionName)
+{
+  TOptionValues::iterator op_val = _customOption2value.find(optionName);
+  if (op_val != _customOption2value.end())
+   _customOption2value.erase(op_val);
+  else {
+    op_val = _option2value.find(optionName);
+    if (op_val != _option2value.end())
+      op_val->second.clear();
+  }
+}
+
+//=============================================================================
+GHS3DPlugin_Hypothesis::TOptionValues GHS3DPlugin_Hypothesis::GetOptionValues() const
+{
+  TOptionValues vals;
+  TOptionValues::const_iterator op_val = _option2value.begin();
+  for ( ; op_val != _option2value.end(); ++op_val )
+    vals.insert( make_pair( op_val->first, GetOptionValue( op_val->first, GET_DEFAULT() )));
+
+  return vals;
+}
+
+//================================================================================
+/*!
+ * \brief Converts a string to a bool
+ */
+//================================================================================
+
+bool GHS3DPlugin_Hypothesis::ToBool(const std::string& str, bool* isOk )
+  throw (std::invalid_argument)
+{
+  std::string s = str;
+  if ( isOk ) *isOk = true;
+
+  for ( size_t i = 0; i <= s.size(); ++i )
+    s[i] = tolower( s[i] );
+
+  if ( s == "1" || s == "true" || s == "active" || s == "yes" )
+    return true;
+
+  if ( s == "0" || s == "false" || s == "inactive" || s == "no" )
+    return false;
+
+  if ( isOk )
+    *isOk = false;
+  else {
+    std::string msg = "Not a Boolean value:'" + str + "'";
+    throw std::invalid_argument(msg);
+  }
+  return false;
+}
+
+//================================================================================
+/*!
+ * \brief Converts a string to a real value
+ */
+//================================================================================
+
+double GHS3DPlugin_Hypothesis::ToDbl(const std::string& str, bool* isOk )
+  throw (std::invalid_argument)
+{
+  if ( str.empty() ) throw std::invalid_argument("Empty value provided");
+
+  char * endPtr;
+  double val = strtod(&str[0], &endPtr);
+  bool ok = (&str[0] != endPtr);
+
+  if ( isOk ) *isOk = ok;
+
+  if ( !ok )
+  {
+    std::string msg = "Not a real value:'" + str + "'";
+    throw std::invalid_argument(msg);
+  }
+  return val;
+}
+
+//================================================================================
+/*!
+ * \brief Converts a string to a integer value
+ */
+//================================================================================
+
+int GHS3DPlugin_Hypothesis::ToInt(const std::string& str, bool* isOk )
+  throw (std::invalid_argument)
+{
+  if ( str.empty() ) throw std::invalid_argument("Empty value provided");
+
+  char * endPtr;
+  int val = (int)strtol( &str[0], &endPtr, 10);
+  bool ok = (&str[0] != endPtr);
+
+  if ( isOk ) *isOk = ok;
+
+  if ( !ok )
+  {
+    std::string msg = "Not an integer value:'" + str + "'";
+    throw std::invalid_argument(msg);
+  }
+  return val;
+}
+

@@ -57,11 +57,11 @@ elements as much as possible.
 \ref optimization_top "Back to top"
 
 
-\section ghs3d_advanced_parameters Advanced parameters
+\section mgtetra_optim_advanced_parameters Advanced parameters
 
 \image html mgtetra_optim_adv_params.png
 
-\subsection memory_settings Memory settings
+\subsection mgtetra_optim_memory_settings Memory settings
 
 - <b>Initial memory size</b> - starts MG-Tetra software with
 the specified amount of work space, in Mbytes. If this option is checked off, the
@@ -71,7 +71,7 @@ software will be started with 100 Megabytes of working space.
 work space limited to the specified amount of RAM, in Mbytes. If this option is
 checked off, the software will be launched with 7O% of the total RAM space.
 
-\subsection log Logs and debug
+\subsection mgtetra_optim_log Logs and debug
 
 - <b>Working directory</b> - allows defining the folder for input and output
 files of MG-Tetra software, which are the files starting with "GHS3D_" prefix.
@@ -104,7 +104,7 @@ files of MG-Tetra software, while usually these files are removed
 after the launch of the mesher. The log file (if any) is also kept if
 this option is checked.
 
-\subsection advanced_meshing_options Advanced meshing options
+\subsection mgtetra_optim_advanced_meshing_options Advanced meshing options
 
 - A table allows to input in the command line any text for MG-Tetra,
 for example, advanced options.<br> 

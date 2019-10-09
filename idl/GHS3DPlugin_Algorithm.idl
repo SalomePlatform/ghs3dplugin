@@ -32,6 +32,8 @@
  */
 module GHS3DPlugin
 {
+  typedef sequence<string> string_array;
+
   typedef sequence<double,3> TCoords;
   struct GHS3DEnforcedVertex {
     string name;
@@ -71,6 +73,26 @@ module GHS3DPlugin
      */
     void SetToMeshHoles(in boolean toMesh);
     boolean GetToMeshHoles();
+    /*!
+     *Set lower boundary of mesh element size
+     */
+    void SetMinSize(in double theMinSize);
+    double GetMinSize();
+    /*!
+     *Set upper boundary of mesh element size
+     */
+    void SetMaxSize(in double theMaxSize);
+    double GetMaxSize();
+    /*!
+     *  Activate/deactivate volume proximity computation
+     */
+    void SetVolumeProximity( in boolean toUse );
+    boolean GetVolumeProximity();
+    /*!
+     * Set number of surface element layers to be generated due to volume proximity
+     */
+    void SetNbVolumeProximityLayers( in short nbLayers );
+    short GetNbVolumeProximityLayers();
     /*!
      * To make groups of volumes of different domains when mesh is generated from skin.
      * Default is to make groups.
@@ -143,13 +165,6 @@ module GHS3DPlugin
     void SetToRemoveCentralPoint(in boolean toRemove);
     boolean GetToRemoveCentralPoint();
     /*!
-     * To set hiden/undocumented/advanced options
-     */
-    void SetAdvancedOption(in string option);
-    string GetAdvancedOption();
-    void SetTextOption(in string option); // obsolete
-    string GetTextOption();
-    /*!
      * To define the volumic gradation
      */
     void SetGradation(in double gradation);
@@ -164,6 +179,39 @@ module GHS3DPlugin
     */
     void SetRemoveLogOnSuccess(in boolean removeLogOnSuccess);
     boolean GetRemoveLogOnSuccess();
+    /*!
+     * Set advanced option value
+     */
+    void SetOptionValue(in string optionName,
+                        in string optionValue) raises (SALOME::SALOME_Exception);
+    string GetOptionValue(in string optionName) raises (SALOME::SALOME_Exception);
+    void UnsetOption(in string optionName);
+    /*!
+     * Adds custom advanced option and its value
+     */
+    void SetAdvancedOption(in string optionsAndValues) // in a form "option_1 v1 option_2 v2'"
+      raises (SALOME::SALOME_Exception);
+    string GetAdvancedOption();
+    void AddOption(in string optionName, in string optionValue);
+    string GetOption(in string optionName);
+    void SetTextOption(in string option); // obsolete
+    string GetTextOption(); // obsolete
+    /*!
+     * Return array of strings each of which is option name concatenated
+     * with option value devided by semicolon - "option_name:option_value:option_type".
+     * Option value is empty if an option is not set.
+     * option_type: 1 if user-define, 0 if default
+     * Note: the method is mostly for interaction with GUI.
+     */
+    string_array GetOptionValues();
+    string_array GetAdvancedOptionValues();
+    /*!
+     * Set option values each in the form "option_name[:option_value][:option_type]".
+     * Note: the method is mostly for interaction with GUI.
+     */
+    void SetOptionValues(in string_array options) raises (SALOME::SALOME_Exception);
+    void SetAdvancedOptionValues(in string_array options);
+
     /*!
      * To set an enforced vertex
      */
@@ -201,6 +249,11 @@ module GHS3DPlugin
     * Set/get/unset an enforced vertex (private method for GUI)
     */
     boolean p_SetEnforcedMesh(in SMESH::SMESH_IDSource theSource, in SMESH::ElementType elementType, in string name, in string groupName) raises (SALOME::SALOME_Exception);
+
+    // GUI methods
+    double GetMaxSizeDefault();
+    double GetMinSizeDefault();
+    void SetMinMaxSizeDefault( in double theMinSize, in double theMaxSize );
   };
 
   /*!

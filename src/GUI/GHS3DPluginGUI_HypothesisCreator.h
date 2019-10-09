@@ -56,6 +56,7 @@ class QSpinBox;
 class QTableWidget;
 class QTableWidgetItem;
 class QHeaderView;
+class QGroupBox;
 
 class GHS3DPluginGUI_AdvWidget;
 class LightApp_SelectionMgr;
@@ -142,13 +143,16 @@ typedef std::set< TEnfMesh*, CompareEnfMeshes > TEnfMeshList;
 
 typedef struct
 {
-  bool    myToMeshHoles,myToMakeGroupsOfDomains,myKeepFiles,myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint,
-          myLogInStandardOutput, myRemoveLogOnSuccess;
-  float   myMaximumMemory;
-  float   myInitialMemory;
   int     myOptimizationLevel;
-  QString myName,myWorkingDir,myTextOption;
+  double  myMinSize, myMaxSize, myMinSizeDefault, myMaxSizeDefault;
   double  myGradation;
+  int     myNbProximityLayers;
+  bool    myUseMinSize, myUseMaxSize, myUseGradation, myUseProximity;
+  bool    myToMeshHoles, myToMakeGroupsOfDomains;
+  bool    myToCreateNewNodes,myBoundaryRecovery,myFEMCorrection,myRemoveInitialCentralPoint,
+          myKeepFiles,myLogInStandardOutput, myRemoveLogOnSuccess;
+  float   myInitialMemory, myMaximumMemory;
+  QString myName,myWorkingDir;
   short   myVerboseLevel;
   TEnfVertexList myEnforcedVertices;
   TEnfMeshList myEnforcedMeshes;
@@ -182,6 +186,7 @@ protected:
   virtual QString  type() const;
 
 protected slots:
+  void                onAddOption();
   void                onToMeshHoles(bool);
   void                onDirBtnClicked();
   void                updateWidgets();
@@ -219,9 +224,21 @@ private:
 private:
   QWidget*              myStdGroup;
   QLineEdit*            myName;
-  QCheckBox*            myToMeshHolesCheck;
-  QCheckBox*            myToMakeGroupsOfDomains;
+  // main
   QComboBox*            myOptimizationLevelCombo;
+  QCheckBox*            myMinSizeCheck;
+  QCheckBox*            myMaxSizeCheck;
+  SMESHGUI_SpinBox*     myMinSizeSpin;
+  SMESHGUI_SpinBox*     myMaxSizeSpin;
+  mutable double        myMinSizeDefault, myMaxSizeDefault;
+  // proximity
+  QCheckBox*            myGradationCheck;
+  SMESHGUI_SpinBox*     myGradationSpin;
+  QGroupBox*            myUseProximityGroup;
+  SalomeApp_IntSpinBox* myNbProximityLayers;
+  // other
+  QCheckBox*            myToMakeGroupsOfDomains;
+  QCheckBox*            myToMeshHolesCheck;
 
   QComboBox*            myOptimizationCombo;
   QComboBox*            mySplitOverConstrainedCombo;
@@ -232,6 +249,8 @@ private:
 
   QWidget*                  myAdvGroup;
   GHS3DPluginGUI_AdvWidget* myAdvWidget;
+  mutable GHS3DPlugin::string_array_var myOptions, myCustomOptions;
+
   
   QWidget*              myEnfGroup;
   QPixmap               iconVertex, iconCompound;
