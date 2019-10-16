@@ -4,10 +4,6 @@
 <context>
     <name>@default</name>
     <message>
-        <source>GHS3D_TO_MAKE_DOMAIN_GROUPS</source>
-        <translation>Pour créer des groupes de domaines</translation>
-    </message>
-    <message>
         <source>GHS3D_ADV_ARGS</source>
         <translation>Avancé</translation>
     </message>
@@ -38,6 +34,10 @@
     <message>
         <source>GHS3D_TO_MESH_HOLES</source>
         <translation>Mailler les trous</translation>
+    </message>
+    <message>
+        <source>GHS3D_TO_MAKE_DOMAIN_GROUPS</source>
+        <translation>Pour créer des groupes de domaines</translation>
     </message>
     <message>
         <source>ADVANCED_MESHING_GROUP_TITLE</source>
@@ -177,7 +177,7 @@
     </message>
     <message>
         <source>GHS3D_ENF_SELECT_VERTEX</source>
-        <translation>Sélectionnez une/des point(s)</translation>
+        <translation>Sélectionnez un/des point(s)</translation>
     </message>
     <message>
         <source>GHS3D_ENF_SELECT_MESH</source>
@@ -277,7 +277,111 @@
     </message>
     <message>
         <source>GHS3D_SMOOTH_OFF_SLIVERS</source>
-        <translation>Polir les élémenst aplatis</translation>
+        <translation>Redresser les éléments aplatis</translation>
+    </message>
+    <message>
+        <source>OPTION_TYPE_COLUMN</source>
+        <translation>Type</translation>
+    </message>
+    <message>
+        <source>OPTION_NAME_COLUMN</source>
+        <translation>Option</translation>
+    </message>
+    <message>
+        <source>OPTION_VALUE_COLUMN</source>
+        <translation>Valeur</translation>
+    </message>
+    <message>
+        <source>GHS3D_ADD_OPTION</source>
+        <translation>Ajouter l'option</translation>
+    </message>
+    <message>
+        <source>GHS3D_MAIN_PARAMS</source>
+        <translation>Paramètres principaux</translation>
+    </message>
+    <message>
+        <source>GHS3D_MIN_SIZE</source>
+        <translation>Taille minimale</translation>
+    </message>
+    <message>
+        <source>GHS3D_MAX_SIZE</source>
+        <translation>Taille maximale</translation>
+    </message>
+    <message>
+        <source>GHS3D_VOLUME_PROXIMITY</source>
+        <translation>Proximité</translation>
+    </message>
+    <message>
+        <source>GHS3D_USE_VOLUME_PROXIMITY</source>
+        <translation>Proximité volumique</translation>
+    </message>
+    <message>
+        <source>GHS3D_NB_LAYERS</source>
+        <translation>Nombre de couches</translation>
+    </message>
+    <message>
+        <source>GHS3D_OTHER_PARAMETERS</source>
+        <translation>Autres paramètres</translation>
+    </message>
+    <message>
+        <source>no_initial_central_point</source>
+        <translation>No central point</translation>
+    </message>
+    <message>
+        <source>force_max_size</source>
+        <translation>Force maximum edge size</translation>
+    </message>
+    <message>
+        <source>apply_gradation_on_skin_vertex_sizes</source>
+        <translation>Gradation on skin</translation>
+    </message>
+    <message>
+        <source>optimise_worst_elements</source>
+        <translation>Optimise worst elements</translation>
+    </message>
+    <message>
+        <source>force_output_quadratic_mesh</source>
+        <translation>Force quadratic mesh</translation>
+    </message>
+    <message>
+        <source>rectify_jacobian</source>
+        <translation>Rectify jacobian</translation>
+    </message>
+    <message>
+        <source>jacobian_rectification_respect_input_surface_mesh</source>
+        <translation>Respect surface mesh</translation>
+    </message>
+    <message>
+        <source>max_number_of_errors_printed</source>
+        <translation>Max number of errors</translation>
+    </message>
+    <message>
+        <source>max_number_of_threads</source>
+        <translation>Maximal number of threads</translation>
+    </message>
+    <message>
+        <source>target_quality</source>
+        <translation>Target quality</translation>
+    </message>
+    <message>
+        <source>sliver_angle</source>
+        <translation>Sliver angle</translation>
+    </message>
+    <message>
+        <source>pthreads_mode</source>
+        <translation>Mode of pthreads</translation>
+    </message>
+    <message>
+        <source>boundary_regeneration</source>
+        <translation>Boundary regeneration</translation>
+    </message>
+    <message>
+        <source>split_overconstrained_tetrahedra</source>
+        <translation>Remove overconstrained tetrahedra</translation>
+    </message>
+    <message>
+        <source>_</source>
+        <translation> </translation>
     </message>
 </context>
 </TS>
