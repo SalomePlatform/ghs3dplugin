@@ -45,6 +45,8 @@
 #include <SalomeApp_Tools.h>
 #include <SalomeApp_TypeFilter.h>
 
+#include "GHS3DPlugin_Hypothesis.hxx"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFileInfo>

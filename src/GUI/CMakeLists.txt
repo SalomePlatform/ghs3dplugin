@@ -58,6 +58,7 @@ SET(_link_LIBRARIES
   ${GUI_SalomeApp}
   ${OpenCASCADE_FoundationClasses_LIBRARIES}
   SalomeIDLGHS3DPLUGIN
+  GHS3DEngine
 )
 
 # --- headers ---
