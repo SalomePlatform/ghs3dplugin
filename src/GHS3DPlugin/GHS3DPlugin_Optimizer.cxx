@@ -437,7 +437,7 @@ bool GHS3DPlugin_Optimizer::Compute(SMESH_Mesh&         theMesh,
   std::string errStr;
   Ok = mgTetra.Compute( cmd, errStr ); // run
 
-  if ( _logInStandardOutput && mgTetra.IsLibrary() ) {
+  if ( logInStandardOutput && mgTetra.IsLibrary() ) {
     BRIEF_INFOS("");
     BRIEF_INFOS(mgTetra.GetLog());
     BRIEF_INFOS("")
