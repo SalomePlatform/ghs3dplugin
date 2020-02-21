@@ -838,7 +838,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVe
   string theVertexEntry = theVertex->GetStudyEntry();
   CORBA::Double x = 0, y = 0, z = 0;
   CORBA::Boolean isCompound = false;
-  GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
+  GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine( theVertex );
   if (theVertexEntry.empty()) {
     string aName;
     if (theVertex->GetShapeType() == GEOM::VERTEX) {
@@ -880,7 +880,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_
   string theVertexEntry = theVertex->GetStudyEntry();
   CORBA::Double x = 0, y = 0, z = 0;
   CORBA::Boolean isCompound = false;
-  GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
+  GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine( theVertex );
   if (theVertexEntry.empty()) {
     string aName;
     if (theVertex->GetShapeType() == GEOM::VERTEX) {
@@ -1013,7 +1013,7 @@ CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertexGeom(GEOM::GEOM_Object_
   
   string theVertexEntry = theVertex->GetStudyEntry();
   if (theVertexEntry.empty()) {
-    GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
+    GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine( theVertex );
     string aName;
     if (theVertex->GetShapeType() == GEOM::VERTEX)
       aName = "Vertex_";
@@ -1116,7 +1116,7 @@ bool GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr th
   
   string theVertexEntry = theVertex->GetStudyEntry();
   if (theVertexEntry.empty()) {
-    GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine();
+    GEOM::GEOM_Gen_ptr geomGen = SMESH_Gen_i::GetGeomEngine( theVertex );
     string aName;
     if (theVertex->GetShapeType() == GEOM::VERTEX)
       aName = "Vertex_";
