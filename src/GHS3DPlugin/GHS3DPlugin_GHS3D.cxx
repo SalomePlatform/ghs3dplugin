@@ -1679,6 +1679,8 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
         proxyMesh = _viscousLayersHyp->Compute( theMesh, expBox.Current() );
         if ( !proxyMesh )
           return false;
+        if ( theMesh.NbQuadrangles() == 0 )
+          components.push_back( proxyMesh );
       }
       if ( theMesh.NbQuadrangles() > 0 )
       {
