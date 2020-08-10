@@ -765,7 +765,7 @@ void GHS3DPlugin_Hypothesis_i::SetStandardOutputLog(CORBA::Boolean logInStandard
 {
   ASSERT(myBaseImpl);
   this->GetImpl()->SetStandardOutputLog(logInStandardOutput);
-  SMESH::TPythonDump() << _this() << ".SetPrintLogInFile( " << !logInStandardOutput << " )";
+  SMESH::TPythonDump() << _this() << ".SetStandardOutputLog( " << !logInStandardOutput << " )";
 }
 
 //=======================================================================

@@ -1719,17 +1719,18 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   Ok = aIdsFile.rdbuf()->is_open();
   if (!Ok) {
     INFOS( "Can't write into " << aSmdsToGhs3dIdMapFileName);
-    return error(SMESH_Comment("Can't write into ") << aSmdsToGhs3dIdMapFileName);
+    //return error(SMESH_Comment("Can't write into ") << aSmdsToGhs3dIdMapFileName);
   }
-  INFOS( "Writing ids relation into " << aSmdsToGhs3dIdMapFileName);
-  aIdsFile << "Smds MG-Tetra" << std::endl;
-  map <int,int>::const_iterator myit;
-  for (myit=aSmdsToGhs3dIdMap.begin() ; myit != aSmdsToGhs3dIdMap.end() ; ++myit) {
-    aIdsFile << myit->first << " " << myit->second << std::endl;
+  else
+  {
+    INFOS( "Writing ids relation into " << aSmdsToGhs3dIdMapFileName);
+    aIdsFile << "Smds MG-Tetra" << std::endl;
+    map <int,int>::const_iterator myit;
+    for (myit=aSmdsToGhs3dIdMap.begin() ; myit != aSmdsToGhs3dIdMap.end() ; ++myit) {
+      aIdsFile << myit->first << " " << myit->second << std::endl;
+    }
   }
-
   aIdsFile.close();
-
   if ( ! Ok ) {
     if ( !_keepFiles ) {
       removeFile( aGMFFileName );
