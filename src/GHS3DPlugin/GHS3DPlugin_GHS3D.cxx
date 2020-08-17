@@ -263,9 +263,15 @@ static int checkTmpFace(const SMDS_MeshNode* node1,
         bool isDomainInPyramid = ( i3base != i3 );
         return isDomainInPyramid ? HOLE_ID : vol->getshapeId();
       }
-      else
+      else // nbNodes == 6
       {
-        return vol->getshapeId(); // triangle is a prism top
+        int i1 = vol->GetNodeIndex( node1 );
+        if (( i1 == 5 && i2 == 4 && i3 == 3 ) ||
+            ( i1 == 4 && i2 == 3 && i3 == 5 ) ||
+            ( i1 == 3 && i2 == 5 && i3 == 4 ))
+          return HOLE_ID;
+        else
+          return vol->getshapeId(); // triangle is a prism top
       }
     }
   }
