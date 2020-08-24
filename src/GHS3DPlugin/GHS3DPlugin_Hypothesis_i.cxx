@@ -190,7 +190,6 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetToMakeGroupsOfDomains()
 //=======================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetMaximumMemory(CORBA::Float MB)
-  throw ( SALOME::SALOME_Exception )
 {
   if ( MB == 0 )
     THROW_SALOME_CORBA_EXCEPTION( "Invalid memory size",SALOME::BAD_PARAM );
@@ -214,7 +213,6 @@ CORBA::Float GHS3DPlugin_Hypothesis_i::GetMaximumMemory()
 //=======================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetInitialMemory(CORBA::Float MB)
-  throw ( SALOME::SALOME_Exception )
 {
   if ( MB == 0 )
     THROW_SALOME_CORBA_EXCEPTION( "Invalid memory size",SALOME::BAD_PARAM );
@@ -238,7 +236,6 @@ CORBA::Float GHS3DPlugin_Hypothesis_i::GetInitialMemory()
 //=======================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetOptimizationLevel(CORBA::Short level)
-  throw ( SALOME::SALOME_Exception )
 {
   ::GHS3DPlugin_Hypothesis::OptimizationLevel l =
     (::GHS3DPlugin_Hypothesis::OptimizationLevel) level;
@@ -265,7 +262,7 @@ CORBA::Short GHS3DPlugin_Hypothesis_i::GetOptimizationLevel()
 //function : SetWorkingDirectory
 //=======================================================================
 
-void GHS3DPlugin_Hypothesis_i::SetWorkingDirectory(const char* path) throw ( SALOME::SALOME_Exception )
+void GHS3DPlugin_Hypothesis_i::SetWorkingDirectory(const char* path)
 {
   if (!path )
     THROW_SALOME_CORBA_EXCEPTION( "Null working directory",SALOME::BAD_PARAM );
@@ -321,7 +318,6 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetKeepFiles()
 //=======================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetVerboseLevel(CORBA::Short level)
-  throw ( SALOME::SALOME_Exception )
 {
   if (level < 0 || level > 10 )
     THROW_SALOME_CORBA_EXCEPTION( "Invalid verbose level, valid range is [0-10]",
@@ -467,7 +463,6 @@ char* GHS3DPlugin_Hypothesis_i::GetAdvancedOption()
 //=============================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetOptionValue(const char* optionName, const char* optionValue)
-  throw (SALOME::SALOME_Exception)
 {
   ASSERT(myBaseImpl);
   try {
@@ -529,7 +524,7 @@ void GHS3DPlugin_Hypothesis_i::SetOptionValue(const char* optionName, const char
       try {
         valueChanged = ( this->GetImpl()->GetOptionValue( name ) != optionValue );
       }
-      catch ( std::invalid_argument ) {
+      catch ( std::invalid_argument& ) {
       }
       if ( valueChanged )
       {
@@ -547,7 +542,6 @@ void GHS3DPlugin_Hypothesis_i::SetOptionValue(const char* optionName, const char
 //=============================================================================
 
 char* GHS3DPlugin_Hypothesis_i::GetOptionValue(const char* optionName)
-  throw (SALOME::SALOME_Exception)
 {
   ASSERT(myBaseImpl);
   try {
@@ -625,7 +619,6 @@ GHS3DPlugin::string_array* GHS3DPlugin_Hypothesis_i::GetAdvancedOptionValues()
 //=============================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetOptionValues(const GHS3DPlugin::string_array& options)
-  throw (SALOME::SALOME_Exception)
 {
   for (CORBA::ULong i = 0; i < options.length(); ++i)
   {
@@ -686,7 +679,6 @@ void GHS3DPlugin_Hypothesis_i::SetAdvancedOptionValues(const GHS3DPlugin::string
 //=============================================================================
 
 void GHS3DPlugin_Hypothesis_i::SetAdvancedOption(const char* optionsAndValues)
-  throw (SALOME::SALOME_Exception)
 {
   if ( !optionsAndValues ) return;
 
@@ -804,31 +796,31 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetRemoveLogOnSuccess()
 //=======================================================================
 
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size)
-  throw (SALOME::SALOME_Exception) {
+{
   ASSERT(myBaseImpl);
   return p_SetEnforcedVertex(size, x, y, z);
 }
 
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexNamed(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theVertexName)
-  throw (SALOME::SALOME_Exception) {
+{
   ASSERT(myBaseImpl);
   return p_SetEnforcedVertex(size, x, y, z, theVertexName, "", "");
 }
 
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theGroupName)
-  throw (SALOME::SALOME_Exception) {
+{
   ASSERT(myBaseImpl);
   return p_SetEnforcedVertex(size, x, y, z, "", "", theGroupName);
 }
 
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexNamedWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theVertexName, const char* theGroupName)
-  throw (SALOME::SALOME_Exception) {
+{
   ASSERT(myBaseImpl);
   return p_SetEnforcedVertex(size, x, y, z, theVertexName, "", theGroupName);
 }
 
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size)
-  throw (SALOME::SALOME_Exception) {
+{
   ASSERT(myBaseImpl);
   
   if ((theVertex->GetShapeType() != GEOM::VERTEX) && (theVertex->GetShapeType() != GEOM::COMPOUND)) {
@@ -870,7 +862,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVe
 }
 
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size, const char* theGroupName)
-  throw (SALOME::SALOME_Exception) {
+{
   ASSERT(myBaseImpl);
   
   if ((theVertex->GetShapeType() != GEOM::VERTEX) && (theVertex->GetShapeType() != GEOM::COMPOUND)) {
@@ -914,7 +906,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_
 bool GHS3DPlugin_Hypothesis_i:: p_SetEnforcedVertex(CORBA::Double size, CORBA::Double x, CORBA::Double y, CORBA::Double z,
                                                     const char* theVertexName, const char* theVertexEntry, const char* theGroupName,
                                                     CORBA::Boolean isCompound)
-  throw (SALOME::SALOME_Exception) {
+{
   ASSERT(myBaseImpl);
   bool newValue = false;
 
@@ -982,7 +974,6 @@ bool GHS3DPlugin_Hypothesis_i:: p_SetEnforcedVertex(CORBA::Double size, CORBA::D
 //=======================================================================
 
 CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z)
-  throw (SALOME::SALOME_Exception)
 {
   ASSERT(myBaseImpl);
   try {
@@ -1003,7 +994,6 @@ CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertex(CORBA::Double x, CORBA
 //=======================================================================
 
 CORBA::Double GHS3DPlugin_Hypothesis_i::GetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex)
-  throw (SALOME::SALOME_Exception)
 {
   ASSERT(myBaseImpl);
   
@@ -1089,7 +1079,6 @@ GHS3DPlugin::GHS3DEnforcedVertexList* GHS3DPlugin_Hypothesis_i::GetEnforcedVerti
 //=======================================================================
 
 bool GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z)
-  throw (SALOME::SALOME_Exception)
 {
   ASSERT(myBaseImpl);
   try {
@@ -1106,7 +1095,6 @@ bool GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertex(CORBA::Double x, CORBA::Doub
 }
 
 bool GHS3DPlugin_Hypothesis_i::RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex)
-  throw (SALOME::SALOME_Exception)
 {
   ASSERT(myBaseImpl);
   
@@ -1203,7 +1191,6 @@ GHS3DPlugin::GHS3DEnforcedMeshList* GHS3DPlugin_Hypothesis_i::GetEnforcedMeshes(
  * \brief Adds enforced elements of type elementType using another mesh/sub-mesh/mesh group theSource. The elements will be grouped in theGroupName.
  */
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, const char* theGroupName)
-  throw (SALOME::SALOME_Exception)
 {
   return p_SetEnforcedMesh(theSource, theType, "", theGroupName);
 }
@@ -1212,7 +1199,6 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_pt
  * \brief Adds enforced elements of type elementType using another mesh/sub-mesh/mesh group theSource.
  */
 bool GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType)
-  throw (SALOME::SALOME_Exception)
 {
   return p_SetEnforcedMesh(theSource, theType);
 }
@@ -1220,8 +1206,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSour
 /*!
  * \brief OBSOLETE FUNCTION - Adds enforced elements of type elementType using another mesh/sub-mesh/mesh group theSource and a size. The elements will be grouped in theGroupName.
  */
-bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize, const char* theGroupName)
-  throw (SALOME::SALOME_Exception)
+bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double /*theSize*/, const char* theGroupName)
 {
   return p_SetEnforcedMesh(theSource, theType, "", theGroupName);
 }
@@ -1229,8 +1214,7 @@ bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSourc
 /*!
  * \brief OBSOLETE FUNCTION - Adds enforced elements of type elementType using another mesh/sub-mesh/mesh group theSource and a size.
  */
-bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double theSize)
-  throw (SALOME::SALOME_Exception)
+bool GHS3DPlugin_Hypothesis_i::SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType theType, double /*theSize*/)
 {
   return p_SetEnforcedMesh(theSource, theType);
 }
@@ -1239,7 +1223,6 @@ bool GHS3DPlugin_Hypothesis_i::p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSo
                                                  SMESH::ElementType        theType,
                                                  const char*               theName,
                                                  const char*               theGroupName)
-  throw (SALOME::SALOME_Exception)
 {
   ASSERT(myBaseImpl);
 
@@ -1382,7 +1365,7 @@ CORBA::Boolean GHS3DPlugin_Hypothesis_i::IsDimSupported( SMESH::Dimension type )
 
 bool
 GHS3DPlugin_Hypothesis_i::getObjectsDependOn( std::vector< std::string > & entryArray,
-                                              std::vector< int >         & subIDArray ) const
+                                              std::vector< int >         & /*subIDArray*/ ) const
 {
   typedef ::GHS3DPlugin_Hypothesis THyp;
   const THyp* h = static_cast< const THyp*>( myBaseImpl );
@@ -1443,7 +1426,7 @@ GHS3DPlugin_Hypothesis_i::getObjectsDependOn( std::vector< std::string > & entry
 
 bool
 GHS3DPlugin_Hypothesis_i::setObjectsDependOn( std::vector< std::string > & entryArray,
-                                              std::vector< int >         & subIDArray )
+                                              std::vector< int >         & /*subIDArray*/ )
 {
   typedef ::GHS3DPlugin_Hypothesis THyp;
   THyp* h = static_cast< THyp*>( myBaseImpl );

@@ -351,7 +351,7 @@ struct MG_Tetra_API::LibData
     _nbRequiredTria = nb;
   }
 
-  void AddNode( double x, double y, double z, int domain )
+  void AddNode( double x, double y, double z, int /*domain*/ )
   {
     _xyz.push_back( x );
     _xyz.push_back( y );
@@ -363,20 +363,20 @@ struct MG_Tetra_API::LibData
     _nodeSize.push_back( size );
   }
   
-  void AddEdgeNodes( int node1, int node2, int domain )
+  void AddEdgeNodes( int node1, int node2, int /*domain*/ )
   {
     _edgeNodes.push_back( node1 );
     _edgeNodes.push_back( node2 );
   }
   
-  void AddTriaNodes( int node1, int node2, int node3, int domain )
+  void AddTriaNodes( int node1, int node2, int node3, int /*domain*/ )
   {
     _triaNodes.push_back( node1 );
     _triaNodes.push_back( node2 );
     _triaNodes.push_back( node3 );
   }
 
-  void AddTetraNodes( int node1, int node2, int node3, int node4, int domain )
+  void AddTetraNodes( int node1, int node2, int node3, int node4, int /*domain*/ )
   {
     _tetraNodes.push_back( node1 );
     _tetraNodes.push_back( node2 );
@@ -689,6 +689,14 @@ bool MG_Tetra_API::LibData::Compute()
   return true;
 }
 
+#else // ifdef USE_MG_LIBS
+
+struct MG_Tetra_API::LibData // to avoid compiler warnings
+{
+  volatile bool& _cancelled_flag;
+  double& _progress;
+  LibData(volatile bool& cancelled_flag, double& progress): _cancelled_flag{cancelled_flag}, _progress{progress} {}
+};
 
 #endif // ifdef USE_MG_LIBS
 
@@ -702,9 +710,9 @@ bool MG_Tetra_API::LibData::Compute()
 MG_Tetra_API::MG_Tetra_API(volatile bool& cancelled_flag, double& progress)
 {
   _useLib = false;
+  _libData = new LibData( cancelled_flag, progress );
 #ifdef USE_MG_LIBS
   _useLib = true;
-  _libData = new LibData( cancelled_flag, progress );
   _libData->Init();
   if ( getenv("MG_TETRA_USE_EXE"))
     _useLib = false;
@@ -888,7 +896,7 @@ void MG_Tetra_API::GmfGotoKwd( int iMesh, GmfKwdCod what )
  */
 //================================================================================
 
-void MG_Tetra_API::GmfGetLin( int iMesh, GmfKwdCod what, int* nbNodes, int* faceInd, int* ori, int* domain, int dummy )
+void MG_Tetra_API::GmfGetLin( int iMesh, GmfKwdCod what, int* nbNodes, int* faceInd, int* ori, int* domain, int /*dummy*/ )
 {
   if ( _useLib ) {
 #ifdef USE_MG_LIBS

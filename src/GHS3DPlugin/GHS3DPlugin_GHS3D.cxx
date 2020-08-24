@@ -440,7 +440,7 @@ static int findShapeID(SMESH_Mesh&          mesh,
 static void addElemInMeshGroup(SMESH_Mesh*             theMesh,
                                const SMDS_MeshElement* anElem,
                                std::string&            groupName,
-                               std::set<std::string>&  groupsToRemove)
+                               std::set<std::string>&  /*groupsToRemove*/)
 {
   if ( !anElem ) return; // issue 0021776
 
@@ -584,7 +584,7 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
                         SMESH_MesherHelper*             theHelper,
                         std::vector <const SMDS_MeshNode*> &    theNodeByGhs3dId,
                         std::vector <const SMDS_MeshElement*> & theFaceByGhs3dId,
-                        map<const SMDS_MeshNode*,int> & theNodeToGhs3dIdMap,
+                        map<const SMDS_MeshNode*,int> & /*theNodeToGhs3dIdMap*/,
                         std::vector<std::string> &      aNodeGroupByGhs3dId,
                         std::vector<std::string> &      anEdgeGroupByGhs3dId,
                         std::vector<std::string> &      aFaceGroupByGhs3dId,
@@ -691,7 +691,7 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
   std::vector< const SMDS_MeshElement* > foundVolumes;
   if ( !hasGeom && theHelper->GetMesh()->NbVolumes() > 0 )
     elemSearcher = SMESH_MeshAlgos::GetElementSearcher( *theMeshDS );
-  auto_ptr< SMESH_ElementSearcher > elemSearcherDeleter( elemSearcher );
+  unique_ptr< SMESH_ElementSearcher > elemSearcherDeleter( elemSearcher ); //auto_ptr
 
   // IMP 0022172: [CEA 790] create the groups corresponding to domains
   std::vector< std::vector< const SMDS_MeshElement* > > elemsOfDomain;
@@ -2871,9 +2871,9 @@ namespace
      */
     void ProcessEvent(const int                       event,
                       const int                       eventType,
-                      SMESH_subMesh*                  subMesh,
+                      SMESH_subMesh*                  /*subMesh*/,
                       SMESH_subMeshEventListenerData* data,
-                      const SMESH_Hypothesis*         hyp)
+                      const SMESH_Hypothesis*         /*hyp*/)
     {
       if ( SMESH_subMesh::SUBMESH_LOADED == event &&
            SMESH_subMesh::COMPUTE_EVENT  == eventType &&
@@ -2913,11 +2913,11 @@ namespace
     /*!
      * \brief Treat events of the subMesh
      */
-    void ProcessEvent(const int                       event,
+    void ProcessEvent(const int                       /*event*/,
                       const int                       eventType,
                       SMESH_subMesh*                  subMesh,
-                      SMESH_subMeshEventListenerData* data,
-                      const SMESH_Hypothesis*         hyp)
+                      SMESH_subMeshEventListenerData* /*data*/,
+                      const SMESH_Hypothesis*         /*hyp*/)
     {
       if (SMESH_subMesh::ALGO_EVENT == eventType &&
           !subMesh->GetAlgo() )

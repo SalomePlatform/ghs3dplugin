@@ -139,14 +139,14 @@ std::istream & GHS3DPlugin_OptimizerHypothesis::LoadFrom(std::istream & load)
   return load;
 }
 
-bool GHS3DPlugin_OptimizerHypothesis::SetParametersByMesh(const SMESH_Mesh*   theMesh,
-                                                          const TopoDS_Shape& theShape)
+bool GHS3DPlugin_OptimizerHypothesis::SetParametersByMesh(const SMESH_Mesh*   /*theMesh*/,
+                                                          const TopoDS_Shape& /*theShape*/)
 {
   return false;
 }
 
-bool GHS3DPlugin_OptimizerHypothesis::SetParametersByDefaults(const TDefaults&  theDflts,
-                                                              const SMESH_Mesh* theMesh)
+bool GHS3DPlugin_OptimizerHypothesis::SetParametersByDefaults(const TDefaults&  /*theDflts*/,
+                                                              const SMESH_Mesh* /*theMesh*/)
 {
   return false;
 }

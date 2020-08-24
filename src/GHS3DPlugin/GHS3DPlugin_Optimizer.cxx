@@ -84,8 +84,8 @@ void GHS3DPlugin_Optimizer::CancelCompute()
  */
 //================================================================================
 
-bool GHS3DPlugin_Optimizer::Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aShape,
-                                     MapShapeNbElems& aResMap)
+bool GHS3DPlugin_Optimizer::Evaluate(SMESH_Mesh& /*aMesh*/, const TopoDS_Shape& /*aShape*/,
+                                     MapShapeNbElems& /*aResMap*/)
 {
   return false;
 }
@@ -95,7 +95,7 @@ bool GHS3DPlugin_Optimizer::Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aSha
  */
 //================================================================================
 
-bool GHS3DPlugin_Optimizer::Compute(SMESH_Mesh & aMesh, const TopoDS_Shape & aShape)
+bool GHS3DPlugin_Optimizer::Compute(SMESH_Mesh & /*aMesh*/, const TopoDS_Shape & /*aShape*/)
 {
   return false;
 }

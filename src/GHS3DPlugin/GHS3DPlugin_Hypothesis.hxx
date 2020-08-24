@@ -111,7 +111,7 @@ public:
 
   struct TIDMeshIDCompare {
     bool operator () (const SMDS_MeshElement* e1, const SMDS_MeshElement* e2) const
-    { return e1->GetMesh() == e2->GetMesh() ? e1->GetID() < e2->GetID() : e1->GetMesh() < e2->GetMesh() ; }
+    { return e1->GetMesh() == e2->GetMesh() ? e1->GetID() < e2->GetID() : e1->GetMesh() < e2->GetMesh(); }
   };
   
   typedef std::map<const SMDS_MeshElement*, std::string, TIDMeshIDCompare > TIDSortedElemGroupMap;
@@ -216,26 +216,26 @@ public:
   * To define the volumic gradation
   */
   void SetGradation(double gradation);
-  double GetGradation() const ;
+  double GetGradation() const;
   /*!
   * Print log in standard output
   */
   void SetStandardOutputLog(bool logInStandardOutput);
-  bool GetStandardOutputLog() const ;
+  bool GetStandardOutputLog() const;
   /*!
   * Remove log file on success
   */
   void SetRemoveLogOnSuccess(bool removeLogOnSuccess);
-  bool GetRemoveLogOnSuccess() const ;
+  bool GetRemoveLogOnSuccess() const;
     
 
   typedef std::map< std::string, std::string > TOptionValues;
   typedef std::set< std::string >              TOptionNames;
 
   void SetOptionValue(const std::string& optionName,
-                      const std::string& optionValue) throw (std::invalid_argument);
+                      const std::string& optionValue);
   std::string GetOptionValue(const std::string& optionName,
-                             bool*              isDefault=0) const throw (std::invalid_argument);
+                             bool*              isDefault=0) const;
   bool HasOptionDefined( const std::string& optionName ) const;
   void ClearOption(const std::string& optionName);
   TOptionValues        GetOptionValues()       const;
@@ -270,9 +270,9 @@ public:
    */
   bool SetEnforcedVertex(std::string aName, std::string anEntry, std::string aGroupName,
                          double size, double x=0.0, double y=0.0, double z=0.0, bool isCompound = false);
-  TGHS3DEnforcedVertex* GetEnforcedVertex(double x, double y, double z) throw (std::invalid_argument);
-  TGHS3DEnforcedVertex* GetEnforcedVertex(const std::string anEntry) throw (std::invalid_argument);
-  bool RemoveEnforcedVertex(double x=0.0, double y=0.0, double z=0.0, const std::string anEntry="" ) throw (std::invalid_argument);
+  TGHS3DEnforcedVertex* GetEnforcedVertex(double x, double y, double z);
+  TGHS3DEnforcedVertex* GetEnforcedVertex(const std::string anEntry);
+  bool RemoveEnforcedVertex(double x=0.0, double y=0.0, double z=0.0, const std::string anEntry="" );
   const TGHS3DEnforcedVertexCoordsValues& _GetEnforcedVerticesCoordsSize() const {return _enfVertexCoordsSizeList; }
   const TGHS3DEnforcedVertexEntryValues & _GetEnforcedVerticesEntrySize() const {return _enfVertexEntrySizeList; }
   const TGHS3DEnforcedVertexList        & _GetEnforcedVertices() const { return _enfVertexList; }
@@ -351,9 +351,9 @@ public:
    */
   virtual bool SetParametersByDefaults(const TDefaults& dflts, const SMESH_Mesh* theMesh=0);
 
-  static bool  ToBool(const std::string& str, bool* isOk=0) throw (std::invalid_argument);
-  static double ToDbl(const std::string& str, bool* isOk=0) throw (std::invalid_argument);
-  static int    ToInt(const std::string& str, bool* isOk=0) throw (std::invalid_argument);
+  static bool  ToBool(const std::string& str, bool* isOk=0);
+  static double ToDbl(const std::string& str, bool* isOk=0);
+  static int    ToInt(const std::string& str, bool* isOk=0);
 
 protected:
 

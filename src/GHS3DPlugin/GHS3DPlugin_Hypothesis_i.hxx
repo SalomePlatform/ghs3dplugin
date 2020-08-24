@@ -80,23 +80,23 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   /*!
    * Maximal size of memory to be used by the algorithm (in Megabytes)
    */
-  void SetMaximumMemory(CORBA::Float MB) throw ( SALOME::SALOME_Exception );
+  void SetMaximumMemory(CORBA::Float MB);
   CORBA::Float GetMaximumMemory();
   /*!
    * Initial size of memory to be used by the algorithm (in Megabytes) in
    * automatic memory adjustment mode. Default is zero
    */
-  void SetInitialMemory(CORBA::Float MB) throw ( SALOME::SALOME_Exception );
+  void SetInitialMemory(CORBA::Float MB);
   CORBA::Float GetInitialMemory();
   /*!
    * Optimization level: 0-none, 1-light, 2-medium, 3-strong. Default is medium
    */
-  void SetOptimizationLevel(CORBA::Short level) throw ( SALOME::SALOME_Exception );
+  void SetOptimizationLevel(CORBA::Short level);
   CORBA::Short GetOptimizationLevel();
   /*!
    * Path to working directory
    */
-  void SetWorkingDirectory(const char* path) throw ( SALOME::SALOME_Exception );
+  void SetWorkingDirectory(const char* path);
   char* GetWorkingDirectory();
   /*!
    * To keep working files or remove them. Log file remains in case of errors anyway.
@@ -113,7 +113,7 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
    *     histogram of the skin mesh, quality statistics histogram together with
    *     the characteristics of the final mesh.
    */
-  void SetVerboseLevel(CORBA::Short level) throw ( SALOME::SALOME_Exception );
+  void SetVerboseLevel(CORBA::Short level);
   CORBA::Short GetVerboseLevel();
   /*!
    * To create new nodes
@@ -142,19 +142,19 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   /*!
    * To set hiden/undocumented/advanced options
    */
-  void SetAdvancedOption(const char* option) throw (SALOME::SALOME_Exception);
+  void SetAdvancedOption(const char* option);
   char* GetAdvancedOption();
   void SetTextOption(const char* option); // obsolete
   char* GetTextOption();
 
-  void SetOptionValue(const char* optionName, const char* optionValue) throw (SALOME::SALOME_Exception);
-  char* GetOptionValue(const char* optionName) throw (SALOME::SALOME_Exception);
+  void SetOptionValue(const char* optionName, const char* optionValue);
+  char* GetOptionValue(const char* optionName);
   void UnsetOption(const char* optionName);
 
   GHS3DPlugin::string_array* GetOptionValues();
   GHS3DPlugin::string_array* GetAdvancedOptionValues();
 
-  void SetOptionValues(const GHS3DPlugin::string_array& options) throw (SALOME::SALOME_Exception);
+  void SetOptionValues(const GHS3DPlugin::string_array& options);
   void SetAdvancedOptionValues(const GHS3DPlugin::string_array& options);
 
   void AddOption(const char* optionName, const char* optionValue);
@@ -179,30 +179,29 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
    */
   bool p_SetEnforcedVertex(CORBA::Double size, CORBA::Double x = 0, CORBA::Double y = 0, CORBA::Double z = 0,
                            const char* theVertexName = "", const char* theVertexEntry = "", const char* theGroupName = "",
-                           CORBA::Boolean isCompound = false) 
-    throw (SALOME::SALOME_Exception);
-  bool SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size) throw (SALOME::SALOME_Exception);
-  bool SetEnforcedVertexNamed(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theVertexName) throw (SALOME::SALOME_Exception);
-  bool SetEnforcedVertexWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theGroupName) throw (SALOME::SALOME_Exception);
-  bool SetEnforcedVertexNamedWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theVertexName, const char* theGroupName) throw (SALOME::SALOME_Exception);
-  bool SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size) throw (SALOME::SALOME_Exception);
-  bool SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size, const char* theGroupName) throw (SALOME::SALOME_Exception);
-  CORBA::Double GetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
-  CORBA::Double GetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex) throw (SALOME::SALOME_Exception);
-  bool RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z) throw (SALOME::SALOME_Exception);
-  bool RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex) throw (SALOME::SALOME_Exception);
+                           CORBA::Boolean isCompound = false);
+  bool SetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size);
+  bool SetEnforcedVertexNamed(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theVertexName);
+  bool SetEnforcedVertexWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theGroupName);
+  bool SetEnforcedVertexNamedWithGroup(CORBA::Double x, CORBA::Double y, CORBA::Double z, CORBA::Double size, const char* theVertexName, const char* theGroupName);
+  bool SetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size);
+  bool SetEnforcedVertexGeomWithGroup(GEOM::GEOM_Object_ptr theVertex, CORBA::Double size, const char* theGroupName);
+  CORBA::Double GetEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z);
+  CORBA::Double GetEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex);
+  bool RemoveEnforcedVertex(CORBA::Double x, CORBA::Double y, CORBA::Double z);
+  bool RemoveEnforcedVertexGeom(GEOM::GEOM_Object_ptr theVertex);
   GHS3DPlugin::GHS3DEnforcedVertexList* GetEnforcedVertices();
   void ClearEnforcedVertices();
   /*!
    * To set an enforced mesh
    */  
-  bool p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, const char* theName="", const char* theGroupName="") throw (SALOME::SALOME_Exception);
-  bool SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType) throw (SALOME::SALOME_Exception);
-  bool SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, const char* theGroupName) throw (SALOME::SALOME_Exception);
+  bool p_SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, const char* theName="", const char* theGroupName="");
+  bool SetEnforcedMesh(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType);
+  bool SetEnforcedMeshWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, const char* theGroupName);
 
   /* OBSOLETE FUNCTIONS */
-  bool SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size) throw (SALOME::SALOME_Exception);
-  bool SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double size, const char* theGroupName) throw (SALOME::SALOME_Exception);
+  bool SetEnforcedMeshSize(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double /*size*/);
+  bool SetEnforcedMeshSizeWithGroup(SMESH::SMESH_IDSource_ptr theSource, SMESH::ElementType elementType, double /*size*/, const char* theGroupName);
   /* OBSOLETE FUNCTIONS */
 
   GHS3DPlugin::GHS3DEnforcedMeshList* GetEnforcedMeshes();

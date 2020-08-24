@@ -818,7 +818,6 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedElements(TIDSortedElemSet theElemSet, SM
 //=======================================================================
 
 GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* GHS3DPlugin_Hypothesis::GetEnforcedVertex(double x, double y, double z)
-  throw (std::invalid_argument)
 {
   std::vector<double> coord(3);
   coord[0] = x;
@@ -832,7 +831,6 @@ GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* GHS3DPlugin_Hypothesis::GetEnforce
 }
 
 GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* GHS3DPlugin_Hypothesis::GetEnforcedVertex(const std::string theEntry)
-  throw (std::invalid_argument)
 {
   if (_geomEntryEnfVertexMap.count(theEntry)>0)
     return _geomEntryEnfVertexMap[theEntry];
@@ -847,7 +845,6 @@ GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertex* GHS3DPlugin_Hypothesis::GetEnforce
 //=======================================================================
 
 bool GHS3DPlugin_Hypothesis::RemoveEnforcedVertex(double x, double y, double z, const std::string theEntry)
-  throw (std::invalid_argument)
 {
   bool toNotify = false;
   std::ostringstream msg;
@@ -1904,7 +1901,6 @@ GHS3DPlugin_Hypothesis::TSetStrings GHS3DPlugin_Hypothesis::GetGroupsToRemove(co
 //=============================================================================
 void GHS3DPlugin_Hypothesis::SetOptionValue(const std::string& optionName,
                                             const std::string& optionValue)
-  throw (std::invalid_argument)
 {
   TOptionValues::iterator op_val = _option2value.find(optionName);
   if (op_val == _option2value.end())
@@ -1969,7 +1965,6 @@ void GHS3DPlugin_Hypothesis::SetOptionValue(const std::string& optionName,
 //  empty if it equals a default one.
 std::string GHS3DPlugin_Hypothesis::GetOptionValue(const std::string& optionName,
                                                    bool*              isDefault) const
-  throw (std::invalid_argument)
 {
   TOptionValues::const_iterator op_val = _option2value.find(optionName);
   if (op_val == _option2value.end())
@@ -2002,7 +1997,7 @@ bool GHS3DPlugin_Hypothesis::HasOptionDefined( const std::string& optionName ) c
   {
     GetOptionValue( optionName, &isDefault );
   }
-  catch ( std::invalid_argument )
+  catch ( std::invalid_argument& )
   {
     return false;
   }
@@ -2040,7 +2035,6 @@ GHS3DPlugin_Hypothesis::TOptionValues GHS3DPlugin_Hypothesis::GetOptionValues() 
 //================================================================================
 
 bool GHS3DPlugin_Hypothesis::ToBool(const std::string& str, bool* isOk )
-  throw (std::invalid_argument)
 {
   std::string s = str;
   if ( isOk ) *isOk = true;
@@ -2070,7 +2064,6 @@ bool GHS3DPlugin_Hypothesis::ToBool(const std::string& str, bool* isOk )
 //================================================================================
 
 double GHS3DPlugin_Hypothesis::ToDbl(const std::string& str, bool* isOk )
-  throw (std::invalid_argument)
 {
   if ( str.empty() ) throw std::invalid_argument("Empty value provided");
 
@@ -2095,7 +2088,6 @@ double GHS3DPlugin_Hypothesis::ToDbl(const std::string& str, bool* isOk )
 //================================================================================
 
 int GHS3DPlugin_Hypothesis::ToInt(const std::string& str, bool* isOk )
-  throw (std::invalid_argument)
 {
   if ( str.empty() ) throw std::invalid_argument("Empty value provided");
 
