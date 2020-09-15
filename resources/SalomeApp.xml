@@ -3,6 +3,8 @@
     <parameter name="GHS3DPlugin" value="${GHS3DPLUGIN_ROOT_DIR}/share/salome/resources/ghs3dplugin"/>
   </section>
   <section name="smesh_help" >
-    <parameter name="User's Guide/Mesh module/Plug-ins/MG-Tetra plugin" value="${GHS3DPLUGIN_ROOT_DIR}/share/doc/salome/gui/GHS3DPLUGIN/index.html;;http://docs.salome-platform.org/latest/gui/GHS3DPLUGIN/index.html"/>
+    <parameter name="User's Guide/Mesh module/MG-Tetra plugin/User's Guide" value="${GHS3DPLUGIN_ROOT_DIR}/share/doc/salome/gui/GHS3DPLUGIN/index.html;;http://docs.salome-platform.org/latest/gui/GHS3DPLUGIN/index.html"/>
+    <parameter name="User's Guide/Mesh module/MG-Tetra plugin/Reference"    value="${MESHGEMS_ROOT_DIR}/Docs/mg-tetra_api_manual.pdf"/>
+    <parameter name="User's Guide/Mesh module/MG-Tetra plugin/Manual"       value="${MESHGEMS_ROOT_DIR}/Docs/mg-tetra_user_manual.pdf"/>
   </section>
 </document>
