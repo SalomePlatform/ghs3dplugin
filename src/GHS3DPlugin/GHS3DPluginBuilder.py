@@ -21,6 +21,7 @@
 # @package GHS3DPluginBuilder
 # Python API for the MG-Tetra meshing plug-in module.
 
+import omniORB
 from salome.smesh.smesh_algorithm import Mesh_Algorithm
 from salome.smesh.smeshBuilder import AssureGeomPublished
 
@@ -474,3 +475,17 @@ class GHS3D_Optimizer(GHS3D_Algorithm):
         pass
 
     pass # end of GHS3D_Optimizer class
+
+class hypoProxy(GHS3DPlugin._objref_GHS3DPlugin_Hypothesis):
+    """
+    Private class wrapping to provide backward compatibility with deprecated API.
+    """
+    def __init__(self, *args):
+        GHS3DPlugin._objref_GHS3DPlugin_Hypothesis.__init__(self, *args)
+    def __deepcopy__(self, memo=None):
+        new = self.__class__(self)
+        return new
+    def SetPrintLogInFile(self, value):
+        self.SetStandardOutputLog(not value)
+omniORB.registerObjref(GHS3DPlugin._objref_GHS3DPlugin_Hypothesis._NP_RepositoryId, hypoProxy)
+del hypoProxy
