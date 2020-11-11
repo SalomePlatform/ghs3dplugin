@@ -563,10 +563,10 @@ namespace // functions called by MG library to exchange with the application
       // progress message (10%): "MGMESSAGE  1009001  0 1 1.000000e+01"
       data->_progress = atof( desc + 24 );
 
-      _progressInCallBack = true;
+      data->_progressInCallBack = true;
     }
 
-    if ( !_progressInCallBack )
+    if ( !data->_progressInCallBack )
     {
       // Compute progress
       // corresponding messages are:
