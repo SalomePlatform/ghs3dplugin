@@ -44,7 +44,7 @@ public:
 
   virtual bool Compute(SMESH_Mesh&         theMesh,
                        SMESH_MesherHelper* theHelper);
-  virtual bool Compute(SMESH_Mesh &        aMesh,
+  virtual bool Compute(SMESH_Mesh &         aMesh,
                        const TopoDS_Shape & aShape);
 
   static const char* Name() { return "MG-Tetra Optimization"; }

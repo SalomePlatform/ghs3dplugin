@@ -691,7 +691,7 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
   std::vector< const SMDS_MeshElement* > foundVolumes;
   if ( !hasGeom && theHelper->GetMesh()->NbVolumes() > 0 )
     elemSearcher = SMESH_MeshAlgos::GetElementSearcher( *theMeshDS );
-  unique_ptr< SMESH_ElementSearcher > elemSearcherDeleter( elemSearcher ); //auto_ptr
+  unique_ptr< SMESH_ElementSearcher > elemSearcherDeleter( elemSearcher );
 
   // IMP 0022172: [CEA 790] create the groups corresponding to domains
   std::vector< std::vector< const SMDS_MeshElement* > > elemsOfDomain;
@@ -1722,8 +1722,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   TCollection_AsciiString aSmdsToGhs3dIdMapFileName;
   aSmdsToGhs3dIdMapFileName = aGenericName + ".ids";  // ids relation
   ofstream aIdsFile  ( aSmdsToGhs3dIdMapFileName.ToCString()  , ios::out);
-  Ok = aIdsFile.rdbuf()->is_open();
-  if (!Ok) {
+  if ( !aIdsFile.rdbuf()->is_open() ) {
     INFOS( "Can't write into " << aSmdsToGhs3dIdMapFileName);
     //return error(SMESH_Comment("Can't write into ") << aSmdsToGhs3dIdMapFileName);
   }

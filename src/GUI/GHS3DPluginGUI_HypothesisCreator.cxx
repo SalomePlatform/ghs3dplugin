@@ -1038,7 +1038,7 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedVertex(double x, double y, dou
 {
   myEnforcedTableWidget->disconnect(SIGNAL( itemChanged(QTableWidgetItem *)));
   bool okToCreate = true;
-  double itemX=0.,itemY=0.,itemZ=0.,itemSize = 0; // todo: itemX, itemY, itemZ must be explicitly initialized to avoid warning (see below)
+  double itemX=0.,itemY=0.,itemZ=0.,itemSize = 0;
   QString itemEntry, itemGroupName = QString("");
   //   bool itemIsCompound;
   int rowCount = myEnforcedTableWidget->rowCount();
@@ -1083,7 +1083,7 @@ void GHS3DPluginGUI_HypothesisCreator::addEnforcedVertex(double x, double y, dou
       break;
 
 
-    if (( !isCompound && ((itemX == x) && (itemY == y) && (itemZ == z))) || // todo: itemX, itemY, itemZ must be explicitly initialized to avoid warning (see above)
+    if (( !isCompound && ((itemX == x) && (itemY == y) && (itemZ == z))) ||
         ( !itemEntry.isEmpty() && ( itemEntry == geomEntry.c_str() )))
     {
       // update size
@@ -1864,7 +1864,7 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       _PTR(SObject) aSObj = aStudy->FindObjectID(enfMesh->entry.c_str());
       SMESH::SMESH_IDSource_var theSource = SMESH::SObjectToInterface<SMESH::SMESH_IDSource>( aSObj );
 
-      SMESH::ElementType elementType = SMESH::NODE; // todo: elementType must be explicitly initialized to avoid warning (see below)
+      SMESH::ElementType elementType = SMESH::NODE;
       switch(enfMesh->elementType) {
       case 0:
         elementType = SMESH::NODE;
@@ -1879,7 +1879,7 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
         break;
       }
 
-      ok = h->p_SetEnforcedMesh(theSource, elementType, enfMesh->name.c_str(), enfMesh->groupName.c_str()); // todo: elementType must be explicitly initialized to avoid warning (see above)
+      ok = h->p_SetEnforcedMesh(theSource, elementType, enfMesh->name.c_str(), enfMesh->groupName.c_str());
     } // for
   } // try
   catch ( const SALOME::SALOME_Exception& ex )

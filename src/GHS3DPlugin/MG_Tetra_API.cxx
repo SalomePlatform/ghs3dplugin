@@ -695,7 +695,9 @@ struct MG_Tetra_API::LibData // to avoid compiler warnings
 {
   volatile bool& _cancelled_flag;
   double& _progress;
-  LibData(volatile bool& cancelled_flag, double& progress): _cancelled_flag{cancelled_flag}, _progress{progress} {}
+  LibData(volatile bool& cancelled_flag, double& progress):
+    _cancelled_flag{cancelled_flag}, _progress{progress}
+  {}
 };
 
 #endif // ifdef USE_MG_LIBS
