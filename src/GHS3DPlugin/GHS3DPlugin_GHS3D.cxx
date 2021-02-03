@@ -207,12 +207,12 @@ bool GHS3DPlugin_GHS3D::CheckHypothesis ( SMESH_Mesh&         aMesh,
 
 TopoDS_Shape GHS3DPlugin_GHS3D::entryToShape(std::string entry)
 {
-  if ( SMESH_Gen_i::getStudyServant()->_is_nil() )
+  if ( SMESH_Gen_i::GetSMESHGen()->getStudyServant()->_is_nil() )
     throw SALOME_Exception("MG-Tetra plugin can't work w/o publishing in the study");
 
   GEOM::GEOM_Object_var aGeomObj;
   TopoDS_Shape S = TopoDS_Shape();
-  SALOMEDS::SObject_var aSObj = SMESH_Gen_i::getStudyServant()->FindObjectID( entry.c_str() );
+  SALOMEDS::SObject_var aSObj = SMESH_Gen_i::GetSMESHGen()->getStudyServant()->FindObjectID( entry.c_str() );
   if (!aSObj->_is_nil() ) {
     CORBA::Object_var obj = aSObj->GetObject();
     aGeomObj = GEOM::GEOM_Object::_narrow(obj);
