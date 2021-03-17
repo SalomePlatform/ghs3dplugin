@@ -284,7 +284,7 @@ public:
    * To set enforced elements
    */
   bool SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::ElementType elementType, std::string name, std::string entry, std::string groupName = "");
-  bool SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::long_array_var theIDs, SMESH::ElementType elementType, std::string name, std::string entry, std::string groupName = "");
+  bool SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::smIdType_array_var theIDs, SMESH::ElementType elementType, std::string name, std::string entry, std::string groupName = "");
   bool SetEnforcedElements(TIDSortedElemSet theElemSet, SMESH::ElementType elementType, std::string groupName = "");
   const TGHS3DEnforcedMeshList _GetEnforcedMeshes() const { return _enfMeshList; }
   const TEntryGHS3DEnforcedMeshListMap _GetEnforcedMeshesByEntry() const { return _entryEnfMeshMap; }

@@ -833,7 +833,7 @@ void GHS3DPluginGUI_HypothesisCreator::updateEnforcedVertexValues(QTableWidgetIt
 
 void GHS3DPluginGUI_HypothesisCreator::onSelectEnforcedVertex()
 {
-  int nbSelEnfVertex = myEnfVertexWdg->NbObjects();
+  size_t nbSelEnfVertex = myEnfVertexWdg->NbObjects();
   clearEnforcedVertexWidgets();
   if (nbSelEnfVertex == 1)
   {
@@ -1195,7 +1195,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedMesh()
     myEnforcedMeshTableWidget->resizeColumnToContents(column);
 
   // Vertex selection
-  int selEnfMeshes = myEnfMeshWdg->NbObjects();
+  size_t selEnfMeshes = myEnfMeshWdg->NbObjects();
   if (selEnfMeshes == 0)
     return;
 
@@ -1250,7 +1250,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
     myEnforcedTableWidget->resizeColumnToContents(column);
 
   // Vertex selection
-  int selEnfVertex = myEnfVertexWdg->NbObjects();
+  size_t selEnfVertex = myEnfVertexWdg->NbObjects();
   bool coordsEmpty = (myXCoord->text().isEmpty()) || (myYCoord->text().isEmpty()) || (myZCoord->text().isEmpty());
   if ((selEnfVertex == 0) && coordsEmpty)
     return;
@@ -1292,7 +1292,7 @@ void GHS3DPluginGUI_HypothesisCreator::onAddEnforcedVertex()
       return;
 
     CORBA::Double x = 0, y = 0,z = 0;
-    for (int j = 0 ; j < selEnfVertex ; j++)
+    for ( size_t j = 0 ; j < selEnfVertex ; j++)
     {
       myEnfVertex = myEnfVertexWdg->GetObject< GEOM::GEOM_Object >(j);
       if (myEnfVertex == GEOM::GEOM_Object::_nil())
@@ -1791,13 +1791,13 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
     if( isCreation() )
       SMESH::SetName( SMESH::FindSObject( h ), h_data.myName.toLatin1().constData() );
 
-    h->SetOptimizationLevel           ( h_data.myOptimizationLevel );
+    h->SetOptimizationLevel           ((CORBA::Short) h_data.myOptimizationLevel );
     h->SetMinSize                     ( h_data.myUseMinSize ? h_data.myMinSize : 0 );
     h->SetMaxSize                     ( h_data.myUseMaxSize ? h_data.myMaxSize : 0 );
     h->SetMinMaxSizeDefault           ( this->myMinSizeDefault, this->myMaxSizeDefault );
     h->SetGradation                   ( h_data.myGradation         );
     h->SetVolumeProximity             ( h_data.myUseProximity      );
-    h->SetNbVolumeProximityLayers     ( h_data.myNbProximityLayers );
+    h->SetNbVolumeProximityLayers     ((CORBA::Short) h_data.myNbProximityLayers );
     h->SetToMeshHoles                 ( h_data.myToMeshHoles       );
     h->SetToMakeGroupsOfDomains       ( h_data.myToMakeGroupsOfDomains );
 
@@ -1820,7 +1820,7 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
       opt->SetSplitOverConstrained  ( (GHS3DPlugin::Mode) h_data.mySplitOverConstrained );
       opt->SetPThreadsMode          ( (GHS3DPlugin::PThreadsMode) h_data.myPThreadsMode );
       opt->SetSmoothOffSlivers      ( h_data.mySmoothOffSlivers );
-      opt->SetMaximalNumberOfThreads( h_data.myNumberOfThreads );
+      opt->SetMaximalNumberOfThreads((CORBA::Short) h_data.myNumberOfThreads );
     }
 
     // Enforced vertices
@@ -1916,11 +1916,11 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
     h_data.myToMeshHoles           = myToMeshHolesCheck->isChecked();
     h_data.myToMakeGroupsOfDomains = myToMakeGroupsOfDomains->isChecked();
   }
-  h_data.myMaximumMemory           = myAdvWidget->maxMemoryCheck->isChecked() ? myAdvWidget->maxMemorySpin->value() : -1;
-  h_data.myInitialMemory           = myAdvWidget->initialMemoryCheck->isChecked() ? myAdvWidget->initialMemorySpin->value() : -1;
+  h_data.myMaximumMemory           = float( myAdvWidget->maxMemoryCheck->isChecked() ? myAdvWidget->maxMemorySpin->value() : -1 );
+  h_data.myInitialMemory           = float( myAdvWidget->initialMemoryCheck->isChecked() ? myAdvWidget->initialMemorySpin->value() : -1 );
   h_data.myKeepFiles               = myAdvWidget->keepWorkingFilesCheck->isChecked();
   h_data.myWorkingDir              = myAdvWidget->workingDirectoryLineEdit->text().trimmed();
-  h_data.myVerboseLevel            = myAdvWidget->verboseLevelSpin->value();
+  h_data.myVerboseLevel            = short( myAdvWidget->verboseLevelSpin->value() );
   h_data.myLogInStandardOutput     = !myAdvWidget->logInFileCheck->isChecked();
   h_data.myRemoveLogOnSuccess      = myAdvWidget->removeLogOnSuccessCheck->isChecked();
 

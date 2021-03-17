@@ -693,13 +693,13 @@ bool GHS3DPlugin_Hypothesis::SetEnforcedMesh(SMESH_Mesh& theMesh, SMESH::Element
 //=======================================================================
 //function : SetEnforcedGroup
 //=======================================================================
-bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::long_array_var theIDs, SMESH::ElementType elementType, std::string name, std::string entry, std::string groupName)
+bool GHS3DPlugin_Hypothesis::SetEnforcedGroup(const SMESHDS_Mesh* theMeshDS, SMESH::smIdType_array_var theIDs, SMESH::ElementType elementType, std::string name, std::string entry, std::string groupName)
 {
   MESSAGE("GHS3DPlugin_Hypothesis::SetEnforcedGroup");
   TIDSortedElemSet theElemSet;
     if ( theIDs->length() == 0 ){MESSAGE("The source group is empty");}
-    for ( CORBA::ULong i=0; i < theIDs->length(); i++) {
-      CORBA::Long ind = theIDs[i];
+    for ( CORBA::ULong i = 0; i < theIDs->length(); i++) {
+      SMESH::smIdType ind = theIDs[i];
       if (elementType == SMESH::NODE)
       {
         const SMDS_MeshNode * node = theMeshDS->FindNode(ind);
@@ -1001,15 +1001,15 @@ float GHS3DPlugin_Hypothesis::DefaultMaximumMemory()
   statex.dwLength = sizeof (statex);
   long err = GlobalMemoryStatusEx (&statex);
   if (err != 0) {
-    double totMB = (double)statex.ullAvailPhys / 1024. / 1024.;
-    return (float)( 0.7 * totMB );
+    double totMB = double( statex.ullAvailPhys ) / 1024. / 1024.;
+    return float( 0.7 * totMB );
   }
 #elif !defined(__APPLE__)
   struct sysinfo si;
   long err = sysinfo( &si );
   if ( err == 0 ) {
-    long ramMB = si.totalram * si.mem_unit / 1024 / 1024;
-    return ( 0.7 * ramMB );
+    double ramMB = double( si.totalram * si.mem_unit / 1024 / 1024 );
+    return float( 0.7 * ramMB );
   }
 #endif
   return 1024;
@@ -1271,19 +1271,19 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
 
   isOK = static_cast<bool>(load >> d);
   if (isOK)
-    myMaximumMemory = d;
+    myMaximumMemory = float( d );
   else
     load.clear(ios::badbit | load.rdstate());
 
   isOK = static_cast<bool>(load >> d);
   if (isOK)
-    myInitialMemory = d;
+    myInitialMemory = float( d );
   else
     load.clear(ios::badbit | load.rdstate());
 
   isOK = static_cast<bool>(load >> i);
   if (isOK)
-    myOptimizationLevel = i;
+    myOptimizationLevel = (short int) i;
   else
     load.clear(ios::badbit | load.rdstate());
 
@@ -1918,7 +1918,7 @@ void GHS3DPlugin_Hypothesis::SetOptionValue(const std::string& optionName,
     // strip white spaces
     while (ptr[0] == ' ')
       ptr++;
-    int i = strlen(ptr);
+    size_t i = strlen(ptr);
     while (i != 0 && ptr[i - 1] == ' ')
       i--;
     // check value type
@@ -2040,7 +2040,7 @@ bool GHS3DPlugin_Hypothesis::ToBool(const std::string& str, bool* isOk )
   if ( isOk ) *isOk = true;
 
   for ( size_t i = 0; i <= s.size(); ++i )
-    s[i] = tolower( s[i] );
+    s[i] = (char) tolower( s[i] );
 
   if ( s == "1" || s == "true" || s == "active" || s == "yes" )
     return true;

@@ -166,9 +166,9 @@ namespace
     if ( meshDS->NbNodes() != meshDS->MaxNodeID() )
       meshDS->CompactMesh();
 
-    theMGInput->GmfSetKwd( mfile, GmfVertices, meshDS->NbNodes() );
+    theMGInput->GmfSetKwd( mfile, GmfVertices, (int) meshDS->NbNodes() );
     int TypTab[] = { GmfSca };
-    theMGInput->GmfSetKwd( sfile, GmfSolAtVertices, meshDS->NbNodes(), 1, TypTab);
+    theMGInput->GmfSetKwd( sfile, GmfSolAtVertices, (int) meshDS->NbNodes(), 1, TypTab);
 
     SMDS_NodeIteratorPtr nodeIt = theHelper->GetMeshDS()->nodesIterator();
     while ( nodeIt->more() )
@@ -182,30 +182,30 @@ namespace
 
     // write all triangles
 
-    theMGInput->GmfSetKwd( mfile, GmfTriangles, meshDS->GetMeshInfo().NbTriangles() );
+    theMGInput->GmfSetKwd( mfile, GmfTriangles, (int) meshDS->GetMeshInfo().NbTriangles() );
     SMDS_ElemIteratorPtr triaIt = meshDS->elementGeomIterator( SMDSGeom_TRIANGLE );
     while ( triaIt->more() )
     {
       const SMDS_MeshElement* tria = triaIt->next();
       theMGInput->GmfSetLin( mfile, GmfTriangles,
-                             tria->GetNode(0)->GetID(),
-                             tria->GetNode(1)->GetID(),
-                             tria->GetNode(2)->GetID(),
+                             static_cast<int>(tria->GetNode(0)->GetID()),
+                             static_cast<int>(tria->GetNode(1)->GetID()),
+                             static_cast<int>(tria->GetNode(2)->GetID()),
                              tag );
     }
 
     // write all tetra
 
-    theMGInput->GmfSetKwd( mfile, GmfTetrahedra, meshDS->GetMeshInfo().NbTetras() );
+    theMGInput->GmfSetKwd( mfile, GmfTetrahedra, (int) meshDS->GetMeshInfo().NbTetras() );
     SMDS_ElemIteratorPtr tetIt = meshDS->elementGeomIterator( SMDSGeom_TETRA );
     while ( tetIt->more() )
     {
       const SMDS_MeshElement* tet = tetIt->next();
       theMGInput->GmfSetLin( mfile, GmfTetrahedra,
-                             tet->GetNode(0)->GetID(),
-                             tet->GetNode(2)->GetID(),
-                             tet->GetNode(1)->GetID(),
-                             tet->GetNode(3)->GetID(),
+                             static_cast<int>(tet->GetNode(0)->GetID()),
+                             static_cast<int>(tet->GetNode(2)->GetID()),
+                             static_cast<int>(tet->GetNode(1)->GetID()),
+                             static_cast<int>(tet->GetNode(3)->GetID()),
                              tag );
     }
 
@@ -234,8 +234,8 @@ namespace
 
     int nbNodes = theMGOutput->GmfStatKwd( inFile, GmfVertices );
     int   nbTet = theMGOutput->GmfStatKwd( inFile, GmfTetrahedra );
-    int nbNodesOld = meshDS->NbNodes();
-    int   nbTetOld = meshDS->GetMeshInfo().NbTetras();
+    smIdType nbNodesOld = meshDS->NbNodes();
+    smIdType nbTetOld = meshDS->GetMeshInfo().NbTetras();
     std::cout << "Optimization input:  "
               << nbNodesOld << " nodes, \t" << nbTetOld << " tetra" << std::endl;
     std::cout << "Optimization output: "
@@ -359,7 +359,7 @@ namespace
   void getNodeByGhsId( SMESH_Mesh& mesh, std::vector <const SMDS_MeshNode*> & nodeByGhsId )
   {
     SMESHDS_Mesh* meshDS = mesh.GetMeshDS();
-    const int nbNodes = meshDS->NbNodes();
+    const smIdType nbNodes = meshDS->NbNodes();
     nodeByGhsId.resize( nbNodes + 1 );
     SMDS_NodeIteratorPtr nodeIt = meshDS->nodesIterator();
     while ( nodeIt->more() )

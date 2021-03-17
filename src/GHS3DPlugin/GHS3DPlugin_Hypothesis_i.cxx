@@ -161,7 +161,7 @@ void GHS3DPlugin_Hypothesis_i::SetNbVolumeProximityLayers( CORBA::Short nbLayers
 
 CORBA::Short GHS3DPlugin_Hypothesis_i::GetNbVolumeProximityLayers()
 {
-  return this->GetImpl()->GetNbVolumeProximityLayers();
+  return (CORBA::Short) this->GetImpl()->GetNbVolumeProximityLayers();
 }
 
 //=======================================================================
@@ -473,13 +473,13 @@ void GHS3DPlugin_Hypothesis_i::SetOptionValue(const char* optionName, const char
     // basic options (visible in Advanced table)
 
     else if ( name == "verbose" )
-      SetVerboseLevel( GetImpl()->ToInt( optionValue ));
+      SetVerboseLevel((CORBA::Short) GetImpl()->ToInt( optionValue ));
 
     else if ( name == "max_memory" )
-      SetMaximumMemory( GetImpl()->ToInt( optionValue ));
+      SetMaximumMemory((CORBA::Short) GetImpl()->ToInt( optionValue ));
 
     else if ( name == "automatic_memory" )
-      SetInitialMemory( GetImpl()->ToInt( optionValue ));
+      SetInitialMemory((CORBA::Short) GetImpl()->ToInt( optionValue ));
 
     else if ( name == "no_initial_central_point" && // optimizer
               strcmp( GetImpl()->GetName(), ::GHS3DPlugin_Hypothesis::GetHypType() ) != 0 )
@@ -509,7 +509,7 @@ void GHS3DPlugin_Hypothesis_i::SetOptionValue(const char* optionName, const char
       SetGradation( GetImpl()->ToDbl( optionValue ));
 
     else if ( name == "volume_proximity_layers" )
-      SetNbVolumeProximityLayers( GetImpl()->ToInt( optionValue ));
+      SetNbVolumeProximityLayers((CORBA::Short) GetImpl()->ToInt( optionValue ));
 
     else if ( name == "components" )
       SetToMeshHoles( strncmp( "all", optionValue, 3 ) == 0 );
@@ -573,7 +573,7 @@ GHS3DPlugin::string_array* GHS3DPlugin_Hypothesis_i::GetOptionValues()
   GHS3DPlugin::string_array_var result = new GHS3DPlugin::string_array();
 
   const ::GHS3DPlugin_Hypothesis::TOptionValues & opts = this->GetImpl()->GetOptionValues();
-  result->length(opts.size());
+  result->length((CORBA::ULong) opts.size());
   int i=0;
 
   bool isDefault;
@@ -600,7 +600,7 @@ GHS3DPlugin::string_array* GHS3DPlugin_Hypothesis_i::GetAdvancedOptionValues()
   GHS3DPlugin::string_array_var result = new GHS3DPlugin::string_array();
 
   const ::GHS3DPlugin_Hypothesis::TOptionValues & custom_opts = this->GetImpl()->GetCustomOptionValues();
-  result->length(custom_opts.size());
+  result->length((CORBA::ULong) custom_opts.size());
   int i=0;
 
   ::GHS3DPlugin_Hypothesis::TOptionValues::const_iterator opIt = custom_opts.begin();
@@ -1042,7 +1042,7 @@ GHS3DPlugin::GHS3DEnforcedVertexList* GHS3DPlugin_Hypothesis_i::GetEnforcedVerti
   GHS3DPlugin::GHS3DEnforcedVertexList_var result = new GHS3DPlugin::GHS3DEnforcedVertexList();
 
   const ::GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList enfVertexList = this->GetImpl()->_GetEnforcedVertices();
-  result->length( enfVertexList.size() );
+  result->length((CORBA::ULong) enfVertexList.size() );
 
   ::GHS3DPlugin_Hypothesis::TGHS3DEnforcedVertexList::const_iterator it = enfVertexList.begin();
 
@@ -1055,8 +1055,8 @@ GHS3DPlugin::GHS3DEnforcedVertexList* GHS3DPlugin_Hypothesis_i::GetEnforcedVerti
     enfVertex->geomEntry = CORBA::string_dup(currentVertex->geomEntry.c_str());
     // Coords
     GHS3DPlugin::TCoords_var coords = new GHS3DPlugin::TCoords();
-    coords->length(currentVertex->coords.size());
-    for ( size_t ind = 0; ind < currentVertex->coords.size(); ind++)
+    coords->length((CORBA::ULong) currentVertex->coords.size());
+    for ( CORBA::ULong ind = 0; ind < currentVertex->coords.size(); ind++)
       coords[ind] = currentVertex->coords[ind];
     enfVertex->coords = coords;
     // Group Name
@@ -1163,7 +1163,7 @@ GHS3DPlugin::GHS3DEnforcedMeshList* GHS3DPlugin_Hypothesis_i::GetEnforcedMeshes(
   GHS3DPlugin::GHS3DEnforcedMeshList_var result = new GHS3DPlugin::GHS3DEnforcedMeshList();
 
   const ::GHS3DPlugin_Hypothesis::TGHS3DEnforcedMeshList enfMeshList = this->GetImpl()->_GetEnforcedMeshes();
-  result->length( enfMeshList.size() );
+  result->length((CORBA::ULong) enfMeshList.size() );
 
   ::GHS3DPlugin_Hypothesis::TGHS3DEnforcedMeshList::const_iterator it = enfMeshList.begin();
 
