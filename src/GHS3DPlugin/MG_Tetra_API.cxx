@@ -22,13 +22,16 @@
 #ifdef WIN32
 #define NOMINMAX
 #endif
+
 #include <SMESH_Comment.hxx>
 #include <SMESH_File.hxx>
+#include <SMESH_MGLicenseKeyGen.hxx>
 #include <Utils_SALOME_Exception.hxx>
 
-#include <vector>
-#include <iterator>
 #include <cstring>
+#include <iostream>
+#include <iterator>
+#include <vector>
 
 #ifdef USE_MG_LIBS
 
@@ -645,15 +648,26 @@ void MG_Tetra_API::LibData::Init()
 bool MG_Tetra_API::LibData::Compute()
 {
   status_t ret;
+  std::string errorTxt;
 
   if ( _tetraNodes.empty() )
   {
+    if ( !SMESHUtils_MGLicenseKeyGen::SignMesh( _tria_mesh, errorTxt ))
+    {
+      AddError( SMESH_Comment( "Problem with library SalomeMeshGemsKeyGenerator: ") << errorTxt );
+      return false;
+    }
     // Set surface mesh
     ret = tetra_set_surface_mesh( _session, _tria_mesh );
     if ( ret != STATUS_OK ) MG_Error( "unable to set surface mesh");
   }
   else
   {
+    if ( !SMESHUtils_MGLicenseKeyGen::SignMesh( _tria_mesh, errorTxt ))
+    {
+      AddError( SMESH_Comment( "Problem with library SalomeMeshGemsKeyGenerator: ") << errorTxt );
+      return false;
+    }
     ret = tetra_set_volume_mesh( _session, _tria_mesh );
     if ( ret != STATUS_OK ) MG_Error( "unable to set volume mesh");
   }
@@ -709,7 +723,8 @@ struct MG_Tetra_API::LibData // to avoid compiler warnings
  */
 //================================================================================
 
-MG_Tetra_API::MG_Tetra_API(volatile bool& cancelled_flag, double& progress)
+MG_Tetra_API::MG_Tetra_API(volatile bool& cancelled_flag, double& progress):
+  _nbNodes(0), _nbEdges(0), _nbFaces(0), _nbVolumes(0)
 {
   _useLib = false;
   _libData = new LibData( cancelled_flag, progress );
@@ -803,13 +818,28 @@ bool MG_Tetra_API::Compute( const std::string& cmdLine, std::string& errStr )
     }
 
     // compute
-    bool ok =  _libData->Compute();
+    bool ok = _libData->Compute();
 
     GetLog(); // write a log file
     _logFile = ""; // not to write it again
 
     return ok;
 #endif
+  }
+
+  // add MG license key
+  {
+    std::string errorTxt, meshIn;
+    std::string key = SMESHUtils_MGLicenseKeyGen::GetKey( meshIn,
+                                                          _nbNodes, _nbEdges, _nbFaces, _nbVolumes,
+                                                          errorTxt );
+    if ( key.empty() )
+    {
+      errStr = "Problem with library SalomeMeshGemsKeyGenerator: " + errorTxt;
+      return false;
+    }
+
+    const_cast< std::string& >( cmdLine ) += " --key " + key;
   }
 
   int err = system( cmdLine.c_str() ); // run
@@ -1069,6 +1099,16 @@ int  MG_Tetra_API::GmfOpenMesh(const char* theFile, int rdOrWr, int ver, int dim
 
 void MG_Tetra_API::GmfSetKwd(int iMesh, GmfKwdCod what, int nb )
 {
+  if ( iMesh == 1 )
+  {
+    switch ( what ) {
+    case GmfVertices:  _nbNodes = nb; break;
+    case GmfEdges:     _nbEdges = nb; break;
+    case GmfTriangles: _nbFaces = nb; break;
+    default:;
+    }
+  }
+
   if ( _useLib ) {
 #ifdef USE_MG_LIBS
     switch ( what ) {

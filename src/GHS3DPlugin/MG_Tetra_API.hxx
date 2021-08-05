@@ -82,6 +82,13 @@ private:
   LibData*      _libData;
   std::set<int> _openFiles;
   std::string   _logFile;
+
+  // count mesh entities for MG license key generation
+  int           _nbNodes;
+  int           _nbEdges;
+  int           _nbFaces;
+  int           _nbVolumes;
+
 };
 
 #endif
