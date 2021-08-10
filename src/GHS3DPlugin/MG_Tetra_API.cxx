@@ -1099,12 +1099,13 @@ int  MG_Tetra_API::GmfOpenMesh(const char* theFile, int rdOrWr, int ver, int dim
 
 void MG_Tetra_API::GmfSetKwd(int iMesh, GmfKwdCod what, int nb )
 {
-  if ( iMesh == 1 )
+  //if ( iMesh == 1 )
   {
     switch ( what ) {
-    case GmfVertices:  _nbNodes = nb; break;
-    case GmfEdges:     _nbEdges = nb; break;
-    case GmfTriangles: _nbFaces = nb; break;
+    case GmfVertices:   _nbNodes   += nb; break;
+    case GmfEdges:      _nbEdges   += nb; break;
+    case GmfTriangles:  _nbFaces   += nb; break;
+    case GmfTetrahedra: _nbVolumes += nb; break;
     default:;
     }
   }
