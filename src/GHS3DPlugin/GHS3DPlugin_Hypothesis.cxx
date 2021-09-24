@@ -25,7 +25,9 @@
 //
 #include "GHS3DPlugin_Hypothesis.hxx"
 
+#include <Basics_DirUtils.hxx>
 #include <SMESHDS_Mesh.hxx>
+#include <SMESH_File.hxx>
 
 #include <TCollection_AsciiString.hxx>
 
@@ -1814,6 +1816,9 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
 std::string GHS3DPlugin_Hypothesis::GetFileName(const GHS3DPlugin_Hypothesis* hyp)
 {
   std::string aTmpDir = hyp ? hyp->GetWorkingDirectory() : DefaultWorkingDirectory();
+  if ( !SMESH_File( aTmpDir ).exists() )
+    aTmpDir = Kernel_Utils::GetTmpDirByPath( aTmpDir );
+
   const char lastChar = *aTmpDir.rbegin();
 #ifdef WIN32
     if(lastChar != '\\') aTmpDir+='\\';
