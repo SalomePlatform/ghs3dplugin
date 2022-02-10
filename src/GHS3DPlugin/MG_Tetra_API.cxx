@@ -839,7 +839,8 @@ bool MG_Tetra_API::Compute( const std::string& cmdLine, std::string& errStr )
       return false;
     }
 
-    const_cast< std::string& >( cmdLine ) += " --key " + key;
+    if ( key != "0")
+      const_cast< std::string& >( cmdLine ) += " --key " + key;
   }
 
   int err = system( cmdLine.c_str() ); // run
