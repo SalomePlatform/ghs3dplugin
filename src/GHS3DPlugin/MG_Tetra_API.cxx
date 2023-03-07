@@ -40,6 +40,9 @@ extern "C"{
 #include <meshgems/tetra.h>
 }
 
+#define MESHGEMS_VERSION_HEX (MESHGEMS_VERSION_MAJOR << 16 | MESHGEMS_VERSION_MINOR << 8 | MESHGEMS_VERSION_PATCH)
+#define MESHGEMS_215 (2 << 16 | 15 << 8 | 0)
+
 struct MG_Tetra_API::LibData
 {
   // MG objects
@@ -650,24 +653,45 @@ bool MG_Tetra_API::LibData::Compute()
   status_t ret;
   std::string errorTxt;
 
+#if MESHGEMS_VERSION_HEX > MESHGEMS_215
+  // need to unlock Tetra license only once
+  std::string SPATIAL_LICENSE = SMESHUtils_MGLicenseKeyGen::GetKey(errorTxt);
+  ret = meshgems_tetra_unlock_product(SPATIAL_LICENSE.c_str());
+  if STATUS_IS_ERROR( ret )
+    {
+    AddError( SMESH_Comment( "Problem with SPATIAL_LICENSE to unlock Tetra: ") << errorTxt );
+    return false;
+    }
+  else
+    MESSAGE("SPATIAL_LICENSE unlock Tetra: " << ret);
+#endif
+
   if ( _tetraNodes.empty() )
   {
+#if MESHGEMS_VERSION_HEX < MESHGEMS_215
+    // Sign the surface mesh
     if ( !SMESHUtils_MGLicenseKeyGen::SignMesh( _tria_mesh, errorTxt ))
     {
       AddError( SMESH_Comment( "Problem with library SalomeMeshGemsKeyGenerator: ") << errorTxt );
       return false;
     }
+#endif
     // Set surface mesh
     ret = tetra_set_surface_mesh( _session, _tria_mesh );
     if ( ret != STATUS_OK ) MG_Error( "unable to set surface mesh");
   }
   else
   {
+#if MESHGEMS_VERSION_HEX < MESHGEMS_215
+    // Sign the volume mesh
+    // TOOD: check if there is a typo here. Should be _tetra_mesh ?
     if ( !SMESHUtils_MGLicenseKeyGen::SignMesh( _tria_mesh, errorTxt ))
     {
       AddError( SMESH_Comment( "Problem with library SalomeMeshGemsKeyGenerator: ") << errorTxt );
       return false;
     }
+#endif
+    // TOOD: check if there is a typo here. Should be _tetra_mesh ?
     ret = tetra_set_volume_mesh( _session, _tria_mesh );
     if ( ret != STATUS_OK ) MG_Error( "unable to set volume mesh");
   }
