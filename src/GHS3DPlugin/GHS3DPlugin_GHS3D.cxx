@@ -1580,12 +1580,12 @@ static bool writeGMFFile(MG_Tetra_API*                                   MGInput
   return true;
 }
 
+
 //=============================================================================
 /*!
  *Here we are going to use the MG-Tetra mesher with geometry
  */
 //=============================================================================
-
 bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                                 const TopoDS_Shape& theShape)
 {
@@ -1872,6 +1872,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
  *Here we are going to use the MG-Tetra mesher w/o geometry
  */
 //=============================================================================
+
 bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
                                 SMESH_MesherHelper* theHelper)
 {

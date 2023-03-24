@@ -135,3 +135,23 @@ void GHS3DPluginGUI_AdvWidget::itemChanged(QTreeWidgetItem * tblRow, int column)
     myOptionTable->blockSignals( false );
   }
 }
+
+void GHS3DPluginGUI_AdvWidget::EnableAdvancedOptions( bool isMGTetra )
+{
+  int iRow = 0, nbRows = myOptionTable->topLevelItemCount();
+  // hard coded: register all possible options here
+  std::vector<std::string>_commonOptions = { "split_overconstrained_tetrahedra" };
+  std::vector<std::string>::iterator tk;
+  for ( ; iRow < nbRows; ++iRow )
+  {
+    // Have to allow advanced option for MGTetra HPC to work
+    tk = std::find( _commonOptions.begin(), 
+                    _commonOptions.end(),  
+                    myOptionTable->topLevelItem( iRow )->data( NAME_COL, PARAM_NAME ).toString().toStdString() 
+                  );
+
+    if ( tk == _commonOptions.end() ) 
+      myOptionTable->topLevelItem( iRow )->setDisabled( !isMGTetra );
+  
+  }
+}

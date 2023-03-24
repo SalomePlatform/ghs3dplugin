@@ -49,6 +49,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QButtonGroup>
 #include <QFileInfo>
 #include <QFrame>
 #include <QGridLayout>
@@ -58,7 +59,9 @@
 #include <QLineEdit>
 #include <QPalette>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSpinBox>
+#include <QtWidgets>
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -303,6 +306,8 @@ GHS3DPluginGUI_HypothesisCreator::GHS3DPluginGUI_HypothesisCreator( const QStrin
     myMaxSizeCheck(0),
     myMinSizeSpin(0),
     myMaxSizeSpin(0),
+    myNumOfThreadsCheck(0),
+    myNumOfThreadsSpin(0),
     myGradationCheck(0),
     myGradationSpin(0),
     myUseProximityGroup(0),
@@ -314,7 +319,9 @@ GHS3DPluginGUI_HypothesisCreator::GHS3DPluginGUI_HypothesisCreator( const QStrin
     myPThreadsModeCombo(0),
     myNumberOfThreadsSpin(0),
     mySmoothOffSliversCheck(0),
-    myCreateNewNodesCheck(0)
+    myCreateNewNodesCheck(0),
+    myPthreadMode(0),
+    myParallelMode(0)
 {
   GeomToolSelected = NULL;
   GeomToolSelected = getGeomSelectionTool();
@@ -352,6 +359,70 @@ GEOM::GEOM_Gen_var GHS3DPluginGUI_HypothesisCreator::getGeomEngine()
 bool GHS3DPluginGUI_HypothesisCreator::isOptimization() const
 {
   return ( hypType() == GHS3DPlugin_OptimizerHypothesis::GetHypType() );
+}
+
+void GHS3DPluginGUI_HypothesisCreator::onRadioButtonSelect()
+{
+  onNumOfThreadsCheck();
+    
+  // Disable selection of standart+ 
+  QStandardItemModel * model = qobject_cast<QStandardItemModel*>(myOptimizationLevelCombo->model());
+  if(!model) return;
+  QStandardItem * item = model->item( GHS3DPlugin_Hypothesis::StandardPlus );
+  if(!item) return;
+
+  if ( myRadioBottomGroup->checkedId() == GHS3DPlugin_Hypothesis::MGTetra )
+  {
+    // Enable selection of stadart+
+    item->setEnabled(true);
+    // Set possibility to check memory options again.
+    myAdvWidget->maxMemoryCheck     ->setEnabled( true );
+    myAdvWidget->initialMemoryCheck ->setEnabled( true );
+
+    myAdvWidget->EnableAdvancedOptions( true );
+    myEnfGroup->setEnabled( true );
+    myEnfMeshGroup->setEnabled( true );
+  }
+  else if ( myRadioBottomGroup->checkedId() == GHS3DPlugin_Hypothesis::MGTetraHPC )
+  {
+    // Disable selection of stadart+ 
+    item->setEnabled(false);
+    // Set to false memory checks and disable checkbox
+    myAdvWidget->maxMemoryCheck     ->setChecked( false );
+    myAdvWidget->initialMemoryCheck ->setChecked( false );
+    myAdvWidget->maxMemoryCheck     ->setEnabled( false );
+    myAdvWidget->initialMemoryCheck ->setEnabled( false );    
+    myAdvWidget->EnableAdvancedOptions( false );
+    myEnfGroup->setEnabled( false );
+    myEnfMeshGroup->setEnabled( false );
+  }    
+
+}
+
+void GHS3DPluginGUI_HypothesisCreator::onNumOfThreadsCheck()
+{
+  if ( myRadioBottomGroup->checkedId() == GHS3DPlugin_Hypothesis::MGTetra )
+  {
+    if ( myNumOfThreadsCheck->isChecked() )
+      myPthreadMode->setEnabled( true );
+    else
+      myPthreadMode->setEnabled( false );
+    
+    myParallelMode->setEnabled( false );
+  }
+  else if ( myRadioBottomGroup->checkedId() == GHS3DPlugin_Hypothesis::MGTetraHPC )
+  {
+    if ( myNumOfThreadsCheck->isChecked() )
+      myParallelMode->setEnabled( true );
+    else
+      myParallelMode->setEnabled( false );
+    
+    myPthreadMode->setEnabled( false );
+  }
+  else
+  {
+
+  }
 }
 
 QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
@@ -419,26 +490,64 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   }
   else
   {
-    // Main parameters
+    // Algorithm selection
+    QGroupBox* radioBottomGroup = new QGroupBox( tr("GHS3D_ALGO_SELECTION"), myStdGroup );
+    myRadioBottomGroup          = new QButtonGroup( radioBottomGroup );
+    
+    QRadioButton * GM_MSH      = new QRadioButton(tr("GHS3D_ALGO_MGTETRA"), radioBottomGroup );
+    QRadioButton * GM_MSH_HPC  = new QRadioButton(tr("GHS3D_ALGO_MGTETRAHPC"), radioBottomGroup );
 
-    QGroupBox* mainGroup = new QGroupBox( tr("GHS3D_MAIN_PARAMS"), myStdGroup );
-    QLabel* optimizatiolLevelLbl = new QLabel( tr( "GHS3D_OPTIMIZATIOL_LEVEL" ), mainGroup );
-    myOptimizationLevelCombo = new QComboBox( mainGroup );
-    myMinSizeCheck = new QCheckBox( tr("GHS3D_MIN_SIZE"), mainGroup );
-    myMaxSizeCheck = new QCheckBox( tr("GHS3D_MAX_SIZE"), mainGroup );
-    myMinSizeSpin  = new SMESHGUI_SpinBox( mainGroup );
-    myMaxSizeSpin  = new SMESHGUI_SpinBox( mainGroup );
+    myRadioBottomGroup->addButton( GM_MSH, 1 );    
+    myRadioBottomGroup->addButton( GM_MSH_HPC, 0 );
+    GM_MSH->setChecked( true );
+
+    QGridLayout* radioBottomLayout = new QGridLayout( radioBottomGroup );
+    radioBottomLayout->setSpacing( 4 );
+    radioBottomLayout->setMargin( 11 );
+    radioBottomLayout->addWidget( GM_MSH, 0, 0, 1, 1 );
+    radioBottomLayout->addWidget( GM_MSH_HPC, 0, 1, 1, 1 );
+
+    // Main parameters
+    QGroupBox* mainGroup          = new QGroupBox( tr("GHS3D_MAIN_PARAMS"), myStdGroup );
+    QLabel* optimizatiolLevelLbl  = new QLabel( tr( "GHS3D_OPTIMIZATIOL_LEVEL" ), mainGroup );
+    QLabel* pthreadModeLbl        = new QLabel( tr( "GHS3D_PTHREAD_MODE" ), mainGroup );
+    QLabel* parallelStrat         = new QLabel( tr( "GHS3D_PARALLE_STRAT" ), mainGroup );
+
+    myOptimizationLevelCombo  = new QComboBox( mainGroup );
+    myMinSizeCheck            = new QCheckBox( tr("GHS3D_MIN_SIZE"), mainGroup );
+    myMaxSizeCheck            = new QCheckBox( tr("GHS3D_MAX_SIZE"), mainGroup );
+    myNumOfThreadsCheck       = new QCheckBox( tr("GHS3D_THREADS_SIZE"), mainGroup );
+    myPthreadMode             = new QComboBox( mainGroup );
+    myParallelMode            = new QComboBox( mainGroup );
+
+    myMinSizeSpin             = new SMESHGUI_SpinBox( mainGroup );
+    myMaxSizeSpin             = new SMESHGUI_SpinBox( mainGroup );
+    myNumOfThreadsSpin        = new SalomeApp_IntSpinBox( 1, 128, 1, mainGroup );
+
     myMinSizeCheck->setChecked( false );
     myMaxSizeCheck->setChecked( false );
+    myNumOfThreadsCheck->setChecked( false );
+
     myMinSizeSpin->RangeStepAndValidator(0, COORD_MAX, 10.0, "length_precision");
     myMaxSizeSpin->RangeStepAndValidator(0, COORD_MAX, 10.0, "length_precision");
-    myMinSizeSpin->setEnabled( false );
-    myMaxSizeSpin->setEnabled( false );
-    connect( myMinSizeCheck, SIGNAL( toggled(bool)), myMinSizeSpin, SLOT( setEnabled(bool)));
-    connect( myMaxSizeCheck, SIGNAL( toggled(bool)), myMaxSizeSpin, SLOT( setEnabled(bool)));
+    myNumOfThreadsSpin->setValue( 4 );
+
+    myMinSizeSpin ->setEnabled( false );
+    myMaxSizeSpin ->setEnabled( false );
+    myNumOfThreadsSpin->setEnabled(false);
+    myPthreadMode ->setEnabled( false );
+    myParallelMode->setEnabled( false );
+
+    // ACTIONS ON BUTTOMS
+    connect( myMinSizeCheck,      SIGNAL( toggled(bool)), myMinSizeSpin,  SLOT( setEnabled(bool)));
+    connect( myMaxSizeCheck,      SIGNAL( toggled(bool)), myMaxSizeSpin,  SLOT( setEnabled(bool)));
+    connect( myNumOfThreadsCheck, SIGNAL( toggled(bool)), myNumOfThreadsSpin, SLOT( setEnabled(bool)));    
+    connect( myNumOfThreadsCheck, SIGNAL( toggled(bool)),  this, SLOT( onNumOfThreadsCheck() ));
+    connect( myNumOfThreadsCheck, SIGNAL( toggled(bool)),  this, SLOT( onNumOfThreadsCheck() ));
+    connect( GM_MSH,              SIGNAL( toggled( bool )),this, SLOT( onRadioButtonSelect() ));
 
     QGridLayout* mainLayout = new QGridLayout( mainGroup );
-    mainLayout->setSpacing( 6 );
+    mainLayout->setSpacing( 12 );
     mainLayout->setMargin( 11 );
     mainLayout->addWidget( optimizatiolLevelLbl,     0, 0, 1, 1 );
     mainLayout->addWidget( myOptimizationLevelCombo, 0, 1, 1, 1 );
@@ -446,7 +555,13 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
     mainLayout->addWidget( myMinSizeSpin,            1, 1, 1, 1 );
     mainLayout->addWidget( myMaxSizeCheck,           2, 0, 1, 1 );
     mainLayout->addWidget( myMaxSizeSpin,            2, 1, 1, 1 );
-
+    mainLayout->addWidget( myNumOfThreadsCheck,      3, 0, 1, 1 );
+    mainLayout->addWidget( myNumOfThreadsSpin,       3, 1, 1, 1 );
+    mainLayout->addWidget( pthreadModeLbl,           4, 0, 1, 1 );
+    mainLayout->addWidget( myPthreadMode,            4, 1, 1, 1 );
+    mainLayout->addWidget( parallelStrat,            5, 0, 1, 1 );
+    mainLayout->addWidget( myParallelMode,           5, 1, 1, 1 );
+    
     // Volume proximity
 
     QGroupBox* proxyGroup = new QGroupBox( tr("GHS3D_VOLUME_PROXIMITY"), myStdGroup );
@@ -484,10 +599,13 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
     otherLayout->addWidget( myToMeshHolesCheck,      0, 0 );
     otherLayout->addWidget( myToMakeGroupsOfDomains, 1, 0 );
 
+    aStdLayout->addWidget( radioBottomGroup,row++, 0, 1, 2 );
+    aStdLayout->addWidget( mainGroup,       row++, 0, 1, 2 );
+    aStdLayout->addWidget( proxyGroup,      row++, 0, 1, 2 );
+    aStdLayout->addWidget( otherGroup,      row++, 0, 1, 2 );
 
-    aStdLayout->addWidget( mainGroup,  row++, 0, 1, 2 );
-    aStdLayout->addWidget( proxyGroup, row++, 0, 1, 2 );
-    aStdLayout->addWidget( otherGroup, row++, 0, 1, 2 );
+    myPthreadMode->addItems( QStringList() << tr( "MODE_NONE" )   << tr( "MODE_AGGRESSIVE" ) << tr( "MODE_SAFE" ) );
+    myParallelMode->addItems( QStringList() << tr( "MODE_NONE" ) << tr( "MODE_REPRODUCIBLE_GIVEN_MAX_THREADS" )  << tr( "MODE_REPRODUCIBLE" ) << tr( "MODE_AGGRESSIVE" ) );
   }
   aStdLayout->setRowStretch( row, 10 );
 
@@ -549,7 +667,7 @@ QFrame* GHS3DPluginGUI_HypothesisCreator::buildFrame()
   QGridLayout* anEnfLayout = new QGridLayout(myEnfGroup);
   
   myEnforcedTableWidget = new QTableWidget(myEnfGroup);
-  myEnforcedTableWidget ->setMinimumWidth(300);
+  myEnforcedTableWidget->setMinimumWidth(300);
   myEnforcedTableWidget->setRowCount( 0 );
   myEnforcedTableWidget->setColumnCount( ENF_VER_NB_COLUMNS );
   myEnforcedTableWidget->setSortingEnabled(true);
@@ -1459,7 +1577,12 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   }
   myToMeshHolesCheck                          ->setChecked    ( data.myToMeshHoles );
   myToMakeGroupsOfDomains                     ->setChecked    ( data.myToMakeGroupsOfDomains );
-  myOptimizationLevelCombo                    ->setCurrentIndex( data.myOptimizationLevel );
+
+  if ( data.myAlgorithm == GHS3DPlugin_Hypothesis::MGTetraHPC && data.myOptimizationLevel == GHS3DPlugin_Hypothesis::StandardPlus /*not implemented by MGTetraHPC*/ )
+    myOptimizationLevelCombo                    ->setCurrentIndex( GHS3DPlugin_Hypothesis::None );
+  else
+    myOptimizationLevelCombo                    ->setCurrentIndex( data.myOptimizationLevel );
+  
   if ( myOptimizationCombo ) // optimizer
   {
     myOptimizationCombo                         ->setCurrentIndex( data.myOptimization );
@@ -1471,14 +1594,19 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
   }
   else
   {
-    myMinSizeSpin->setValue( data.myMinSize );
-    myMinSizeCheck->setChecked( data.myUseMinSize );
-    myMaxSizeSpin->setValue( data.myMaxSize );
-    myMaxSizeCheck->setChecked( data.myUseMaxSize );
-    myGradationCheck->setChecked( data.myUseGradation );
-    myGradationSpin->setValue( data.myUseGradation ? data.myGradation : GHS3DPlugin_Hypothesis::DefaultGradation() );
-    myUseProximityGroup->setChecked( data.myUseProximity );
-    myNbProximityLayers->setValue( data.myNbProximityLayers );
+    myRadioBottomGroup  ->button( data.myAlgorithm )->setChecked( true );
+    myMinSizeSpin       ->setValue( data.myMinSize );
+    myMinSizeCheck      ->setChecked( data.myUseMinSize );
+    myMaxSizeSpin       ->setValue( data.myMaxSize );
+    myMaxSizeCheck      ->setChecked( data.myUseMaxSize );
+    myGradationCheck    ->setChecked( data.myUseGradation );
+    myGradationSpin     ->setValue( data.myUseGradation ? data.myGradation : GHS3DPlugin_Hypothesis::DefaultGradation() );
+    myUseProximityGroup ->setChecked( data.myUseProximity );
+    myNbProximityLayers ->setValue( data.myNbProximityLayers );
+    myNumOfThreadsCheck ->setChecked( data.myUseNumOfThreads );
+    myNumOfThreadsSpin  ->setValue( data.myNumOfThreads );    
+    myPthreadMode       ->setCurrentIndex( data.myPthreadMode );
+    myParallelMode      ->setCurrentIndex( data.myParallelMode );    
   }
   myAdvWidget->maxMemoryCheck                 ->setChecked    ( data.myMaximumMemory > 0 );
   myAdvWidget->maxMemorySpin                  ->setValue
@@ -1501,7 +1629,7 @@ void GHS3DPluginGUI_HypothesisCreator::retrieveParams() const
       myAdvWidget->AddOption( that->myCustomOptions[i].in() );
   }
   myAdvWidget->myOptionTable->resizeColumnToContents( OPTION_NAME_COLUMN );
-
+  myAdvWidget->EnableAdvancedOptions( data.myAlgorithm == GHS3DPlugin_Hypothesis::MGTetra );
 
   TEnfVertexList::const_iterator it;
   int rowCount = 0;
@@ -1703,6 +1831,7 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
     h_data.myNumberOfThreads      = 1;
     h_data.mySmoothOffSlivers     = 1;
   }
+  h_data.myAlgorithm                  = h->GetAlgorithm();
   h_data.myOptimizationLevel          = h->GetOptimizationLevel();
   h_data.myMinSize                    = h->GetMinSize();
   h_data.myMaxSize                    = h->GetMaxSize();
@@ -1731,6 +1860,10 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromHypo( GHS3DHypothesisData& 
   //h_data.myTextOption                 = h->GetAdvancedOption();
   h_data.myLogInStandardOutput        = h->GetStandardOutputLog();
   h_data.myRemoveLogOnSuccess         = h->GetRemoveLogOnSuccess();
+  h_data.myUseNumOfThreads            = h->GetUseNumOfThreads();
+  h_data.myNumOfThreads               = h->GetNumOfThreads();
+  h_data.myPthreadMode                = h->GetPthreadMode();
+  h_data.myParallelMode               = h->GetParallelMode();
 
   GHS3DPluginGUI_HypothesisCreator* that = (GHS3DPluginGUI_HypothesisCreator*)this;
   that->myOptions       = h->GetOptionValues();
@@ -1791,18 +1924,27 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
     if( isCreation() )
       SMESH::SetName( SMESH::FindSObject( h ), h_data.myName.toLatin1().constData() );
 
+    if ( opt->_is_nil() )
+    {
+      h->SetAlgorithm                   ((CORBA::Short) h_data.myAlgorithm );
+      h->SetUseNumOfThreads             ( h_data.myUseNumOfThreads     );
+      h->SetNumOfThreads                ( (CORBA::Short) h_data.myNumOfThreads        );
+      h->SetPthreadMode                 ( (CORBA::Short) h_data.myPthreadMode         );
+      h->SetParallelMode                ( (CORBA::Short) h_data.myParallelMode        );
+      h->SetGradation                   ( h_data.myGradation         );
+      h->SetToMeshHoles                 ( h_data.myToMeshHoles       );
+      h->SetToMakeGroupsOfDomains       ( h_data.myToMakeGroupsOfDomains );
+      h->SetVolumeProximity             ( h_data.myUseProximity      );
+      h->SetNbVolumeProximityLayers     ((CORBA::Short) h_data.myNbProximityLayers );
+    }
+
+    // Common existing options optimization a MGTetra && MGTetraHPC
     h->SetOptimizationLevel           ((CORBA::Short) h_data.myOptimizationLevel );
     h->SetMinSize                     ( h_data.myUseMinSize ? h_data.myMinSize : 0 );
     h->SetMaxSize                     ( h_data.myUseMaxSize ? h_data.myMaxSize : 0 );
     h->SetMinMaxSizeDefault           ( this->myMinSizeDefault, this->myMaxSizeDefault );
-    h->SetGradation                   ( h_data.myGradation         );
-    h->SetVolumeProximity             ( h_data.myUseProximity      );
-    h->SetNbVolumeProximityLayers     ((CORBA::Short) h_data.myNbProximityLayers );
-    h->SetToMeshHoles                 ( h_data.myToMeshHoles       );
-    h->SetToMakeGroupsOfDomains       ( h_data.myToMakeGroupsOfDomains );
 
     h->SetMaximumMemory               ( h_data.myMaximumMemory     );
-    h->SetInitialMemory               ( h_data.myInitialMemory     );
     h->SetInitialMemory               ( h_data.myInitialMemory     );
     h->SetKeepFiles                   ( h_data.myKeepFiles         );
     h->SetWorkingDirectory            ( h_data.myWorkingDir.toLatin1().constData() );
@@ -1812,6 +1954,7 @@ bool GHS3DPluginGUI_HypothesisCreator::storeParamsToHypo( const GHS3DHypothesisD
     //h->SetFEMCorrection               ( h_data.myFEMCorrection     );
     h->SetStandardOutputLog           ( h_data.myLogInStandardOutput );
     h->SetRemoveLogOnSuccess          ( h_data.myRemoveLogOnSuccess  );
+    
 
     if ( !opt->_is_nil() )
     {
@@ -1915,6 +2058,11 @@ bool GHS3DPluginGUI_HypothesisCreator::readParamsFromWidgets( GHS3DHypothesisDat
     h_data.myNbProximityLayers     = myNbProximityLayers->value();
     h_data.myToMeshHoles           = myToMeshHolesCheck->isChecked();
     h_data.myToMakeGroupsOfDomains = myToMakeGroupsOfDomains->isChecked();
+    h_data.myAlgorithm             = myRadioBottomGroup->checkedId();
+    h_data.myUseNumOfThreads       = myNumOfThreadsCheck->isChecked();
+    h_data.myNumOfThreads          = myNumOfThreadsSpin->value();
+    h_data.myPthreadMode           = myPthreadMode->currentIndex();
+    h_data.myParallelMode          = myParallelMode->currentIndex();
   }
   h_data.myMaximumMemory           = float( myAdvWidget->maxMemoryCheck->isChecked() ? myAdvWidget->maxMemorySpin->value() : -1 );
   h_data.myInitialMemory           = float( myAdvWidget->initialMemoryCheck->isChecked() ? myAdvWidget->initialMemorySpin->value() : -1 );

@@ -153,7 +153,7 @@ bool GHS3DPlugin_OptimizerHypothesis::SetParametersByDefaults(const TDefaults&  
 
 std::string GHS3DPlugin_OptimizerHypothesis::CommandToRun(const GHS3DPlugin_OptimizerHypothesis* hyp)
 {
-  SMESH_Comment cmd( GetExeName() );
+  SMESH_Comment cmd( GetExeName( (ImplementedAlgorithms) 1 ) );
 
   cmd << " --max_memory "
       << (( hyp && hyp->myMaximumMemory > 0 ) ? hyp->myMaximumMemory : DefaultMaximumMemory());

@@ -119,6 +119,31 @@ module GHS3DPlugin
     void SetOptimizationLevel(in short level) raises (SALOME::SALOME_Exception);
     short GetOptimizationLevel();
     /*!
+     * Algorithm selection: 0-MGTetra HPC, 1-MGTetra
+     */
+    void SetAlgorithm(in short level) raises (SALOME::SALOME_Exception);
+    short GetAlgorithm();
+    /*!
+     * Set use number of threads
+     */
+    void SetUseNumOfThreads(in boolean setThread) raises (SALOME::SALOME_Exception);
+    boolean GetUseNumOfThreads();
+    /*!
+     * Set number of threads to use
+     */
+    void SetNumOfThreads(in short numThreads);
+    short GetNumOfThreads();
+     /*!
+     * PThreadMode defined for MGTetra
+     */
+    void SetPthreadMode(in short pThreadMode) raises (SALOME::SALOME_Exception);
+    short GetPthreadMode();
+     /*!
+     * ParallelMode defined for MGTetra HPC
+     */
+    void SetParallelMode(in short parallelMode) raises (SALOME::SALOME_Exception);
+    short GetParallelMode();
+    /*!
      * Path to working directory
      */
     void SetWorkingDirectory(in string path) raises (SALOME::SALOME_Exception);

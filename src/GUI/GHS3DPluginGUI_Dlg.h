@@ -49,7 +49,7 @@ public:
 
   void AddOption( const char* name_value_type, bool isCustom = false );
   void GetOptionAndValue( QTreeWidgetItem * tblRow, QString& option, QString& value, bool& dflt );
-
+  void EnableAdvancedOptions( bool isMGTetra );
 public slots:
 
   void itemChanged(QTreeWidgetItem * tblRow, int column);

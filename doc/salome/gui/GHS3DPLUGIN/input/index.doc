@@ -3,9 +3,9 @@
 \mainpage Introduction to MG-Tetra plug-in
 
 MG-Tetra plug-in adds two meshing algorithm to the SALOME Mesh: 
-\b MG-Tetra (former GHS3D) and <b>MG-Tetra Optimization</b>.
+<b> MG-Tetra or MG-Tetra HPC</b> (former GHS3D) and <b>MG-Tetra Optimization</b>.
 
-\b MG-Tetra meshing algorithm is destined for:
+<b> MG-Tetra or MG-Tetra HPC</b> meshing algorithm is destined for:
   - Meshing 3D geometric entities: solids are split into tetrahedral (pyramidal) elements.
   - Generating 3D meshes from 2D meshes (triangles and quadrangles), working without geometrical objects.
 

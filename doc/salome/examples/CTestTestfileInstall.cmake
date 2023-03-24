@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2022  CEA/DEN, EDF R&D, OPEN CASCADE
+# Copyright (C) 2016-2022  CEA/DEN, EDF R&D
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -17,34 +17,15 @@
 # See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 #
 
-FILE(GLOB files "${CMAKE_CURRENT_SOURCE_DIR}/*.py")
 INCLUDE(examples.set)
 
 SET(COMPONENT_NAME GHS3DPLUGIN)
+SET(SALOME_TEST_DRIVER "$ENV{KERNEL_ROOT_DIR}/bin/salome/appliskel/python_test_driver.py")
+SET(TIMEOUT        300)
 
-SET(TEST_INSTALL_DIRECTORY ${SALOME_GHS3DPLUGIN_INSTALL_TESTS})
-
-# make test
-SALOME_GENERATE_TESTS_ENVIRONMENT(tests_env)
 
 FOREACH(tfile ${EXAMPLE_NAMES})
   SET(TEST_NAME ${COMPONENT_NAME}_${tfile})
-  ADD_TEST(NAME ${TEST_NAME}
-           COMMAND ${PYTHON_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/${tfile}.py)           
-  SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES ENVIRONMENT "${tests_env}")
+  ADD_TEST(${TEST_NAME} python ${SALOME_TEST_DRIVER} ${TIMEOUT} ${tfile}.py)
   SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES LABELS "${COMPONENT_NAME}")
-  MESSAGE( ${SALOME_INSTALL_DOC})
-  INSTALL(FILES ${tfile}.py DESTINATION ${SALOME_INSTALL_DOC}/examples/GHS3DPLUGIN)
 ENDFOREACH()
-
-# salome test
-FOREACH(tfile ${EXAMPLE_NAMES})
-  INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${tfile}.py
-          DESTINATION ${TEST_INSTALL_DIRECTORY})
-ENDFOREACH()
-
-INSTALL(FILES CTestTestfileInstall.cmake
-  DESTINATION ${TEST_INSTALL_DIRECTORY}
-  RENAME CTestTestfile.cmake)
-
-INSTALL(FILES examples.set DESTINATION ${TEST_INSTALL_DIRECTORY})

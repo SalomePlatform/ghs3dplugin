@@ -222,6 +222,43 @@ class GHS3D_Algorithm(Mesh_Algorithm):
         self.Parameters().SetToRemoveCentralPoint(toRemove)
         pass
 
+    ## To set the algorithm id
+    #  @param algorithm ID 0 MGTetra HPC - 1 MGTetra
+    def SetAlgorithm(self,algoId):
+        self.Parameters().SetAlgorithm(algoId)    
+        pass
+    
+    ## To use parallel mode
+    #  @param toUseNumOfThreads "use max number of threads" flag value
+    def SetUseNumOfThreads(self,useThreads):
+        self.Parameters().SetUseNumOfThreads(useThreads)    
+        pass
+
+    ## To set the number of threads to be used
+    #  @param numberOfThreads define max_num_threads for MGTetra and MGTetra HPC
+    def SetNumOfThreads(self,numThreads):
+        self.Parameters().SetNumOfThreads(numThreads)    
+        pass
+    
+    ## Set SetPthreadMode.
+    #  @param pthreadMode for parallel algorithm in MGTetra
+    #  - 0 - none
+    #  - 1 - aggresive
+    #  - 2 - safe
+    def SetPthreadMode(self,pthreadMode):
+        self.Parameters().SetPthreadMode(pthreadMode)    
+        pass
+    
+    ## Set SetParallelMode.
+    #  @param parallelMode for parallel algorithm in MGTetra HPC
+    #  - 0 - none
+    #  - 1 - reproducible_given_max_number_of_threads
+    #  - 2 - reproducible
+    #  - 3 - aggressive 
+    def SetPthreadMode(self,parallelMode):
+        self.Parameters().SetParallelMode(parallelMode)    
+        pass
+
     ## To set an enforced vertex.
     #  @param x            : x coordinate
     #  @param y            : y coordinate

@@ -70,6 +70,11 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, SMESH_Gen * gen)
     myGradation(DefaultGradation()),
     myUseVolumeProximity(DefaultUseVolumeProximity()),
     myNbVolumeProximityLayers(DefaultNbVolumeProximityLayers()),
+    myAlgorithm(DefaultAlgorithm()),    
+    myNumOfThreads(DefaultNumOfThreads()),
+    myUseNumOfThreads(DefaultUseNumOfThreads()),
+    myPthreadModeMG(DefaultMyPthreadMode()),
+    myPthreadModeMGHPC(DefaultMyPthreadModeHPC()),
     myMinSize(0),
     myMinSizeDefault(0),
     myMaxSize(0),
@@ -88,15 +93,13 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, SMESH_Gen * gen)
                                     "" // mark of end
   };
   const char* intOptionNames[] = { "max_number_of_errors_printed", // 1
-                                   "max_number_of_threads",        // 4
                                    "" // mark of end
   };
   const char* doubleOptionNames[] = { "target_quality",  // 0
                                       "sliver_angle",    // 5
                                       "" // mark of end
   };
-  const char* charOptionNames[] = { "pthreads_mode",                    // ""
-                                    "boundary_regeneration",            // standard
+  const char* charOptionNames[] = { "boundary_regeneration",            // standard
                                     "split_overconstrained_tetrahedra", // no
                                     "" // mark of end
   };
@@ -132,10 +135,8 @@ GHS3DPlugin_Hypothesis::GHS3DPlugin_Hypothesis(int hypId, SMESH_Gen * gen)
   _defaultOptionValues["rectify_jacobian"                                 ] = "yes";
   _defaultOptionValues["jacobian_rectification_respect_input_surface_mesh"] = "yes";
   _defaultOptionValues["max_number_of_errors_printed"                     ] = "1";
-  _defaultOptionValues["max_number_of_threads"                            ] = "4";
   _defaultOptionValues["target_quality"                                   ] = "";//NoValue();
   _defaultOptionValues["sliver_angle"                                     ] = "5";
-  _defaultOptionValues["pthreads_mode"                                    ] = "";//NoValue();
   _defaultOptionValues["boundary_regeneration"                            ] = "standard";
   _defaultOptionValues["split_overconstrained_tetrahedra"                 ] = "no";
 
@@ -354,9 +355,108 @@ void GHS3DPlugin_Hypothesis::SetToCreateNewNodes(bool toCreate)
 }
 
 //=======================================================================
+//function : SetAlgorithm
+//=======================================================================
+void GHS3DPlugin_Hypothesis::SetAlgorithm(ImplementedAlgorithms algoId)
+{
+  if ( myAlgorithm != algoId ) {
+    myAlgorithm = algoId;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function :   short GetAlgorithm() const;
+
+//=======================================================================
+GHS3DPlugin_Hypothesis::ImplementedAlgorithms GHS3DPlugin_Hypothesis::GetAlgorithm() const
+{
+  return (ImplementedAlgorithms) myAlgorithm;
+}
+
+//=======================================================================
+//function : SetPthreadMode
+//=======================================================================
+void GHS3DPlugin_Hypothesis::SetPthreadMode(PThreadMode pThreadsMode )
+{
+  if ( myPthreadModeMG != pThreadsMode ) {
+    myPthreadModeMG = pThreadsMode;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function :   short GetPthreadMode() const;
+
+//=======================================================================
+GHS3DPlugin_Hypothesis::PThreadMode GHS3DPlugin_Hypothesis::GetPthreadMode() const
+{
+  return (PThreadMode)myPthreadModeMG;
+}
+
+//=======================================================================
+//function : SetParallelMode
+//=======================================================================
+void GHS3DPlugin_Hypothesis::SetParallelMode(ParallelMode parallelMode )
+{
+  if ( myPthreadModeMGHPC != parallelMode ) {
+    myPthreadModeMGHPC = parallelMode;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function :   short GetParallelMode() const;
+
+//=======================================================================
+GHS3DPlugin_Hypothesis::ParallelMode GHS3DPlugin_Hypothesis::GetParallelMode() const
+{
+  return (ParallelMode)myPthreadModeMGHPC;
+}
+
+//=======================================================================
+//function : SetUseNumOfThreads
+//=======================================================================
+void GHS3DPlugin_Hypothesis::SetUseNumOfThreads(bool setUseOfThreads)
+{
+  if ( myUseNumOfThreads != setUseOfThreads ) {
+    myUseNumOfThreads = setUseOfThreads;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function :   bool GetUseNumOfThreads() const;
+
+//=======================================================================
+bool GHS3DPlugin_Hypothesis::GetUseNumOfThreads() const
+{
+  return myUseNumOfThreads;
+}
+
+//=======================================================================
+//function : SetNumOfThreads
+//=======================================================================
+void GHS3DPlugin_Hypothesis::SetNumOfThreads(short numOfThreads)
+{
+  if ( myNumOfThreads != numOfThreads ) {
+    myNumOfThreads = numOfThreads;
+    NotifySubMeshesHypothesisModification();
+  }
+}
+
+//=======================================================================
+//function :   short GetUseNumOfThreads() const;
+
+//=======================================================================
+short GHS3DPlugin_Hypothesis::GetNumOfThreads() const
+{
+  return myNumOfThreads;
+}
+
+//=======================================================================
 //function : GetToCreateNewNodes
 //=======================================================================
-
 bool GHS3DPlugin_Hypothesis::GetToCreateNewNodes() const
 {
   return myToCreateNewNodes;
@@ -1252,6 +1352,13 @@ std::ostream & GHS3DPlugin_Hypothesis::SaveTo(std::ostream & save)
   for ( o2v = _customOption2value.begin(); o2v != _customOption2value.end(); ++o2v )
     save << " -" << o2v->first << " -" << o2v->second;
 
+  // New options (issue #32737) 
+  save << " " << myAlgorithm;
+  save << " " << myUseNumOfThreads;
+  save << " " << myNumOfThreads;
+  save << " " << myPthreadModeMG;
+  save << " " << myPthreadModeMGHPC;
+
   return save;
 }
 
@@ -1608,6 +1715,36 @@ std::istream & GHS3DPlugin_Hypothesis::LoadFrom(std::istream & load)
     }
   }
 
+  isOK = static_cast<bool>(load >> i);
+  if (isOK)
+    myAlgorithm = (short) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
+  
+  isOK = static_cast<bool>(load >> i);
+  if (isOK)
+    myUseNumOfThreads = (short) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
+  
+  isOK = static_cast<bool>(load >> i);
+  if (isOK)
+    myNumOfThreads = (short) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
+
+  isOK = static_cast<bool>(load >> i);
+  if (isOK)
+    myPthreadModeMG = (short) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
+
+  isOK = static_cast<bool>(load >> i);
+  if (isOK)
+    myPthreadModeMGHPC = (short) i;
+  else
+    load.clear(ios::badbit | load.rdstate());
+
   return load;
 }
 
@@ -1639,17 +1776,57 @@ bool GHS3DPlugin_Hypothesis::SetParametersByDefaults(const TDefaults&  dflts,
   return true;
 }
 
+void GHS3DPlugin_Hypothesis::SetAdvancedOptionsInCommandLine( std::string & cmd ) const
+{
+  std::string option, value;
+  bool isDefault;
+  const TOptionValues* options[] = { & this->_option2value, & this->_customOption2value };
+  for ( int iOp = 0; iOp < 2; ++iOp )
+  {
+    TOptionValues::const_iterator o2v = options[iOp]->begin();
+    for ( ; o2v != options[iOp]->end(); ++o2v )
+    {
+      option = o2v->first;
+      value = this->GetOptionValue( option, &isDefault );
+
+      if ( isDefault )
+        continue;
+
+      if ( value.empty() )//value == NoValue() )
+      {
+        if ( this->_defaultOptionValues.count( option ))
+          continue; // non-custom option with no value
+        //value.clear();
+      }    
+
+      if ( strncmp( "no", option.c_str(), 2 ) == 0 ) // options w/o values: --no_*
+      {
+        if ( !value.empty() && ToBool( value ) == false )
+          continue;
+        value.clear();
+      }
+
+      if ( option[0] != '-' )
+        cmd += " --";
+      else
+        cmd += " ";
+      cmd += option + " " + value;
+    }
+  }
+}
+
 //================================================================================
 /*!
  * \brief Return command to run MG-Tetra mesher excluding file prefix (-f)
  */
 //================================================================================
-
 std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* hyp,
                                                  const bool                    hasShapeToMesh,
                                                  const bool                    forExecutable)
 {
-  std::string cmd = GetExeName();
+  GHS3DPlugin_Hypothesis::ImplementedAlgorithms algoId = hyp ? (ImplementedAlgorithms) hyp->myAlgorithm : MGTetra;
+  std::string cmd = GetExeName( algoId );
+  
   // check if any option is overridden by hyp->myTextOption
   bool max_memory     = hyp ? !hyp->HasOptionDefined("max_memory")               : true;
   bool auto_memory    = hyp ? !hyp->HasOptionDefined("automatic_memory")         : true;
@@ -1668,20 +1845,20 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
     useBndRecovery = hyp->myToUseBoundaryRecoveryVersion;
 
   // MG-Tetra needs to know amount of memory it may use (MB).
-  // Default memory is defined at MG-Tetra installation but it may be not enough,
-  // so allow to use about all available memory
-  if ( max_memory ) {
+  // Default memory is defined at MG-Tetra installation but it may be not enough,  // so allow to use about all available memory
+  if ( algoId == MGTetra && max_memory ) {
     float aMaximumMemory = hyp ? hyp->myMaximumMemory : -1;
     cmd += " --max_memory ";
     if ( aMaximumMemory < 0 ) cmd += SMESH_Comment( int( DefaultMaximumMemory() ));
     else                      cmd += SMESH_Comment( int( aMaximumMemory ));
   }
-  if ( auto_memory && !useBndRecovery ) {
+  if (  algoId == MGTetra && ( auto_memory && !useBndRecovery ) ) {
     float aInitialMemory = hyp ? hyp->myInitialMemory : -1;
     cmd += " --automatic_memory ";
     if ( aInitialMemory > 0 ) cmd += SMESH_Comment( int( aInitialMemory ));
     else                      cmd += "100";
   }
+
   // component to mesh
   if ( comp && !useBndRecovery ) {
     // We always run MG-Tetra with "to mesh holes'==TRUE (see PAL19680)
@@ -1700,11 +1877,13 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
     cmd += " --optimisation_level none"; // issue 22608
   }
   else if ( optim_level && hyp && !useBndRecovery ) {
-    if ( hyp->myOptimizationLevel >= 0 && hyp->myOptimizationLevel < 5 ) {
-      const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
-      cmd += " --optimisation_level ";
-      cmd += level[ hyp->myOptimizationLevel ];
-    }
+    const char* level[] = { "none" , "light" , "standard" , "standard+" , "strong" };
+    const short myOpt = hyp->myOptimizationLevel;
+    
+    if ( myOpt >= 0 && myOpt < 5 && ( algoId == MGTetra || ( algoId == MGTetraHPC && myOpt != 3 ) ) ) {
+        cmd += " --optimisation_level ";
+        cmd += level[ myOpt ];
+    }    
   }
 
   // to create internal nodes
@@ -1715,101 +1894,66 @@ std::string GHS3DPlugin_Hypothesis::CommandToRun(const GHS3DPlugin_Hypothesis* h
       cmd += " --internalpoints no";
   }
 
-  // verbose mode
-  if ( verbose && hyp ) {
-    cmd += " --verbose " + SMESH_Comment( hyp->myVerboseLevel );
-  }
-
-  // boundary recovery version
-  // if ( useBndRecovery ) {
-  //   cmd += " -C";
-  // }
-
-  // to use FEM correction
-  // if ( fem && hyp && hyp->myToUseFemCorrection) {
-  //   cmd += " -FEM";
-  // }
-
-  // to remove initial central point.
-  if ( rem && hyp && hyp->myToRemoveCentralPoint ) {
-    if ( forExecutable )
-      cmd += " --no_initial_central_point";
-    else
-      cmd += " --centralpoint no";
-  }
-
-  // options as text
-  // if ( hyp && !hyp->myTextOption.empty() ) {
-  //   cmd += " " + hyp->myTextOption;
-  // }
-
-  // min/max size
-  if ( hyp )
+  if ( hyp ) 
   {
+    // verbose mode
+    if ( verbose ) {
+      cmd += " --verbose " + SMESH_Comment( hyp->myVerboseLevel );
+    }
+
+    // to remove initial central point.
+    if ( rem && hyp->myToRemoveCentralPoint ) {
+      if ( forExecutable )
+        cmd += " --no_initial_central_point";
+      else
+        cmd += " --centralpoint no";
+    }
+
     if ( hyp->GetMinSize() > 0 )
       cmd += " --min_size " + SMESH_Comment( hyp->GetMinSize() );
+
     if ( hyp->GetMaxSize() > 0 )
       cmd += " --max_size " + SMESH_Comment( hyp->GetMaxSize() );
-  }
 
-  // to define volumic gradation.
-  if ( gra && hyp )
-  {
-    cmd += " --gradation " + SMESH_Comment( hyp->myGradation );
-  }
+    // to define volumic gradation.
+    if ( gra )
+      cmd += " --gradation " + SMESH_Comment( hyp->myGradation );
 
-  if ( hyp )
-  {
+    if ( hyp->GetUseNumOfThreads() )
+    {      
+      cmd += " --max_number_of_threads "  + SMESH_Comment( hyp->GetNumOfThreads() );
+      const char* pthreadMode[] = { "none" , "aggressive" , "safe" };
+      const char* parallelMode[] = { "none", "reproducible_given_max_number_of_threads", "reproducible", "aggressive"  };
+
+      if ( algoId == MGTetra && hyp->myPthreadModeMG >= 1 && hyp->myPthreadModeMG < 3 ) {
+        cmd += " --pthreads_mode ";
+        cmd += pthreadMode[ hyp->myPthreadModeMG ];
+      }
+      else if ( algoId == MGTetraHPC && hyp->myPthreadModeMGHPC >= 1 && hyp->myPthreadModeMGHPC < 4 )
+      {
+        cmd += " --parallel_strategy ";
+        cmd += parallelMode[ hyp->myPthreadModeMGHPC ];
+      }
+    }
+
     // proximity
     if ( hyp->GetUseVolumeProximity() )
     {
       cmd += " --volume_proximity_layers " + SMESH_Comment( hyp->GetNbVolumeProximityLayers() );
     }
-
-    std::string option, value;
-    bool isDefault;
-    const TOptionValues* options[] = { & hyp->_option2value, & hyp->_customOption2value };
-    for ( int iOp = 0; iOp < 2; ++iOp )
-    {
-      TOptionValues::const_iterator o2v = options[iOp]->begin();
-      for ( ; o2v != options[iOp]->end(); ++o2v )
-      {
-        option = o2v->first;
-        value = hyp->GetOptionValue( option, &isDefault );
-
-        if ( isDefault )
-          continue;
-        if ( value.empty() )//value == NoValue() )
-        {
-          if ( hyp->_defaultOptionValues.count( option ))
-            continue; // non-custom option with no value
-          //value.clear();
-        }
-        if ( strncmp( "no", option.c_str(), 2 ) == 0 ) // options w/o values: --no_*
-        {
-          if ( !value.empty() && ToBool( value ) == false )
-            continue;
-          value.clear();
-        }
-        if ( option[0] != '-' )
-          cmd += " --";
-        else
-          cmd += " ";
-        cmd += option + " " + value;
-      }
-    }
+    
+    hyp->SetAdvancedOptionsInCommandLine( cmd );
   }
 
 #ifdef WIN32
   cmd += " < NUL";
 #endif
-
   return cmd;
 }
 
 //================================================================================
 /*!
- * \brief Return a unique file name
+ * \brief Return a unique file name for MGTetra
  */
 //================================================================================
 
@@ -1836,14 +1980,50 @@ std::string GHS3DPlugin_Hypothesis::GetFileName(const GHS3DPlugin_Hypothesis* hy
 }
 
 //================================================================================
+/*!
+ * \brief Return a unique file name when running MGTetra HPC
+ */
+//================================================================================
+
+std::string GHS3DPlugin_Hypothesis::GetFileNameHPC(const GHS3DPlugin_Hypothesis* hyp)
+{
+  std::string aTmpDir = hyp ? hyp->GetWorkingDirectory() : DefaultWorkingDirectory();
+  if ( !SMESH_File( aTmpDir ).exists() )
+    aTmpDir = Kernel_Utils::GetTmpDirByPath( aTmpDir );
+
+  const char lastChar = *aTmpDir.rbegin();
+#ifdef WIN32
+    if(lastChar != '\\') aTmpDir+='\\';
+#else
+    if(lastChar != '/') aTmpDir+='/';
+#endif      
+
+  TCollection_AsciiString aGenericName = (char*)aTmpDir.c_str();
+  aGenericName += "MGTETRAHPC_";
+  aGenericName += getpid();
+  aGenericName += "_";
+  aGenericName += Abs((Standard_Integer)(long) aGenericName.ToCString());
+
+  return aGenericName.ToCString();
+}
+
+//================================================================================
 /*
  * Return the name of executable
  */
 //================================================================================
 
-std::string GHS3DPlugin_Hypothesis::GetExeName()
+std::string GHS3DPlugin_Hypothesis::GetExeName( ImplementedAlgorithms algoId )
 {
-  return "mg-tetra.exe";
+  switch ( algoId )
+  {
+    case MGTetra:
+      return "mg-tetra.exe";
+    case MGTetraHPC:
+      return "mg-tetra_hpc.exe";
+    default:
+      throw( "Undefined algorithm id: ");
+  }
 }
 
 //================================================================================

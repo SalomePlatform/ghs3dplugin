@@ -64,6 +64,50 @@
         <translation>Moyen (standard)</translation>
     </message>
     <message>
+        <source>GHS3D_PTHREAD_MODE</source>
+        <translation>Mode Pthread</translation>
+    </message>
+    <message>
+    <source>GHS3D_PARALLE_STRAT</source>
+    <translation>Statégie Parallèle(HPC)</translation>
+    </message>
+     <message>
+    <source>MODE_NONE</source>
+    <translation>Zéro</translation>
+    </message>
+    <message>
+        <source>MODE_AGGRESSIVE</source>
+        <translation>Agressif</translation>
+    </message>
+    <message>
+        <source>MODE_SAFE</source>
+        <translation>Sûr</translation>
+    </message>
+    <message>
+    <source>MODE_REPRODUCIBLE</source>
+    <translation>Reproductible</translation>
+    </message>
+    <message>
+    <source>MODE_REPRODUCIBLE_GIVEN_MAX_THREADS</source>
+    <translation>Reproductible étant donné le nombre max de threads</translation>
+    </message>
+    <message>
+        <source>GHS3D_ALGO_SELECTION</source>
+        <translation>Sélection d&apos;algorithme</translation>
+    </message>
+    <message>
+        <source>GHS3D_ALGO_MGTETRA</source>
+        <translation>MG-Tetra</translation>
+    </message>
+    <message>
+        <source>GHS3D_ALGO_MGTETRAHPC</source>
+        <translation>MG-Tetra HPC</translation>
+    </message>
+    <message>
+        <source>GHS3D_THREADS_SIZE</source>
+        <translation>Nombre max de threads</translation>
+    </message>
+    <message>
         <source>LEVEL_STANDARDPLUS</source>
         <translation>Standard+</translation>
     </message>

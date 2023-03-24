@@ -94,6 +94,33 @@ class GHS3DPLUGIN_EXPORT GHS3DPlugin_Hypothesis_i:
   void SetOptimizationLevel(CORBA::Short level);
   CORBA::Short GetOptimizationLevel();
   /*!
+   * Algorithm Id: 0-MGTetra HPC, 1-MGTetra
+   */
+  void SetAlgorithm(CORBA::Short algoId);
+  CORBA::Short GetAlgorithm();
+   /*!
+   * Flag for set get optional use parallelism in MGTetra
+   */
+  void SetUseNumOfThreads(CORBA::Boolean useThreads);
+  CORBA::Boolean GetUseNumOfThreads();
+   /*!
+   * Get set number of threads to use on the parallel MGTetra algorithm
+   */
+  void SetNumOfThreads(CORBA::Short numThreads);
+  CORBA::Short GetNumOfThreads();
+  /*!
+   * For MGTetra
+   * PthreadMode: 0-PThreadNone, 1-PThreadAggressive, 2-Safe
+   */
+  void SetPthreadMode(CORBA::Short pThreadMode);
+  CORBA::Short GetPthreadMode();
+  /*!
+   * For MGTetra HPC 
+   * SetParallelMode level: 0-ParallelNone, 1-ReproducibleGivenMaxNumThreads, 2-Reproducible, 3-ParallelAggressive   
+   */
+  void SetParallelMode(CORBA::Short parallelMode);
+  CORBA::Short GetParallelMode();
+  /*!
    * Path to working directory
    */
   void SetWorkingDirectory(const char* path);

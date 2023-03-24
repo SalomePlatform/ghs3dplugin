@@ -241,7 +241,7 @@ void GHS3DPlugin_Hypothesis_i::SetOptimizationLevel(CORBA::Short level)
     (::GHS3DPlugin_Hypothesis::OptimizationLevel) level;
   if ( l < ::GHS3DPlugin_Hypothesis::None ||
        l > ::GHS3DPlugin_Hypothesis::Strong )
-    THROW_SALOME_CORBA_EXCEPTION( "Invalid optimization level",SALOME::BAD_PARAM );
+    THROW_SALOME_CORBA_EXCEPTION( "Invalid optimization level", SALOME::BAD_PARAM );
     
   ASSERT(myBaseImpl);
   this->GetImpl()->SetOptimizationLevel(l);
@@ -256,6 +256,121 @@ CORBA::Short GHS3DPlugin_Hypothesis_i::GetOptimizationLevel()
 {
   ASSERT(myBaseImpl);
   return this->GetImpl()->GetOptimizationLevel();
+}
+
+//=======================================================================
+//function : SetAlgorithm
+//=======================================================================
+void GHS3DPlugin_Hypothesis_i::SetAlgorithm(CORBA::Short algoId)
+{ 
+  ::GHS3DPlugin_Hypothesis::ImplementedAlgorithms algo =
+    (::GHS3DPlugin_Hypothesis::ImplementedAlgorithms) algoId;
+  if ( algo != ::GHS3DPlugin_Hypothesis::MGTetra && algo != ::GHS3DPlugin_Hypothesis::MGTetraHPC )
+    THROW_SALOME_CORBA_EXCEPTION( "Invalid algorithm type", SALOME::BAD_PARAM );
+
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetAlgorithm(algo);
+  SMESH::TPythonDump() << _this() << ".SetAlgorithm( " << algoId << " )";
+}
+
+//=======================================================================
+//function : GetAlgorithm
+//=======================================================================
+CORBA::Short GHS3DPlugin_Hypothesis_i::GetAlgorithm()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetAlgorithm();
+}
+
+//=======================================================================
+//function : SetUseNumOfThreads
+//=======================================================================
+void GHS3DPlugin_Hypothesis_i::SetUseNumOfThreads(CORBA::Boolean setThread)
+{ 
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetUseNumOfThreads(setThread);
+  SMESH::TPythonDump() << _this() << ".SetUseNumOfThreads( " << setThread << " )";
+}
+
+//=======================================================================
+//function : GetUseNumOfThreads
+//=======================================================================
+CORBA::Boolean GHS3DPlugin_Hypothesis_i::GetUseNumOfThreads()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetUseNumOfThreads();
+}
+
+//=======================================================================
+//function : SetNumOfThreads
+//=======================================================================
+void GHS3DPlugin_Hypothesis_i::SetNumOfThreads(CORBA::Short numOfThreads)
+{ 
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetNumOfThreads(numOfThreads);
+  SMESH::TPythonDump() << _this() << ".SetNumOfThreads( " << numOfThreads << " )";
+}
+
+//=======================================================================
+//function : GetNumOfThreads
+//=======================================================================
+CORBA::Short GHS3DPlugin_Hypothesis_i::GetNumOfThreads()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetNumOfThreads();
+}
+
+//=======================================================================
+//function : SetNumOfThreads
+//=======================================================================
+void GHS3DPlugin_Hypothesis_i::SetPthreadMode(CORBA::Short pThreadMode)
+{ 
+  ::GHS3DPlugin_Hypothesis::PThreadMode mode =
+    (::GHS3DPlugin_Hypothesis::PThreadMode) pThreadMode;
+  
+   if ( mode < ::GHS3DPlugin_Hypothesis::PThreadNone ||
+       mode > ::GHS3DPlugin_Hypothesis::Safe )
+    THROW_SALOME_CORBA_EXCEPTION( "Invalid pthreadMode type", SALOME::BAD_PARAM );
+
+
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetPthreadMode(mode);
+  SMESH::TPythonDump() << _this() << ".SetPthreadMode( " << pThreadMode << " )";
+}
+
+//=======================================================================
+//function : GetNumOfThreads
+//=======================================================================
+CORBA::Short GHS3DPlugin_Hypothesis_i::GetPthreadMode()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetPthreadMode();
+}
+
+//=======================================================================
+//function : SetNumOfThreads
+//=======================================================================
+void GHS3DPlugin_Hypothesis_i::SetParallelMode(CORBA::Short parallelMode)
+{ 
+    ::GHS3DPlugin_Hypothesis::ParallelMode mode =
+    (::GHS3DPlugin_Hypothesis::ParallelMode) parallelMode;
+  
+   if ( mode < ::GHS3DPlugin_Hypothesis::ParallelNone ||
+       mode > ::GHS3DPlugin_Hypothesis::ParallelAggressive )
+    THROW_SALOME_CORBA_EXCEPTION( "Invalid parallelMode type", SALOME::BAD_PARAM );
+
+  ASSERT(myBaseImpl);
+  this->GetImpl()->SetParallelMode(mode);
+  SMESH::TPythonDump() << _this() << ".SetParallelMode( " << parallelMode << " )";
+}
+
+//=======================================================================
+//function : GetNumOfThreads
+//=======================================================================
+CORBA::Short GHS3DPlugin_Hypothesis_i::GetParallelMode()
+{
+  ASSERT(myBaseImpl);
+  return this->GetImpl()->GetParallelMode();
 }
 
 //=======================================================================

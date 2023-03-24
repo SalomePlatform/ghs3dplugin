@@ -49,6 +49,7 @@
 #include CORBA_SERVER_HEADER(SMESH_Mesh)
 
 class QWidget;
+class QButtonGroup;
 class QComboBox;
 class QCheckBox;
 class QLineEdit;
@@ -156,6 +157,8 @@ typedef struct
   short   myVerboseLevel;
   TEnfVertexList myEnforcedVertices;
   TEnfMeshList myEnforcedMeshes;
+  short   myAlgorithm, myNumOfThreads, myPthreadMode, myParallelMode;
+  bool    myUseNumOfThreads;
 
   int myOptimization, mySplitOverConstrained, myPThreadsMode, myNumberOfThreads;
   bool mySmoothOffSlivers;
@@ -208,6 +211,8 @@ protected slots:
   void                onRemoveEnforcedMesh();
   //void                synchronizeEnforcedMesh();
   void                checkEnfMeshIsDefined();
+  void                onRadioButtonSelect();
+  void                onNumOfThreadsCheck();
   
 signals:
   void                vertexDefined(bool);
@@ -230,6 +235,8 @@ private:
   QCheckBox*            myMaxSizeCheck;
   SMESHGUI_SpinBox*     myMinSizeSpin;
   SMESHGUI_SpinBox*     myMaxSizeSpin;
+  QCheckBox*            myNumOfThreadsCheck;
+  SalomeApp_IntSpinBox* myNumOfThreadsSpin;
   mutable double        myMinSizeDefault, myMaxSizeDefault;
   // proximity
   QCheckBox*            myGradationCheck;
@@ -246,6 +253,9 @@ private:
   SalomeApp_IntSpinBox* myNumberOfThreadsSpin;
   QCheckBox*            mySmoothOffSliversCheck;
   QCheckBox*            myCreateNewNodesCheck;
+  QComboBox*            myPthreadMode;
+  QComboBox*            myParallelMode;
+  QButtonGroup*         myRadioBottomGroup;
 
   QWidget*                  myAdvGroup;
   GHS3DPluginGUI_AdvWidget* myAdvWidget;

@@ -17,6 +17,8 @@ To get a license, visit http://www.meshgems.com/meshgems-products.html
 - <b>Name</b> - allows to define the name of the hypothesis (MG-Tetra
 Parameters by default).
 
+- <b>Algorithm Selection</b> - allows to select the version of MG-Tetra algorithm to be used.
+
 - <b>Optimization level</b> - allows choosing the required
 optimization level (higher level of optimization provides better mesh,
 but can be time-consuming):
@@ -27,13 +29,29 @@ but can be time-consuming):
 
   - medium (standard)
 
-  - standard+
+  - standard+ (not available whem MG-Tetra HPC is selected)
 
   - strong
 
 - <b>Minimal size</b> - sets the minimum edge size in the generated mesh.
 
 - <b>Maximal size</b> - sets the maximum edge size in the generated mesh.
+
+- <b>Maximal number of threads</b> - define the maximal number of threads to be used by the meshing algorithm. 
+                                      On selection of this box the Pthread mode is activated when MG-Tetra is selected and 
+                                      Parallel mode is activated if the MG-Tetra HPC algorithm is selected.
+
+- <b>Pthread mode</b> - define the parallel strategy used by the mesher when MG-Tetra is selected.
+  - none
+  - aggresive - is faster than the sequential mode, but the quality of the resulting mesh may altered compared to the sequential mode.
+  - safe - is slower than the sequential mode, but the quality of the mesh can only improve;
+
+- <b>Paralle strategy (HPC)</b> - define the parallel strategy used by the mesher when MG-Tetra HPC is selected.
+  - none
+  - reproducible_given_max_number_of_threads
+  - reproducible
+  - aggressive
+
 
 - <b>Volumic gradation</b> - Defines the volumic ratio between 2 consecutive elements.
 WARNING: Changing the default value of this parameter may dramatically
@@ -58,7 +76,7 @@ domain.<br>
 
 \image html ghs3d_parameters_advanced.png
 
-\subsection advanced_meshing_options Advanced meshing options
+\subsection advanced_meshing_options Advanced meshing options for MG-Tetra algorithm
 
 Advanced page tab expose mostly useful advanced options. Initially,
 default values of the options are displayed and they are not
@@ -130,10 +148,6 @@ option will be erased upon pressing \a Ok.
   to a given maximum number of errors. At least 1 error is printed and
   at most 100 errors are printed to prevent infinite loops.
 
-- <b>Maximal number of threads</b> - This allows to set the maximal
-  number of threads the software can use in parallel for the
-  multi-threading optimization mode.
-
 - <b>No central point</b> - <b>yes</b> prevents adding an internal point at the
    centre of gravity of the bounding box that MeshGems-Tetra uses by
    default in order to speed up and to simplify the meshing
@@ -151,17 +165,6 @@ option will be erased upon pressing \a Ok.
 - <b>Optimise worst elements</b> - Applies an optimization processing
   to improve the worst quality elements whenever possible. 
 
-- <b>Mode of pthreads</b> - This option sets the optimization mode
-  when using multithread capabilities. By default, this option is not
-  activated which means that only a sequential optimization is
-  performed.
-
-  - <b>safe</b> is slower than the sequential mode, but the
-    quality of the mesh can only improve;
-
-  - <b>aggressive</b> - is faster than the sequential mode, but
-    the quality of the resulting mesh may altered compared to the sequential mode.
-
 - <b>Rectify jacobian</b> - This option activates correction of some
   nodes so as to make the Jacobian of element strictly positive when
   generating a quadratic mesh.
@@ -171,6 +174,19 @@ option will be erased upon pressing \a Ok.
   user has the possibility to specify an angle (in degrees), which
   caracterizes a sliver : any tetrahedron which has at least an angle
   below this value will be considered as a sliver.
+
+- <b>Target quality</b> - Sets the desired maximum target of worst
+  quality acceptable for the volume mesh used during optimisation
+  phase. When defined, an optimization processing is applied to
+  improve the quality until the given target is reached whenever
+  possible. By default, this option is not activated which means that
+  only the standard optimisations are performed (the quality target is
+  the target quality computed by the program).
+
+\subsection advanced_meshing_options_HPC Advanced meshing options for MG-Tetra and MG-Tetra HPC algorithms
+
+This option is common to both algorithms. When MG-Tetra HPC algorithm is selected on the General Parameters view, all advanced options
+are disabled except the follow ones:
 
 - <b>Remove overconstrained tetrahedra</b> - This option can be used
   to only split the tetrahadra which have at least two facets that
@@ -185,15 +201,7 @@ option will be erased upon pressing \a Ok.
 
   - <b>only</b> means only correction is applied to an existing mesh.
 
-- <b>Target quality</b> - Sets the desired maximum target of worst
-  quality acceptable for the volume mesh used during optimisation
-  phase. When defined, an optimization processing is applied to
-  improve the quality until the given target is reached whenever
-  possible. By default, this option is not activated which means that
-  only the standard optimisations are performed (the quality target is
-  the target quality computed by the program).
-
-\subsection memory_settings Memory settings
+\subsection memory_settings Memory settings (disable when MG-Tetra HPC is selected)
 
 - <b>Maximum memory size</b> - launches MG-Tetra software with
 work space limited to the specified amount of RAM, in Mbytes. If this option is

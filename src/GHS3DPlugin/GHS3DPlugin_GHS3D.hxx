@@ -57,19 +57,18 @@ public:
   virtual bool CheckHypothesis(SMESH_Mesh&         aMesh,
                                const TopoDS_Shape& aShape,
                                Hypothesis_Status&  aStatus);
-
-  virtual bool Compute(SMESH_Mesh&         aMesh,
-                       const TopoDS_Shape& aShape);
-
   virtual void CancelCompute();
   bool         computeCanceled() { return _computeCanceled; }
 
   virtual bool Evaluate(SMESH_Mesh& aMesh, const TopoDS_Shape& aShape,
                         MapShapeNbElems& aResMap);
 
+  virtual bool Compute(SMESH_Mesh&         aMesh,
+                       const TopoDS_Shape& aShape);
+  
   virtual bool Compute(SMESH_Mesh&         theMesh,
-                       SMESH_MesherHelper* aHelper);
-
+                       SMESH_MesherHelper* aHelper);                          
+  
   virtual void SubmeshRestored(SMESH_subMesh* subMesh);
 
   virtual void SetEventListener(SMESH_subMesh* subMesh);

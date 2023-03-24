@@ -60,8 +60,52 @@
         <translation>Light</translation>
     </message>
     <message>
-        <source>LEVEL_MEDIUM</source>
-        <translation>Medium (standard)</translation>
+    <source>LEVEL_MEDIUM</source>
+    <translation>Medium (standard)</translation>
+    </message>
+    <message>
+        <source>GHS3D_PTHREAD_MODE</source>
+        <translation>Pthread Mode</translation>
+    </message>
+    <message>
+    <source>GHS3D_PARALLE_STRAT</source>
+    <translation>Parallel Strategy (HPC)</translation>
+    </message>
+     <message>
+    <source>MODE_NONE</source>
+    <translation>None</translation>
+    </message>
+    <message>
+        <source>MODE_AGGRESSIVE</source>
+        <translation>Aggressive</translation>
+    </message>
+    <message>
+        <source>MODE_SAFE</source>
+        <translation>Safe</translation>
+    </message>
+    <message>
+    <source>MODE_REPRODUCIBLE</source>
+    <translation>Reproducible</translation>
+    </message>
+    <message>
+    <source>MODE_REPRODUCIBLE_GIVEN_MAX_THREADS</source>
+    <translation>Reproducible Given Max Number of Threads</translation>
+    </message>
+    <message>
+        <source>GHS3D_ALGO_SELECTION</source>
+        <translation>Algorithm selection</translation>
+    </message>
+    <message>
+        <source>GHS3D_ALGO_MGTETRA</source>
+        <translation>MG-Tetra</translation>
+    </message>
+    <message>
+        <source>GHS3D_ALGO_MGTETRAHPC</source>
+        <translation>MG-Tetra HPC</translation>
+    </message>
+    <message>
+        <source>GHS3D_THREADS_SIZE</source>
+        <translation>Maximal number of threads</translation>
     </message>
     <message>
         <source>LEVEL_STANDARDPLUS</source>

@@ -184,6 +184,36 @@ public:
   void SetVerboseLevel(short level);
   short GetVerboseLevel() const;
   /*!
+   * Implemented algorithms to be executed [0,1]
+   *  0 - MGTetra-HPC
+   *  1 - MGTetra
+   */
+  enum ImplementedAlgorithms { MGTetraHPC = 0,  MGTetra };
+  void SetAlgorithm(ImplementedAlgorithms algoId);
+  ImplementedAlgorithms GetAlgorithm() const;
+  /*!
+   * Set Get for flag to use pthread parallel version of the algorithm
+   */
+  void SetUseNumOfThreads(bool setUseOfThreads);
+  bool GetUseNumOfThreads() const;
+   /*!
+   * Set Get num of threads to be used by MGTetra algorithms
+   */
+  void SetNumOfThreads(short numOfThreads);
+  short GetNumOfThreads() const;
+  /*!
+  * Set Get pthread mode used for MGTetra
+  */
+  enum PThreadMode { PThreadNone = 0, PThreadAggressive,  Safe };
+  void SetPthreadMode(PThreadMode pthreadMode );
+  PThreadMode GetPthreadMode() const;
+  /*!
+  * Set Get paralle mode used for MGTetra HPC
+  */
+  enum ParallelMode { ParallelNone = 0, ReproducibleGivenMaxNumThreads, Reproducible, ParallelAggressive };
+  void SetParallelMode(ParallelMode parallelMode );
+  ParallelMode GetParallelMode() const;
+  /*!
    * To create new nodes
    */
   void SetToCreateNewNodes(bool toCreate);
@@ -211,7 +241,7 @@ public:
    * To set hiden/undocumented/advanced options
    */
   void SetAdvancedOption(const std::string& option);
-  std::string GetAdvancedOption() const;
+  std::string GetAdvancedOption() const;  
   /*!
   * To define the volumic gradation
   */
@@ -240,16 +270,20 @@ public:
   void ClearOption(const std::string& optionName);
   TOptionValues        GetOptionValues()       const;
   const TOptionValues& GetCustomOptionValues() const { return _customOption2value; }
-  //static inline const char* NoValue() { return "_"; }
+
+  // bool isMGTetraHPCOptions( std::string & option ) const;
+  /*!
+   * \brief To set the advanced options in the execution command line
+   */
+  void SetAdvancedOptionsInCommandLine( std::string & cmd ) const;
   
+  //static inline const char* NoValue() { return "_"; }  
 //   struct TEnforcedEdge {
 //     long ID;
 //     long node1;
 //     long node2;
 //     std::string groupName;
 //   };
-  
-
   /*!
    * \brief Return command to run MG-Tetra mesher excluding file prefix (-f)
    */
@@ -261,9 +295,13 @@ public:
    */
   static std::string GetFileName(const GHS3DPlugin_Hypothesis* hyp);
   /*!
+   * \brief Return a unique file name for MGTetraHPC will have a GHS3D prefix
+   */
+  static std::string GetFileNameHPC(const GHS3DPlugin_Hypothesis* hyp);
+  /*!
    * \brief Return the name of executable
    */
-  static std::string GetExeName();
+  static std::string GetExeName( ImplementedAlgorithms algoId );
 
   /*!
    * To set an enforced vertex
@@ -331,6 +369,11 @@ public:
   static inline double DefaultGradation() { return 1.05; }
   static bool   DefaultUseVolumeProximity() { return false; }
   static int    DefaultNbVolumeProximityLayers() { return 2; }
+  static short  DefaultAlgorithm() { return MGTetra; }
+  static short  DefaultNumOfThreads() { return 4; }
+  static bool   DefaultUseNumOfThreads() { return true; }
+  static short  DefaultMyPthreadMode() { return 2; }    //reproducible_given_max_of_threads
+  static short  DefaultMyPthreadModeHPC() { return 1; } // safe
    
   void SetMinMaxSizeDefault( double theMinSize, double theMaxSize )
   { myMinSizeDefault = theMinSize; myMaxSizeDefault = theMaxSize; }
@@ -374,13 +417,19 @@ protected:
   double      myGradation;
   bool        myUseVolumeProximity;
   int         myNbVolumeProximityLayers;
+  short       myAlgorithm;  //member used to pivot between MG-Tetra and MG-Tetra
+  short       myNumOfThreads;
+  bool        myUseNumOfThreads;
+  short       myPthreadModeMG;
+  short       myPthreadModeMGHPC;
   double      myMinSize, myMinSizeDefault;
   double      myMaxSize, myMaxSizeDefault;
   //std::string myTextOption;
+
   
   TOptionValues _option2value, _customOption2value;         // user defined values
   TOptionValues _defaultOptionValues;                       // default values
-  TOptionNames  _doubleOptions, _charOptions, _boolOptions; // to find a type of option
+  TOptionNames  _doubleOptions, _charOptions, _boolOptions; // to find a type of option  
 
   TGHS3DEnforcedVertexList         _enfVertexList;
   TGHS3DEnforcedVertexCoordsValues _enfVertexCoordsSizeList;
