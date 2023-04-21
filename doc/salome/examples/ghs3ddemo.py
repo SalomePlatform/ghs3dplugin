@@ -19,7 +19,15 @@ MG_CADSurf = mgtetraMesh.Triangle(algo=smeshBuilder.MG_CADSurf)
 MG_Tetra = mgtetraMesh.Tetrahedron(algo=smeshBuilder.MG_Tetra)
 
 # compute the mesh
-mgtetraMesh.Compute()
+ok = mgtetraMesh.Compute()
+
+if not ok:
+  raise Exception("Error when computing mgtetraMesh")
+
+volume = smesh.GetVolume(mgtetraMesh)
+expected_volume = 200**3
+
+assert (volume-expected_volume)/expected_volume < 1e-12
 
 # End of script
 

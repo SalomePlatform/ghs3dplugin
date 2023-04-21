@@ -62,13 +62,18 @@ Mesh_cylindre.AddHypothesis( MG_CADSurf_Parameters2 )
 face_cyl_faces = Mesh_cylindre.GroupOnGeom(face_cyl,'group_face_cyl', SMESH.FACE)
 face_cyl_edges = Mesh_cylindre.GroupOnGeom(face_cyl,'group_edge_cyl', SMESH.EDGE)
 face_cyl_nodes = Mesh_cylindre.GroupOnGeom(face_cyl,'group_node_cyl', SMESH.NODE)
-Mesh_cylindre.Compute()
+ok = Mesh_cylindre.Compute()
+if not ok:
+  raise Exception("Error when computing Mesh_cylindre with MG_CADSurf")
 
 # Create the mesh on the cylinder
 Mesh_box_tri = smesh.Mesh(box,"Mesh_box_tri")
 Mesh_box_tri.AddHypothesis( MG_CADSurf )
 Mesh_box_tri.AddHypothesis( MG_CADSurf_Parameters )
-Mesh_box_tri.Compute()
+ok = Mesh_box_tri.Compute()
+if not ok:
+  raise Exception("Error when computing Mesh_box_tri with MG_CADSurf")
+
 
 # Create 4 copies of the 2D mesh to test the 3 types of contraints (NODE, EDGE, FACE)
 # from the whole mesh and from groups of elements.
@@ -97,9 +102,49 @@ MG_Tetra_Parameters_edge.SetEnforcedMeshWithGroup(face_cyl_edges,SMESH.EDGE,"edg
 MG_Tetra_Parameters_face.SetEnforcedMeshWithGroup(face_cyl_faces,SMESH.FACE,"faces from face_cyl_faces")
 
 #Compute the meshes
-mesh_node.Compute()
-mesh_edge.Compute()
-mesh_face.Compute()
-mesh_mesh.Compute()
+ok = mesh_node.Compute()
+if not ok:
+  raise Exception("Error when computing mesh_node")
+ok = mesh_edge.Compute()
+if not ok:
+  raise Exception("Error when computing mesh_edge")
+ok = mesh_face.Compute()
+if not ok:
+  raise Exception("Error when computing mesh_face")
+ok = mesh_mesh.Compute()
+if not ok:
+  raise Exception("Error when computing mesh_mesh")
+
+## Get the number of nodes of a mesh or a group of mesh
+def getNbNodes(mesh):
+  try:
+    #mesh
+    nb_nodes = mesh.NbNodes()
+  except:
+    # group
+    nb_nodes = mesh.GetNumberOfNodes()
+  return nb_nodes
+
+## Check enforced mesh is correct
+def checkEnforcedMesh(mesh, enforced_group, result_group, tol=1e-7):
+  name = "Check " + mesh.GetName()
+  # test nb nodes are the same between enforced group and the result group
+  if getNbNodes(enforced_group) != getNbNodes(enforced_group):
+    raise Exception("Enforce mesh failed for %s, wrong nummber of nodes"%name)
+  # test that all nodes are imposed at the same place by finding coincident nodes in a compound mesh
+  mesh_check = smesh.Concatenate([enforced_group, result_group], 0, name=name)
+  ll_coincident_nodes = mesh_check.FindCoincidentNodes(tol)
+  coincident_nodes = [item for sublist in ll_coincident_nodes for item in sublist]
+  mesh_check.MakeGroupByIds("coincident_nodes", SMESH.NODE, coincident_nodes)
+  mesh_nodes = mesh_check.GetNodesId()
+  if len(ll_coincident_nodes) != getNbNodes(enforced_group):
+    non_coincident_nodes = list(set(mesh_nodes) - set(coincident_nodes))
+    mesh_check.MakeGroupByIds("non_coincident_nodes", SMESH.NODE, non_coincident_nodes)
+    raise Exception("Enforce mesh failed for %s"%name)
+
+checkEnforcedMesh(mesh_node, face_cyl_nodes, mesh_node.GetGroupByName("nodes from face_cyl_nodes")[0])
+checkEnforcedMesh(mesh_edge, face_cyl_edges, mesh_edge.GetGroupByName("edges from face_cyl_edges")[0])
+checkEnforcedMesh(mesh_face, face_cyl_faces, mesh_face.GetGroupByName("faces from face_cyl_faces")[0])
+checkEnforcedMesh(mesh_mesh, Mesh_cylindre.GetMesh(), mesh_mesh.GetGroupByName("faces from cylinder")[0])
 
 # End of script

@@ -13,6 +13,8 @@ smesh =  smeshBuilder.New()
 box = geompy.MakeBoxDXDYDZ(200., 200., 200.)
 geompy.addToStudy(box, "box")
 
+expected_volume = 200**3
+
 # create a mesh on the box
 mgtetraMesh = smesh.Mesh(box,"box: MG-Tetra and NETGEN_1D_2D mesh")
 
@@ -30,6 +32,9 @@ MG_Tetra_Parameters_1.SetPthreadMode( 1 )       # 0 - none, 1 - aggressive, 2 - 
 status = mgtetraMesh.Compute()
 assert( status )
 
+volume = smesh.GetVolume(mgtetraMesh)
+assert (volume-expected_volume)/expected_volume < 1e-12
+
 mgtetraHPCMesh       = smesh.Mesh(box,"box: MG-Tetra HPC and NETGEN_1D_2D mesh")
 status               = mgtetraHPCMesh.AddHypothesis(NETGEN_2D_Parameters_1)
 NETGEN_1D_2D_1       = mgtetraHPCMesh.Triangle(algo=smeshBuilder.NETGEN_1D2D)
@@ -43,6 +48,9 @@ MG_Tetra_Parameters_2.SetParallelMode( 1 )      # 0 - none, 1 - reproducible_giv
 # compute the mesh  with MGTetra HPC
 status = mgtetraHPCMesh.Compute()
 assert( status )
+
+volume_HPC = smesh.GetVolume(mgtetraHPCMesh)
+assert (volume_HPC-expected_volume)/expected_volume < 1e-12
 
 
 # End of script

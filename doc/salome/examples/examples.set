@@ -19,4 +19,8 @@
 
 SET(EXAMPLE_NAMES
   ghs3dSetParametersDemo
+  ghs3ddemo
+  ghs3d_enfmesh
+  ghs3d_enfvert
+  ghs3d_optimization
 )
