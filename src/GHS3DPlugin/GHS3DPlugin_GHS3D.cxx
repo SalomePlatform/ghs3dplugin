@@ -79,6 +79,10 @@
 #include <algorithm>
 #include <errno.h>
 
+#include <boost/filesystem.hpp>
+
+namespace boofs = boost::filesystem;
+
 #ifdef _DEBUG_
 //#define _MY_DEBUG_
 #endif
@@ -110,6 +114,12 @@ static std::string flagsToErrorStr( int anInvalidEnforcedFlags )
       str += "There are enforced triangles incorrectly defined.\n";
   }
   return str;
+}
+
+// change results files permissions to user only (using boost to be used without C++17)
+static void chmodUserOnly(const char* filename)
+{
+  boofs::permissions(filename, boofs::remove_perms | boofs::group_all | boofs::others_all );
 }
 
 typedef const list<const SMDS_MeshFace*> TTriaList;
@@ -1571,11 +1581,19 @@ static bool writeGMFFile(MG_Tetra_API*                                   MGInput
       MGInput->GmfSetLin( idx, GmfRequiredTriangles, int( anElemSet.size()+enfID ));
   }
 
+  // close input files and change results files permissions to user only
   MGInput->GmfCloseMesh(idx);
+  chmodUserOnly(theMeshFileName);
   if (idxRequired)
-    MGInput->GmfCloseMesh(idxRequired);
+    {
+      MGInput->GmfCloseMesh(idxRequired);
+      chmodUserOnly(theRequiredFileName);
+    }
   if (idxSol)
-    MGInput->GmfCloseMesh(idxSol);
+    {
+      MGInput->GmfCloseMesh(idxSol);
+      chmodUserOnly(theRequiredFileName);
+    }
 
   return true;
 }
@@ -1736,6 +1754,7 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     }
   }
   aIdsFile.close();
+  chmodUserOnly(aSmdsToGhs3dIdMapFileName.ToCString());
   if ( ! Ok ) {
     if ( !_keepFiles ) {
       removeFile( aGMFFileName );
@@ -1785,6 +1804,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     BRIEF_INFOS("End of MG-Tetra execution !");
     BRIEF_INFOS("")
   }
+
+  // change results files permissions to user only
+  chmodUserOnly(aLogFileName.ToCString());
+  if (Ok)
+    {
+      chmodUserOnly(aResultFileName.ToCString());
+      chmodUserOnly(aResSolFileName.ToCString());
+    }
 
   // --------------
   // read a result
