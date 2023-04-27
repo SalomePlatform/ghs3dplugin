@@ -119,7 +119,8 @@ static std::string flagsToErrorStr( int anInvalidEnforcedFlags )
 // change results files permissions to user only (using boost to be used without C++17)
 static void chmodUserOnly(const char* filename)
 {
-  boofs::permissions(filename, boofs::remove_perms | boofs::group_all | boofs::others_all );
+  if (boofs::exists(filename))
+    boofs::permissions(filename, boofs::remove_perms | boofs::group_all | boofs::others_all );
 }
 
 typedef const list<const SMDS_MeshFace*> TTriaList;
