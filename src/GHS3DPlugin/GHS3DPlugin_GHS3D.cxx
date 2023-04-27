@@ -2650,9 +2650,12 @@ GHS3DPlugin_GHS3D::getErrorDescription(const char*                logFile,
   if ( errDescription.empty() ) { // no errors found
     char msgLic1[] = "connection to server failed";
     char msgLic2[] = " Dlim ";
+    char msgLic3[] = "license is not valid";
     if ( search( &buf[0], bufEnd, msgLic1, msgLic1 + strlen(msgLic1)) != bufEnd ||
          search( &buf[0], bufEnd, msgLic2, msgLic2 + strlen(msgLic2)) != bufEnd )
-      errDescription << "Licence problems.";
+      errDescription << "Network license problem.";
+    else if ( search( &buf[0], bufEnd, msgLic3, msgLic3 + strlen(msgLic3)) != bufEnd )
+      errDescription << "License is not valid.";
     else
     {
       char msg2[] = "SEGMENTATION FAULT";
