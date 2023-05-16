@@ -730,7 +730,12 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
     else
       continue;
 
-    std::vector<int> id (nbElem*tabRef[token]); // node ids
+    // Store connectivity in vector of vectors
+    // For each element id, store its nodes
+    // This allows to prevent the int64 limit of connectivity size without using smIdType
+    // because GmfGetLin only allows int
+    std::vector< std::vector<int> > id (nbElem, std::vector<int>(tabRef[token])); // node ids
+
     std::vector<int> domainID( nbElem ); // domain
 
     if (token == GmfVertices) {
@@ -786,32 +791,32 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
     else if (token == GmfCorners && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " corner" : tmpStr = " corners";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem][0]);
     }
     else if (token == GmfRidges && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " ridge" : tmpStr = " ridges";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem][0]);
     }
     else if (token == GmfEdges && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " edge" : tmpStr = " edges";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &domainID[iElem]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem][0], &id[iElem][1], &domainID[iElem]);
     }
     else if (token == GmfTriangles && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " triangle" : tmpStr = " triangles";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &domainID[iElem]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem][0], &id[iElem][1], &id[iElem][2], &domainID[iElem]);
     }
     else if (token == GmfQuadrilaterals && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " Quadrilateral" : tmpStr = " Quadrilaterals";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &domainID[iElem]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem][0], &id[iElem][1], &id[iElem][2], &id[iElem][3], &domainID[iElem]);
     }
     else if (token == GmfTetrahedra && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " Tetrahedron" : tmpStr = " Tetrahedra";
       for ( int iElem = 0; iElem < nbElem; iElem++ ) {
-        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3], &domainID[iElem]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem][0], &id[iElem][1], &id[iElem][2], &id[iElem][3], &domainID[iElem]);
 #ifdef _MY_DEBUG_
         subdomainId2tetraId[dummy].insert(iElem+1);
 #endif
@@ -820,8 +825,8 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
     else if (token == GmfHexahedra && nbElem > 0) {
       (nbElem <= 1) ? tmpStr = " Hexahedron" : tmpStr = " Hexahedra";
       for ( int iElem = 0; iElem < nbElem; iElem++ )
-        MGOutput->GmfGetLin( InpMsh, token, &id[iElem*tabRef[token]], &id[iElem*tabRef[token]+1], &id[iElem*tabRef[token]+2], &id[iElem*tabRef[token]+3],
-                  &id[iElem*tabRef[token]+4], &id[iElem*tabRef[token]+5], &id[iElem*tabRef[token]+6], &id[iElem*tabRef[token]+7], &domainID[iElem]);
+        MGOutput->GmfGetLin( InpMsh, token, &id[iElem][0], &id[iElem][1], &id[iElem][2], &id[iElem][3],
+                  &id[iElem][4], &id[iElem][5], &id[iElem][6], &id[iElem][7], &domainID[iElem]);
     }
     std::cout << tmpStr << std::endl;
     std::cout << std::endl;
@@ -849,7 +854,7 @@ static bool readGMFFile(MG_Tetra_API*                   MGOutput,
         bool fullyCreatedElement = false; // if at least one of the nodes was created
         for ( int iRef = 0; iRef < nbRef; iRef++ )
         {
-          aGMFNodeID = id[iElem*tabRef[token]+iRef]; // read nbRef aGMFNodeID
+          aGMFNodeID = id[iElem][iRef]; // read nbRef aGMFNodeID
           if (aGMFNodeID <= nbInitialNodes) // input nodes
           {
             aGMFNodeID--;
