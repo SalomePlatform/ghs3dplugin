@@ -428,9 +428,9 @@ bool GHS3DPlugin_Optimizer::Compute(SMESH_Mesh&         theMesh,
     cmd += " 1>" + aLogFileName;  // dump into file
   }
 
-  BRIEF_INFOS("")
-  BRIEF_INFOS("MG-Tetra execution...")
-  BRIEF_INFOS(cmd)
+  INFOS("")
+  INFOS("MG-Tetra execution...")
+  INFOS(cmd)
 
   _computeCanceled = false;
 
@@ -438,14 +438,14 @@ bool GHS3DPlugin_Optimizer::Compute(SMESH_Mesh&         theMesh,
   Ok = mgTetra.Compute( cmd, errStr ); // run
 
   if ( logInStandardOutput && mgTetra.IsLibrary() ) {
-    BRIEF_INFOS("");
-    BRIEF_INFOS(mgTetra.GetLog());
-    BRIEF_INFOS("")
+    INFOS("");
+    INFOS(mgTetra.GetLog());
+    INFOS("")
   }
   if ( Ok ) {
-    BRIEF_INFOS("");
-    BRIEF_INFOS("End of MG-Tetra execution !");
-    BRIEF_INFOS("")
+    INFOS("");
+    INFOS("End of MG-Tetra execution !");
+    INFOS("")
   }
 
 
