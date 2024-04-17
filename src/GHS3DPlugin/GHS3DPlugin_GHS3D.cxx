@@ -1786,9 +1786,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
   }
 
-  INFOS("")
-  INFOS("MG-Tetra execution...")
-  INFOS(cmd)
+  std::cout << std::endl;
+  std::cout << "MG-Tetra execution..." << std::endl;
+  std::cout << cmd << std::endl;
 
   _computeCanceled = false;
 
@@ -1796,14 +1796,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   Ok = mgTetra.Compute( cmd.ToCString(), errStr ); // run
 
   if ( _logInStandardOutput && mgTetra.IsLibrary() ) {
-    INFOS("");
-    INFOS(mgTetra.GetLog());
-    INFOS("")
+    std::cout << std::endl;
+    std::cout << mgTetra.GetLog() << std::endl;
+    std::cout << std::endl;
   }
   if ( Ok ) {
-    INFOS("");
-    INFOS("End of MG-Tetra execution !");
-    INFOS("")
+    std::cout << std::endl;
+    std::cout << "End of MG-Tetra execution !" << std::endl;
+    std::cout << std::endl;
   }
 
   // change results files permissions to user only
@@ -2025,9 +2025,9 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
     cmd += TCollection_AsciiString(" 1>" ) + aLogFileName;  // dump into file
   }
 
-  INFOS("")
-  INFOS("MG-Tetra execution...")
-  INFOS(cmd)
+  std::cout << std::endl;
+  std::cout << "MG-Tetra execution..." << std::endl;
+  std::cout << cmd << std::endl;
 
   _computeCanceled = false;
 
@@ -2035,14 +2035,14 @@ bool GHS3DPlugin_GHS3D::Compute(SMESH_Mesh&         theMesh,
   Ok = mgTetra.Compute( cmd.ToCString(), errStr ); // run
 
   if ( _logInStandardOutput && mgTetra.IsLibrary() ) {
-    INFOS("");
-    INFOS(mgTetra.GetLog());
-    INFOS("")
+    std::cout << std::endl;
+    std::cout << mgTetra.GetLog() << std::endl;
+    std::cout << std::endl;
   }
   if ( Ok ) {
-    INFOS("");
-    INFOS("End of MG-Tetra execution !");
-    INFOS("")
+    std::cout << std::endl;
+    std::cout << "End of MG-Tetra execution !" << std::endl;
+    std::cout << std::endl;
   }
 
   // --------------
