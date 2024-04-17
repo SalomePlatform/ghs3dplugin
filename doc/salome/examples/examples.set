@@ -23,4 +23,5 @@ SET(EXAMPLE_NAMES
   ghs3d_enfmesh
   ghs3d_enfvert
   ghs3d_optimization
+  ghs3d_optimization_no_log
 )

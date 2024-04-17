@@ -471,7 +471,7 @@ bool GHS3DPlugin_Optimizer::Compute(SMESH_Mesh&         theMesh,
                                                      mgTetra.GetLog(), conv, Ok ));
     }
   }
-  else {
+  else if (!logInStandardOutput) {
     // the log file is empty
     removeFile( aLogFileName );
     INFOS( "MG-Tetra Error, " << errStr);
